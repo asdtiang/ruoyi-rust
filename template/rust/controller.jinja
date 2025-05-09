@@ -1,0 +1,46 @@
+use crate::context::${{table.moduleName|upper}}_CONTEXT;
+use crate::domain::${{table.moduleName}}::dto::{${{table.className}}AddDTO, ${{table.className}}PageDTO, ${{table.className}}UpdateDTO};
+use crate::domain::${{table.moduleName}}::mapper::${{table.moduleName}}_${{table.businessName}}::${{table.className}};
+use crate::domain::${{table.moduleName}}::vo::${{table.className}}VO;
+use crate::{PageVO, RespVO};
+use axum::extract::Path;
+use axum::response::IntoResponse;
+use axum::Json;
+use macros::pre_authorize;
+use rbatis::Page;
+
+//查询${{table.functionName}}列表
+#[pre_authorize("${{permissionPrefix}}:list")]
+pub async fn list(dto: Json<${{table.className}}PageDTO>) -> impl IntoResponse {
+    let data = ${{table.moduleName|upper}}_CONTEXT.${{table.moduleName}}_${{table.businessName}}_service.page(&dto.0).await;
+    let data = data.map(|d| Page::<${{table.className}}VO>::from(d));
+    PageVO::from_result(&data).into_response()
+}
+//获取${{table.functionName}}详细信息
+#[pre_authorize("${{permissionPrefix}}:query")]
+pub async fn detail(${{pk_column.columnName}}: Path<String>) -> impl IntoResponse {
+    let ${{table.businessName}} = ${{table.moduleName|upper}}_CONTEXT.${{table.moduleName}}_${{table.businessName}}_service.detail(&${{pk_column.columnName}}.0).await;
+    let ${{table.businessName}} = ${{table.businessName}}.map(|d| ${{table.className}}VO::from(d));
+    RespVO::from_result(&${{table.businessName}}).into_response()
+}
+//新增${{table.functionName}}
+#[pre_authorize("${{permissionPrefix}}:add")]
+pub async fn add(dto: Json<${{table.className}}AddDTO>) -> impl IntoResponse {
+    let res = ${{table.moduleName|upper}}_CONTEXT.${{table.moduleName}}_${{table.businessName}}_service.add(dto.0).await;
+    RespVO::from_result(&res).into_response()
+}
+
+//更新${{table.functionName}}
+#[pre_authorize("${{permissionPrefix}}:edit")]
+pub async fn update(dto: Json<${{table.className}}UpdateDTO>) -> impl IntoResponse {
+    let res = ${{table.moduleName|upper}}_CONTEXT.${{table.moduleName}}_${{table.businessName}}_service.update(dto.0).await;
+    RespVO::from_result(&res).into_response()
+}
+
+//新增${{table.functionName}}
+#[pre_authorize("${{permissionPrefix}}:remove")]
+pub async fn remove(${{pk_column.columnName}}: Path<String>) -> impl IntoResponse {
+    let rows_affected = ${{table.moduleName|upper}}_CONTEXT.${{table.moduleName}}_${{table.businessName}}_service.remove_batch(&${{pk_column.columnName}}.0).await;
+    RespVO::<u64>::judge_result(&rows_affected, "", "删除失败！")
+        .into_response()
+}

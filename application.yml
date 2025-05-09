@@ -1,29 +1,40 @@
-#debug模式，true输出控制台日志，false只输出文件日志.生产环境需要关闭debug，rbatis也需移除"debug_mode"
+  #debug模式，true输出控制台日志，false只输出文件日志.生产环境需要关闭debug，rbatis也需移除"debug_mode"
 debug: true
 #名称
 server_name: "ruoyi_rust"
 #server 地址
-server_url: "0.0.0.0:8080"
+server_url: "0.0.0.0:9988"
 #相对应若依平台的VITE_APP_BASE_API
 base_api: "/"
-#缓存介质类型,单选("mem","redis")
-cache_type: "redis"
-
-#web后台 redis地址(cache_type为“redis”时有效)
-web_redis_url: "redis://127.0.0.1:6379" #这是db0
-
+#choose one ["mem","redis://127.0.0.1:6379"]
+cache: "redis://127.0.0.1:6379"
+#choose storage type
+#storage: "local",
+#storage: "s3://{\"bucket\":\"test\",\"endpoint\":\"http://127.0.0.1:9000\",\"access_key\":\"minioadmin\",\"secret_key\":\"minioadmin\",\"region\":\"\"}",
+storage: "local"
 #后台用数据库地址
-database_url: "mysql://root:123456@localhost/ruoyi-rust"
+db_url: "mysql://root:123456@127.0.0.1/rouyi-rust"
+#database pool len
+db_pool_len: 32
+#pool get timeout
+db_pool_timeout: 60
 #逻辑删除-字段
 logic_column: "del"
 #逻辑删除-未删除标志
 logic_un_deleted: 0
 #逻辑删除-已删除标志
 logic_deleted: 1
+#rolling by LogFileSize use[1KB,1MB,1GB], rolling by date use ['hour','minute','day'],rolling by Duration use ['1hour','10minute','1day']
+log_rolling: "day"
 #日志文件存放目录
 log_dir: "target/logs/"
 #日志分割尺寸-单位KB,MB,GB
 log_temp_size: "100MB"
+#Log rolling retention options:
+#Retain all logs: All
+#Retain logs by time (in seconds): KeepTime(i64)
+#Retain logs by version: KeepNum(i64)
+log_keep_type: "KeepNum(120)"
 #日志打包格式可选“”（空-保留.log）“gzip”（gz压缩包）“zip”（zip压缩包）“lz4”（lz4压缩包（非常快））
 #需要打开以下选项
 #toml文件里面，fast_log 添加   fast_log = { version = "1.5",features = ["lz4", "zip", "gzip"]}
@@ -38,24 +49,54 @@ log_level: "debug"
 log_chan_len: 100000
 #JwtToken秘钥
 jwt_secret: "ruoyi_rust_vue3"
+#jwt to the exp (in seconds)  default 30 minutes
+jwt_exp : 1800
+#Jwt resolution determines whether the expiration time is less than give minutes (default 10 minutes) and automatically renews the contract
+jwt_refresh_token : 600
+
 #短信通道缓存（系统先把数据放入队列sms:send:，第三方短信sdk或程序需要从队列获取并发送，获得回执存入sms:resp:*）,格式为sms:send:手机号和sms:resp:手机号
 sms_cache_send_key_prefix: "sms:send:"
 #登陆失败拒绝策略，重试次数限制(0次无限制)
 login_fail_retry: 3
 #登陆失败重试次数限制超过后提示的等待时间（秒）
 login_fail_retry_wait_sec: 30
-#接口白名单（免登陆直接访问）
-white_list_api:
-  - "/"
-  - "/login"
-  - "/logout"
-  - "/captchaImage"
-#是否启用验证码
-captcha_enabled: false
+#Garbage data timeout, unit: days (data that exceeds the timeout for deletion will be permanently removed)
+trash_recycle_days: 90
 #验证码过期时间（分钟）
 captcha_expired_min: 2
 #Token过期时间（分钟）
 token_expired_min: 60
+
+#format datetime.you can choose any ['YYYY-MM-DD hh:mm:ss.000000', 'YYYY-MM-DD hh:mm:ss']
+datetime_format: "YYYY-MM-DD hh:mm:ss"
+
+#根据ip查地址
+address_enabled: true
+
+errors:
+  '-1': 未知错误
+  empty: 缺少参数
+  arg.name_empty: 权限名字不能为空
+  arg.permission_empty: 权限不能为空
+  access_token_empty: 令牌不能为空
+  access_denied: 无权限访问
+  account_empty: 账户不能为空
+  cannot_disable_admin: 不能禁用超级管理员
+  dict_exists: 字典已存在
+  permission_exists: 权限已存在
+  role_id_empty: 角色id不能为空
+  please_send_code: 请发送验证码
+  role_user_cannot_empty: 添加角色时用户和角色不能为空
+  user_not_exists: 用户不存在
+  user_and_name_cannot_empty: 用户名和姓名不能为空
+  user_cannot_find: 找不到用户
+  account_not_exists: 账号不存在
+  account_disabled: 账户被禁用
+  password_empty: 密码为空
+  password_error: 密码不正确
+  vcode_error: 验证码不正确
+  req_frequently: '操作过于频繁,请等待{}秒后重试'
+  id_empty: id不能为空
 
 
 

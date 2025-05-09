@@ -1,0 +1,55 @@
+import request from '@/utils/request'
+
+// 查询${{table.functionName}}列表
+export function list${{table.businessName|capitalize}}(query) {
+  return request({
+    url: '/${{table.moduleName}}/${{table.businessName}}/list',
+    method: 'get',
+    params: query
+  })
+}
+
+// 查询${{table.functionName}}详细
+export function get${{table.businessName|capitalize}}(${{pkColumn.javaField}}) {
+  return request({
+    url: '/${{table.moduleName}}/${{table.businessName}}/' + ${{pkColumn.javaField}},
+    method: 'get'
+  })
+}
+
+// 新增${{table.functionName}}
+export function add${{table.businessName|capitalize}}(data) {
+  return request({
+    url: '/${{table.moduleName}}/${{table.businessName}}',
+    method: 'post',
+    data: data
+  })
+}
+
+// 修改${{table.functionName}}
+export function update${{table.businessName|capitalize}}(data) {
+  return request({
+    url: '/${{table.moduleName}}/${{table.businessName}}',
+    method: 'put',
+    data: data
+  })
+}
+
+// 删除${{table.functionName}}
+export function del${{table.businessName|capitalize}}(${{pkColumn.javaField}}) {
+  return request({
+    url: '/${{table.moduleName}}/${{table.businessName}}/' + ${{pkColumn.javaField}},
+    method: 'delete'
+  })
+}
+{%- for column in columns %}
+#if($column.hasFk())
+    //查询${column.comment}Map
+export function get${column.capJavaField}Map() {
+  return request({
+    url: '/${{table.moduleName}}/${{table.businessName}}/${column.javaField}Map',
+    method: 'get'
+  })
+}
+#end
+{%- endfor %}

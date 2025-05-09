@@ -1,0 +1,79 @@
+use rbatis::rbdc::DateTime;
+use rbatis::{crud, impl_select_page};
+
+crud!(${{table.className}} {});
+
+
+impl_select_page!(${{table.className}}{select_page(dto: &crate::domain::${{table.moduleName}}::dto::${{table.className}}PageDTO) =>
+    "`where 1=1`
+    if dto.noticeTitle != '':
+      ` and notice_title like #{'%'+dto.noticeTitle+'%'}`
+    if dto.createBy != '':
+      ` and create_by = #{dto.createBy}`
+    if dto.noticeType != '':
+      ` and notice_type = #{dto.noticeType}`
+    if do_count == false:
+     ` order by notice_title`"});
+
+#[derive(Clone, Debug, serde::Serialize, serde::Deserialize)]
+pub struct ${{table.className}} {
+{% for ($column in $columns)
+{% if !$table.isSuperColumn($column.javaField))
+    /** $column.columnComment */
+{% if $column.list&&$column.export)##    @Excel(name = "${column.comment}", readConverterExp = "$column.readConverterExp()")
+{% if $column.dictType!='')
+    @Excel(name = "${column.comment}",  dictType= "$column.dictType")
+{% elif $column.hasFk())
+    @Excel(name = "${column.comment}", fkTable = "$column.more("fkTable")", fkId = "$column.more("fkId")", fkLabel = "$column.more("fkLabel")")
+{% elif $column.javaType == 'Date')
+    @Excel(name = "${column.comment}", width = 20, dateFormat = "yyyy-MM-dd")
+{% elif $column.javaType == 'Time')
+    @Excel(name = "${column.comment}", width = 20, dateFormat = "hh:mm:ss")
+{% elif $column.javaType == 'Timestamp')
+    @Excel(name = "${column.comment}", width = 35, dateFormat = "yyyy-MM-dd hh:mm:ss")
+{% else 
+    @Excel(name = "${column.comment}")
+{% endif %}
+{% endif %}
+{% if $column.list||$column.detail)
+{% if $column.javaType == 'Date')
+    @JsonFormat(pattern = "yyyy-MM-dd")
+{% elif $column.javaType == 'Time')
+    @JsonFormat(pattern = "hh:mm:ss")
+{% elif $column.javaType == 'Timestamp')
+    @JsonFormat(pattern = "yyyy-MM-dd hh:mm:ss")
+{% endif %}
+{% endif %}
+#set($maxLength=$column.maxLength)
+{% if $column.javaType=="String")
+{% if $column.required)
+    @NotBlank(message = "${column.comment}不能为空")
+{% endif %}
+{% if column.more("checkLength")}=="1"&&$maxLength>0)
+{% if column.more("utf")}=="1")#set($maxLength=$column.maxLength /2){% endif %}
+    @Size(max = $maxLength, message = "${column.comment}不能超过$maxLength个字符")
+{% endif %}
+{% elif $column.required)
+    @NotNull(message = "${column.comment}不能为空")
+{% endif %}
+{% if !$column.pk)
+{% if $column.javaType=="BigDecimal")
+    @Digits(integer = $column.maxLength, fraction =$column.precision, message = "${column.comment}输入错误，整数长度最长为$column.maxLength{% if $column.precision>0)，小数点长度最长为$column.precision{% endif %}")
+{% elif $column.max&&($column.javaType=="Integer"||$column.javaType=="Long"))
+    @Min(value = $column.min,message =  "${column.comment}不能小于$column.min")
+    @Max(value = ${column.max}{% if $column.javaType=="Long")l{% endif %},message = "${column.comment}不能大于$column.max")
+{% endif %}
+{% if $column.more("pattern"))
+    @Pattern(regexp = "$column.more("pattern").replace("\","\\")", message = "$column.more("patternMessage")")
+{% endif %}
+{% endif %}
+    private $column.javaType $column.javaField;
+
+{% endif %}
+{% endif %}
+    pub create_by: Option<String>,
+    pub create_time: Option<DateTime>,
+    pub update_by: Option<String>,
+    pub update_time: Option<DateTime>,
+    pub remark: Option<String>,
+}

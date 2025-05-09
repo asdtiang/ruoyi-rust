@@ -1,6 +1,7 @@
 #相对应若依平台的VITE_APP_BASE_API
 base_api: "/dev-api"
-
+#server 地址
+server_url: "0.0.0.0:8090"
 
 #接口白名单（免登陆直接访问）
 white_list_api:

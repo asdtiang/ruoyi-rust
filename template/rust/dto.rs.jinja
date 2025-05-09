@@ -1,0 +1,86 @@
+use crate::domain::${{table.moduleName}}::mapper::${{table.moduleName}}_${{table.businessName}}::${{table.className}};
+use macros::page_request;
+use rbatis::object_id::ObjectId;
+use rbatis::rbdc::datetime::DateTime;
+use serde::{Deserialize, Serialize};
+
+#[page_request]
+#[derive(Serialize, Deserialize, Clone, Debug)]
+#[serde(rename_all = "camelCase")]
+pub struct ${{table.className}}PageDTO {
+    pub notice_title: Option<String>,
+    pub create_by: Option<String>,
+    pub notice_type: Option<char>,
+}
+
+
+#[derive(Serialize, Deserialize, Clone, Debug)]
+#[serde(rename_all = "camelCase")]
+pub struct ${{table.className}}AddDTO {
+{% for column in columns %}
+  {% if column.isInsert and not column.isPk %}
+    {% if column.isRequired %}
+  #[validate(required(message = "${{column.comment}}不能为空"))]
+    {% endif %}
+    {% if column.javaType=="String" and column.more["checkLength"]=="1" and column.maxLength>0 %}
+  #[validate(length(max = ${{maxLength}}, message = "${{column.comment}}不能超过${{maxLength}}个字符"))]
+    {% endif %}
+{#{% if column.javaType=="BigDecimal" %}#}
+{#    @Digits(integer = column.maxLength, fraction =column.precision, message = "${column.comment}输入错误，整数长度最长为column.maxLength{% if column.precision>0 %}，小数点长度最长为column.precision{% endif %}" %}#}
+{#{% elif column.max&&(column.javaType=="Integer"||column.javaType=="Long" %} %}#}
+{#    @Min(value = column.min,message =  "${column.comment}不能小于column.min" %}#}
+{#    @Max(value = ${column.max}{% if column.javaType=="Long" %}l{% endif %},message = "${column.comment}不能大于column.max" %}#}
+{#{% endif %}#}
+{#{% if column.more("pattern" %} %}#}
+{#    @Pattern(regexp = "column.more("pattern" %}.replace("\","\\" %}", message = "column.more("patternMessage" %}" %}#}
+{#{% endif %}#}
+      /** ${{column.columnComment}} */
+    pub ${{column.javaField}}:Option<${{column.javaType}}>,
+  {% endif %}
+{% endfor %}
+}
+
+impl From<${{table.className}}AddDTO> for ${{table.className}} {
+    fn from(arg: ${{table.className}}AddDTO) -> Self {
+        ${{table.className}} {
+            ${{pkColumn.columnName}}: ObjectId::new().to_string().into(),
+            notice_title: arg.notice_title,
+            notice_content: arg.notice_content,
+            notice_type: arg.notice_type,
+            status: arg.status,
+            create_by: None,
+            create_time: DateTime::now().set_nano(0).into(),
+            update_by: None,
+            update_time: None,
+            remark: arg.remark,
+        }
+    }
+}
+
+#[derive(Serialize, Deserialize, Clone, Debug)]
+#[serde(rename_all = "camelCase")]
+pub struct ${{table.className}}UpdateDTO {
+    pub ${{pkColumn.columnName}}: Option<String>,
+    pub notice_title: Option<String>,
+    pub notice_content: Option<String>,
+    pub notice_type: Option<char>,
+    pub status: Option<char>,
+    pub remark: Option<String>,
+}
+
+impl From<${{table.className}}UpdateDTO> for ${{table.className}} {
+    fn from(arg: ${{table.className}}UpdateDTO) -> Self {
+        ${{table.className}} {
+            ${{pkColumn.columnName}}: arg.${{pkColumn.columnName}},
+            notice_title: arg.notice_title,
+            notice_content: arg.notice_content,
+            notice_type: arg.notice_type,
+            status: arg.status,
+            create_by: None,
+            create_time: None,
+            update_by: None,
+            update_time: DateTime::now().set_nano(0).into(),
+            remark: arg.remark,
+        }
+    }
+}

@@ -1,0 +1,30 @@
+use crate::domain::${{table.moduleName}}::mapper::${{table.moduleName}}_${{table.businessName}}::${{table.className}};
+use rbatis::rbdc::datetime::DateTime;
+
+#[derive(Clone, Debug, serde::Serialize, serde::Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct ${{table.className}}VO {
+    pub ${{pk_column.columnName}}: Option<String>,
+    pub notice_title: Option<String>,
+    pub notice_content: Option<String>,
+    pub notice_type: Option<char>,
+    pub create_by: Option<String>,
+    pub create_time: Option<DateTime>,
+    pub status: Option<char>,
+    pub remark: Option<String>,
+}
+
+impl From<${{table.className}}> for ${{table.className}}VO {
+    fn from(arg: ${{table.className}}) -> Self {
+        Self {
+            ${{pk_column.columnName}}: arg.${{pk_column.columnName}},
+            notice_title: arg.notice_title,
+            notice_content: arg.notice_content,
+            notice_type: arg.notice_type,
+            create_by: arg.create_by,
+            create_time: arg.create_time,
+            status: arg.status,
+            remark: arg.remark,
+        }
+    }
+}
