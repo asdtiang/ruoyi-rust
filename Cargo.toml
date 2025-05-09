@@ -81,7 +81,6 @@ minijinja = { version = "2.10.0", optional = true, features = ["custom_syntax"] 
 markup_fmt = { version = "0.20.0" }
 prettify-js = "0.1.0"
 prettyplease = "*"
-syn = { version = "2.0", features = ["full"] }
 [build-dependencies]
 serde = { version = "1.0", features = ["derive"] }
 
