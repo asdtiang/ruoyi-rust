@@ -57,8 +57,9 @@ impl From<${{className}}AddDTO> for ${{className}} {
 #[derive(Serialize, Deserialize,validator::Validate, Clone, Debug)]
 #[serde(rename_all = "camelCase")]
 pub struct ${{className}}UpdateDTO {
+ pub ${{pkColumn.columnName}}:Option<${{pkColumn.javaType}}>,
 {% for column in columns %}
-  {% if column.isEdit%}
+  {% if column.isEdit %}
       // ${{column.columnComment}}
     {% if column.isRequired %}
   #[validate(required(message = "${{column.comment}}不能为空"))]
@@ -83,7 +84,7 @@ pub struct ${{className}}UpdateDTO {
 impl From<${{className}}UpdateDTO> for ${{className}} {
     fn from(arg: ${{className}}UpdateDTO) -> Self {
         ${{className}} {
-            {% for column in columns %} {% if column.isEdit%} ${{column.columnName}}: arg.${{column.columnName}}, {% else %} ${{column.columnName}}: None, {% endif %}{% endfor %}
+            {% for column in columns %} {% if column.isEdit or column.isPk %} ${{column.columnName}}: arg.${{column.columnName}}, {% else %} ${{column.columnName}}: None, {% endif %}{% endfor %}
         }
     }
 }

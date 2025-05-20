@@ -1,4 +1,7 @@
+use std::fmt::format;
 use std::net::SocketAddr;
+use std::path::PathBuf;
+use axum::extract::DefaultBodyLimit;
 use axum::Router;
 use tower_http::compression::{CompressionLayer};
 use tower_http::compression::predicate::SizeAbove;
@@ -31,8 +34,15 @@ async fn main() -> std::io::Result<()> {
     );
     //router
     let app = Router::new()
-        .nest(&CONTEXT.config.base_api, build_api())
-        .layer(CompressionLayer::new().compress_when(SizeAbove::new(2048)))
+        .nest(&CONTEXT.config.base_api, build_api().nest_service(
+            "/profile",
+            ServeDir::new(PathBuf::from(&CONTEXT.config.upload_path).join("profile")),
+        ))
+        .layer(CompressionLayer::new().compress_when(SizeAbove::new(2048)))//启动压缩
+        .layer(DefaultBodyLimit::disable())
+        .layer(tower_http::limit::RequestBodyLimitLayer::new(
+            CONTEXT.config.upload_max_size * 1024 * 1024, 
+        ))
         .fallback_service(
             ServeDir::new("./dist/").not_found_service(ServeFile::new("./dist/index.html")),
         )

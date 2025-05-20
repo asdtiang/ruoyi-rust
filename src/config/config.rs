@@ -32,7 +32,10 @@ pub struct ApplicationConfig {
     pub trash_recycle_days: u64,
     pub datetime_format: String,
     pub errors: HashMap<String, String>,
-    pub error_infos: Option<HashMap<String, String>>
+    pub error_infos: Option<HashMap<String, String>>,
+    
+    pub upload_path:String,
+    pub upload_max_size: usize,
 }
 
 impl Default for ApplicationConfig {

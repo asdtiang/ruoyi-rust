@@ -10,6 +10,7 @@ pub mod sys_profile_controller;
 pub mod sys_role_controller;
 pub mod sys_user_controller;
 pub mod monitor;
+pub mod common_controller;
 
 use axum::routing::{delete, get, post, put};
 use axum::{middleware, Router};
@@ -23,7 +24,10 @@ pub(crate) fn build_auth_api() -> Router {
         .route("/getInfo", get(sys_auth_controller::info))
         .route("/getRouters", get(sys_menu_controller::routers))
 }
-
+pub(crate) fn build_common_api() -> Router {
+    Router::new()
+        .route("/upload", post(common_controller::upload))
+}
 pub(crate) fn build_system_api() -> Router {
     Router::new()
         .nest("/user", user_api())

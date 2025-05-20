@@ -1,6 +1,7 @@
-pub mod system;
 #[cfg(feature = "code-gen")]
 pub mod gen;
+pub mod oa;
+pub mod system;
 
 use axum::Router;
 
@@ -8,12 +9,14 @@ pub fn build_api() -> Router {
     let r = Router::new()
         .merge(system::controller::build_auth_api())
         .nest("/system", system::controller::build_system_api())
-        .nest("/monitor", system::controller::monitor::build_monitor_api());
+        .nest("/monitor", system::controller::monitor::build_monitor_api())
+        .nest("/common", system::controller::build_common_api())
+        .nest("/oa", oa::build_oa_api());
 
     #[cfg(feature = "code-gen")]
     return Router::new()
         .merge(r)
-        .merge( Router::new().nest("/tool", gen::build_gen_api()));
+        .merge(Router::new().nest("/tool", gen::build_gen_api()));
 
     #[cfg(not(feature = "code-gen"))]
     return r;
@@ -76,9 +79,9 @@ where
         }
     }
 
-    pub fn from_error( error: Error) -> Self {
+    pub fn from_error(error: Error) -> Self {
         Self {
-            code:500,
+            code: 500,
             msg: Some(error.to_string()),
             data: None,
         }
@@ -99,15 +102,19 @@ where
         }
     }
 
-    pub fn judge_result(rows_affected:&Result<u64, Error>, success_msg: &str, fail_message: &str) -> Self {
+    pub fn judge_result(
+        rows_affected: &Result<u64, Error>,
+        success_msg: &str,
+        fail_message: &str,
+    ) -> Self {
         if rows_affected.is_err() {
-            return  Self {
+            return Self {
                 code: CODE_FAIL,
                 msg: Some(rows_affected.clone().err().unwrap().to_string()),
-                data: None
+                data: None,
             };
         }
-        let affected= rows_affected.clone().unwrap();
+        let affected = rows_affected.clone().unwrap();
         if affected >= 1 {
             Self {
                 code: CODE_SUCCESS,
