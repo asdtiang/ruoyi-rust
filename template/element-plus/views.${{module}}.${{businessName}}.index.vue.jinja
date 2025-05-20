@@ -1,5 +1,15 @@
 <template>
   <div class="app-container">
+    {% set queryTypeDict={"EQ":"等于",
+"NE":"不等于",
+"GT":"大于",
+"GTE":"大于或等于",
+"LT":"小于",
+"LTE":"小于或等于",
+"LIKE":"包含",
+"START":"开始于",
+"BETWEEN":"之间"} %}
+
     <el-form :model="queryParams" ref="queryRef" class="queryForm" v-show="showSearch">
       <el-row :gutter="15">
         {% for column in columns %}
@@ -9,7 +19,7 @@
                 <el-form-item label="${{ column.comment }}" prop="${{ column.javaField }}">
                   <el-input
                       v-model="queryParams.${{ column.javaField }}"
-                      placeholder="请输入${{ column.comment }}（${{ column.queryTypeString }}）"
+                      placeholder="请输入${{ column.comment }}（${{ queryTypeDict[column.queryType] }}）"
                       clearable
                       @keyup.enter.native="handleQuery"
                   />
@@ -47,9 +57,9 @@
               {% elif column.htmlType == "datetime" or column.htmlType == "date" %}
                 {% if column.queryType =="BETWEEN" %}
                   <div class="d-flex">
-                    <el-form-item label="${{ column.comment }}" prop="begin${{ column.javaField|capitalize }}">
+                    <el-form-item label="${{ column.comment }}" prop="begin${{ column.javaFieldCap }}">
                       <el-date-picker
-                          v-model="queryParams.params.begin${{ column.javaField|capitalize }}" value-format="YYYY-MM-DD"
+                          v-model="queryParams.params.begin${{ column.javaFieldCap }}" value-format="YYYY-MM-DD"
                           type="date"
                           title="请选择${{ column.comment }}开始日期"
                           clearable
@@ -57,8 +67,8 @@
                       />
                     </el-form-item>
                     <span style="margin:5px">至</span>
-                    <el-form-item props="end${{ column.javaField|capitalize }}">
-                      <el-date-picker v-model="queryParams.params.end${{ column.javaField|capitalize }}"
+                    <el-form-item props="end${{ column.javaFieldCap }}">
+                      <el-date-picker v-model="queryParams.params.end${{ column.javaFieldCap }}"
                                       title="请选择${{ column.comment }}结束日期" value-format="YYYY-MM-DD"
                                       type="date"
                                       clearable @keyup.enter.native="handleQuery" style="width:unset;"/>
@@ -68,26 +78,26 @@
                   <el-form-item label="${{ column.comment }}" prop="${{ column.javaField }}">
                     <el-date-picker clearable
                                     v-model="queryParams.${{ column.javaField }}"
-                                    type="column.htmlType"
+                                    type="${{column.htmlType}}"
                                     value-format="YYYY-MM-DD{% if column.htmlType == "datetime" %} HH:mm:ss{% endif %}"
-                                    placeholder="选择${{ column.comment }}（${{ column.queryTypeString }}）">
+                                    placeholder="选择${{ column.comment }}（${{ queryTypeDict[column.queryType] }}）">
                     </el-date-picker>
                   </el-form-item>
                 {% endif %}
               {% elif column.htmlType == "number" %}
                 {% if column.queryType =="BETWEEN" %}
                   <div class="d-flex">
-                    <el-form-item label="${{ column.comment }}区间" prop="begin${{ column.javaField|capitalize }}">
+                    <el-form-item label="${{ column.comment }}区间" prop="begin${{ column.javaFieldCap }}">
                       <el-input
-                          v-model="queryParams.params.begin${{ column.javaField|capitalize }}"
+                          v-model="queryParams.params.begin${{ column.javaFieldCap }}"
                           title="请输入${{ column.comment }}最小值"
                           clearable
                           @keyup.enter.native="handleQuery"
                       />
                     </el-form-item>
                     <span style="margin:5px">至</span>
-                    <el-form-item props="end${{ column.javaField|capitalize }}">
-                      <el-input v-model="queryParams.params.end${{ column.javaField|capitalize }}"
+                    <el-form-item props="end${{ column.javaFieldCap }}">
+                      <el-input v-model="queryParams.params.end${{ column.javaFieldCap }}"
                                 title="请输入${{ column.comment }}最大值"
                                 clearable @keyup.enter.native="handleQuery"/>
                     </el-form-item>
@@ -96,7 +106,7 @@
                   <el-form-item label="${{ column.comment }}" prop="${{ column.javaField }}">
                     <el-input
                         v-model="queryParams.${{ column.javaField }}"
-                        placeholder="请输入${{ column.comment }}（${{ column.queryTypeString }}）"
+                        placeholder="请输入${{ column.comment }}（${{ queryTypeDict[column.queryType] }}）"
                         clearable
                         @keyup.enter.native="handleQuery"
                     />
@@ -162,33 +172,45 @@
       </el-col>
       <right-toolbar v-model:showSearch="showSearch" @queryTable="getList"></right-toolbar>
     </el-row>
-
-    <el-table v-loading="loading"{% if table.fixedHeader %} v-fixedTableHeight="85"{% endif %}
-              :data="${{ table.businessName }}List" @selection-change="handleSelectionChange"
-        {% if table.hasSortColumn %}  @sort-change="sortChange"{% endif %}>
+{% macro tableColumnAttrs(column) -%}
+label="${{ column.comment }}" {% if column.sortable %} sortable="custom" {% endif %} align="center" prop="${{ column.javaField }}"
+{%- endmacro %}
+    <el-table v-loading="loading"{% if fixedHeader %} v-fixedTableHeight="85"{% endif %}
+              :data="${{ businessName }}List" @selection-change="handleSelectionChange"
+        {% if hasSortColumn %}  @sort-change="sortChange"{% endif %}>
       <el-table-column type="selection" width="55" align="center"/>
       {% for column in columns %}
         {% if column.isList %}
           {% if column.htmlType == "datetime" or column.htmlType == "date" %}
-            <el-table-column label="${{ column.comment }}" {% if column.sortable %} sortable="custom" {% endif %}
-                             align="center" prop="${{ column.javaField }}"/>
+            <el-table-column ${{tableColumnAttrs(column)}}/>
           {% elif column.dictType %}
-            <el-table-column label="${{ column.comment }}" {% if column.sortable %} sortable="custom" {% endif %}
-                             align="center" prop="${{ column.javaField }}">
+            <el-table-column ${{tableColumnAttrs(column)}}>
               <template #default="{row}">
                 <dict-tag :options="${{ column.dictType }}" :value="row.${{ column.javaField }}"/>
               </template>
             </el-table-column>
           {% elif column.htmlType == "select"  and  column.hasFk %}
-            <el-table-column label="${{ column.comment }}"{% if column.sortable %}  sortable="custom"{% endif %}
-                             align="center" prop="${{ column.javaField }}" :formatter="${{ column.javaField }}Format"/>
+            <el-table-column  ${{tableColumnAttrs(column)}} :formatter="${{ column.javaField }}Format"/>
+           {% elif column.htmlType == "imageUpload"%}
+             <el-table-column  ${{tableColumnAttrs(column)}}>
+              <template #default="{row}">
+                       <el-image preview-teleported
+                                 src="/images/preview.svg"
+                                 style="width: 20px;height: 20px;cursor: pointer"
+                                 :preview-src-list="row.${{ column.javaField }}.map(url=>baseUrl+url)"
+                                 v-if="row.${{ column.javaField }}&&row.${{ column.javaField }}.length>0"
+                                 lazy
+                       />
+
+                     </template>
+             </el-table-column>
+           {% elif column.javaType == "String" %}
+           <el-table-column  ${{tableColumnAttrs(column)}}
+                             {% if column.maxLength>200 or column.maxLength==0  %}show-overflow-tooltip{% endif %}/>
           {% elif column.javaField %}
-            <el-table-column label="${{ column.comment }}"{% if column.sortable %} sortable="custom"{% endif %}
-                             align="center" prop="${{ column.javaField }}"
-                             {% if column.maxLength>200 %}show-overflow-tooltip{% endif %}/>
+            <el-table-column  ${{tableColumnAttrs(column)}}/>
           {% endif %}
         {% endif %}
-
       {% endfor %}
       <el-table-column label="操作" align="center" class-name="small-padding fixed-width">
         <template #default="{row}">
@@ -203,29 +225,32 @@
     </el-table>
     <pagination v-show="total>0" :total="total" v-model:page="queryParams.pageNum"
                 v-model:limit="queryParams.pageSize" @pagination="getList"/>
-    <!-- 添加或修改${{table.functionName}}对话框 -->
-    <el-dialog :title="title" v-model="open" {% if table.editAndInsertCnt>=8 %}width="650px"{% else %}
+    <!-- 添加或修改${{functionName}}对话框 -->
+    <el-dialog :title="title" v-model="open" {% if insertEditCnt>=8 %}width="650px"{% else %}
                width="500px"{% endif %}>
-      <el-form ref="${{ table.businessName }}Ref" :model="form" :rules="rules">
-        {% if table.insertEditCnt>=8 %}
+      <el-form ref="${{ businessName }}Ref" :model="form" :rules="rules">
+        {% if insertEditCnt>=8 %}
           <el-row :gutter="15">
         {% endif %}
         {% for column in columns %}
-          <{% if table.insertEditCnt>=8 %}el-col {% if column.htmlType == "textarea" %}:span="24"{% else %}
-                                                 :span="12"{% endif %}{% endif %}>
-            <el-form-item label="${{ column.comment }}" {% if column.isEdit %} v-show="!edit"{% endif %}>
+          {% if not column.special and not column.isPk and (column.isEdit or column.isInsert) %}
+
+          {% if not column.isEdit and column.isInsert %} {% set disabled=":disabled='isEdit'" %}{%else%} {% set disabled="" %}{% endif %}
+          <{% if insertEditCnt>=8 %}el-col {% if column.htmlType == "textarea" or column.htmlType == "imageUpload" %}:span="24"{% else %}
+                                                 :span="12"{% endif %}{% endif %} {% if column.isEdit and not column.isInsert %} v-show="isEdit"{% endif %}>
+            <el-form-item label="${{ column.comment }}" prop="${{ column.javaField }}">
               {% if column.htmlType == "input" %}
-                <el-input v-model="form.${{ column.javaField }}" placeholder="请输入${{ column.comment }}"
+                <el-input v-model="form.${{ column.javaField }}"  ${{disabled}} placeholder="请输入${{ column.comment }}"
                           {% if column.maxLength>0 %}:maxlength="${{ column.maxLength }}" show-word-limit{% endif %}/>
               {% elif column.htmlType == "imageUpload" %}
-                <imageUpload v-model="form.${{ column.javaField }}"/>
+                <imageUpload v-model="form.${{ column.javaField }}"  ${{disabled}}/>
               {% elif column.htmlType == "fileUpload" %}
-                <fileUpload v-model="form.${{ column.javaField }}"/>
+                <fileUpload v-model="form.${{ column.javaField }}"  ${{disabled}}/>
               {% elif column.htmlType == "editor" %}
-                <editor v-model="form.${{ column.javaField }}" :min-height="192"/>
+                <editor v-model="form.${{ column.javaField }}" :min-height="192"  ${{disabled}}/>
               {% elif column.htmlType == "select" %}
                 {% if column.dictType %}
-                  <el-select v-model="form.${{ column.javaField }}" placeholder="请选择${{ column.comment }}">
+                  <el-select v-model="form.${{ column.javaField }}"  ${{disabled}} placeholder="请选择${{ column.comment }}">
                     <el-option
                         v-for="dict in ${{ column.dictType }}"
                         :key="dict.value"
@@ -246,13 +271,13 @@
                     />
                   </el-select>
                 {% else %}
-                  <el-select v-model="form.${{ column.javaField }}" placeholder="请选择${{ column.comment }}">
+                  <el-select v-model="form.${{ column.javaField }}"  ${{disabled}} placeholder="请选择${{ column.comment }}">
                     <el-option label="请选择字典生成" value=""/>
                   </el-select>
                 {% endif %}
               {% elif column.htmlType == "checkbox"  and  "" != column.dictType %}
                 {% if column.dictType %}
-                  <el-checkbox-group v-model="form.${{ column.javaField }}">
+                  <el-checkbox-group v-model="form.${{ column.javaField }}"  ${{disabled}}>
                     <el-checkbox
                         v-for="dict in ${{ column.dictType }}"
                         :key="dict.value"
@@ -261,13 +286,13 @@
                     </el-checkbox>
                   </el-checkbox-group>
                 {% else %}
-                  <el-checkbox-group v-model="form.${{ column.javaField }}">
+                  <el-checkbox-group v-model="form.${{ column.javaField }}"  ${{disabled}}>
                     <el-checkbox>请选择字典生成</el-checkbox>
                   </el-checkbox-group>
                 {% endif %}
               {% elif column.htmlType == "radio" %}
                 {% if column.dictType %}
-                  <el-radio-group v-model="form.${{ column.javaField }}">
+                  <el-radio-group v-model="form.${{ column.javaField }}"  ${{disabled}}>
                     <el-radio-button v-for="dict in ${{ column.dictType }}" :key="dict.value"
                                      {% if column.javaType == "Integer"  or  column.javaType == "Long" %}:value="parseInt(dict.value)"{% else %}
                                      :value="dict.value"{% endif %}
@@ -275,38 +300,38 @@
                     </el-radio-button>
                   </el-radio-group>
                 {% else %}
-                  <el-radio-group v-model="form.${{ column.javaField }}">
+                  <el-radio-group v-model="form.${{ column.javaField }}"  ${{disabled}}>
                     <el-radio-button value="1">请选择字典生成</el-radio-button>
                   </el-radio-group>
                 {% endif %}
               {% elif column.htmlType == "datetime" or column.htmlType == "date" %}
                 <el-date-picker clearable
-                                v-model="form.${{ column.javaField }}"
-                                type="column.htmlType"
+                                v-model="form.${{ column.javaField }}"  ${{disabled}}
+                                type="${{column.htmlType}}"
                                 value-format="YYYY-MM-DD{% if column.htmlType == "datetime" %} HH:mm:ss{% endif %}"
                                 placeholder="选择${{ column.comment }}">
                 </el-date-picker>
               {% elif column.htmlType == "time" %}
-                <el-time-picker arrow-control clearable v-model="form.${{ column.javaField }}" value-format="HH:mm:ss"
+                <el-time-picker arrow-control clearable v-model="form.${{ column.javaField }}"  ${{disabled}} value-format="HH:mm:ss"
                                 placeholder="选择${{ column.comment }}">
                 </el-time-picker>
               {% elif column.htmlType == "textarea" %}
-                <el-input v-model="form.${{ column.javaField }}" type="textarea" autosize
+                <el-input v-model="form.${{ column.javaField }}"  ${{disabled}} type="textarea" autosize
                           placeholder="请输入${{ column.comment }}"
                           {% if column.maxLength>0 %}:maxlength="${{ column.maxLength }}" show-word-limit{% endif %}/>
               {% elif column.htmlType == "number" %}
-                <el-input-number v-model="form.${{ column.javaField }}" placeholder="输入${{ column.comment }}"
-                                 :min="column.min"
-                                 :max="{% if column.javaType== "BigDecimal" %}column.maxBigDecimal{% else %}  column.max {% endif %}"
-                                 title="输入最大值为{% if column.javaType== "BigDecimal" %} column.maxBigDecimal{% else %}  column.max {% endif %}"
+                <el-input-number v-model="form.${{ column.javaField }}"  ${{disabled}} placeholder="输入${{ column.comment }}"
+                                 :min="${{column.min}}"
+                                 :max="{% if column.javaType== "BigDecimal" %}column.maxBigDecimal{% else %} ${{column.max}} {% endif %}"
+                                 title="输入最大值为{% if column.javaType== "BigDecimal" %} column.maxBigDecimal{% else %}  ${{column.max}} {% endif %}"
                                  {% if column.precision>0 %}:precision="column.precision"{% endif %}
                                  controls-position="right"/>
               {% endif %}
             </el-form-item>
-            {% if table.insertEditCnt>=8 %}</el-col>{% endif %}
+            {% if insertEditCnt>=8 %}</el-col>{% endif %}
+        {% endif %}
         {% endfor %}
-        {% if table.insertEditCnt>=8 %}</el-row>{% endif %}
-        {% if table.sub %}
+        {% if sub %}
           <el-divider content-position="center">${{ subTable.functionName }}信息</el-divider>
           <el-row :gutter="10" class="mb8">
             <el-col :span="1.5">
@@ -334,7 +359,7 @@
             {% endfor %}
           </el-table>
         {% endif %}
-        {% if table.editAndInsertCnt>=8 %}</el-row>{% endif %}
+        {% if insertEditCnt>=8 %}</el-row>{% endif %}
       </el-form>
       <template #footer>
         <el-button type="primary" @click="submitForm">确 定</el-button>
@@ -344,30 +369,33 @@
   </div>
 </template>
 
-<script setup name="${{ table.businessName }}">
+<script setup name="${{ businessName }}">
+{% if hasImageInList %}
+const baseUrl = import.meta.env.VITE_APP_BASE_API;
+{% endif %}
     import {
-        list${{table.businessName|capitalize}},
-        get${{table.businessName|capitalize}},
-        del${{table.businessName|capitalize}},
-        add${{table.businessName|capitalize}},
-        update${{table.businessName|capitalize}}
-    } from "@/api/${{table.moduleName}}/${{table.businessName}}";
+        list${{BusinessName}},
+        get${{BusinessName}},
+        del${{BusinessName}},
+        add${{BusinessName}},
+        update${{BusinessName}}
+    } from "@/api/${{moduleName}}/${{businessName}}";
 
     import {ElMessage, ElMessageBox} from "element-plus";
     {% if dicts!="" %}
         import {useDict} from "@/utils/dict.js";
-        const { ${{dicts|replace("'","")}} = useDict(${{dicts}});
+        const { ${{dicts|replace("'","")}}} = useDict(${{dicts}});
     {% endif %}
 
-    const ${{table.businessName}}List = ref([]);
-    {% if table.sub %}
+    const ${{businessName}}List = ref([]);
+    {% if sub %}
         const ${{subclassName}}List = ref([]);
     {% endif %}
     const open = ref(false);
     const loading = ref(true);
     const showSearch = ref(true);
     const ids = ref([]);
-    {% if table.sub %}
+    {% if sub %}
         const checked${{subClassName}} = ref([]);
     {% endif %}
     const single = ref(true);
@@ -377,12 +405,9 @@
     const queryParams = ref({
         pageNum: 1,
         pageSize: 10,
-        {% for column in columns %}
-            {% if column.queryType == "BETWEEN" %}
-                params: {},
-                {#                {% break %}#}
-            {% endif %}
-        {% endfor %}
+        {% if hasBetween %}
+           params: {},
+        {% endif %}
 
         {% for column in columns %}
             {% if column.query %}
@@ -392,7 +417,7 @@
     });
     const rules = {
         {% for column in columns %}
-            {% if not column.isPk and (not column.superColumn or column.javaField=="remark") %}
+            {% if not column.special and not column.isPk and (column.isEdit or column.isInsert) %}
                 ${{ column.javaField}}: [
                     {% if column.isRequired %}
                         {
@@ -416,11 +441,13 @@
         {% endfor %}
     }
     const form = ref({});
-
-    /** 查询${{table.functionName}}列表 */
+const isEdit=computed(()=>{
+  return form.value.${{pkColumn.javaField}};
+})
+    /** 查询${{functionName}}列表 */
     function getList() {
         loading.value = true;
-        {% if table.hasSortColumn %}
+        {% if hasSortColumn %}
             delete queryParams.value.orderByColumn;
             delete queryParams.value.isAsc;
 
@@ -432,16 +459,10 @@
             //   }
             // }
         {% endif %}
-        list${{table.businessName|capitalize}}(queryParams.value).then(response => {
-            ${{table.businessName}}List.value = response.rows;
+        list${{BusinessName}}(queryParams.value).then(response => {
+            ${{businessName}}List.value = response.rows;
             total.value = response.total;
             loading.value = false;
-            {% for column in columns %}
-                {% if column.htmlType == "datetime" or column.htmlType == "date"  and  column.queryType == "BETWEEN" %}
-                    queryParams.value.params["begin${{column.javaField|capitalize}}"] = null;
-                    queryParams.value.params["end${{column.javaField|capitalize}}"] = null;
-                {% endif %}
-            {% endfor %}
         });
     }
 
@@ -451,7 +472,7 @@
         reset();
     }
 
-    const ${{table.businessName}}Ref = ref();
+    const ${{businessName}}Ref = ref();
 
     // 表单重置
     function reset() {
@@ -473,10 +494,10 @@
                 {% endif %}
             {% endfor %}
         };
-        {% if table.sub %}
+        {% if sub %}
             ${{ subclassName}}List.value = [];
         {% endif %}
-        ${{table.businessName}}Ref.value && ${{table.businessName}}Ref.value.resetFields();
+        ${{businessName}}Ref.value && ${{businessName}}Ref.value.resetFields();
     }
 
     /** 搜索按钮操作 */
@@ -505,48 +526,48 @@
     function handleAdd() {
         reset();
         open.value = true;
-        title.value = "添加${{table.functionName}}";
+        title.value = "添加${{functionName}}";
     }
 
     /** 修改按钮操作 */
     function handleUpdate(row) {
         reset();
         const _${{pkColumn.javaField}} = row.${{pkColumn.javaField}} || ids.value
-        get${{table.businessName|capitalize}}(_${{pkColumn.javaField}}).then(response => {
+        get${{BusinessName}}(_${{pkColumn.javaField}}).then(response => {
             form.value = response.data;
             {% for column in columns %}
                 {% if column.htmlType == "checkbox" %}
                     form.value.${{ column.javaField }} = form.value.${{column.javaField}}.split(",");
                 {% endif %}
             {% endfor %}
-            {% if table.sub  %}
+            {% if sub  %}
                 ${{subclassName}}List.value = response.data.${{subclassName}}List;
             {% endif %}
             open.value = true;
-            title.value = "修改${{table.functionName}}";
+            title.value = "修改${{functionName}}";
         });
     }
 
     /** 提交按钮 */
     function submitForm() {
-        ${{table.businessName}}Ref.value.validate(valid => {
+        ${{businessName}}Ref.value.validate(valid => {
             if (valid) {
                 {% for column in columns %}
                     {% if column.htmlType == "checkbox" %}
                         form.value.${{column.javaField}} = form.value.${{column.javaField}}.join(",");
                     {% endif %}
                 {% endfor %}
-                {% if table.sub %}
+                {% if sub %}
                     form.value.${{subclassName}}List = ${{subclassName}}List.value;
                 {% endif %}
                 if (form.value.${{pkColumn.javaField}} != null) {
-                    update${{table.businessName|capitalize}}(form.value).then(response => {
+                    update${{BusinessName}}(form.value).then(response => {
                         ElMessage.success("修改成功");
                         open.value = false;
                         getList();
                     });
                 } else {
-                    add${{table.businessName|capitalize}}(form.value).then(response => {
+                    add${{BusinessName}}(form.value).then(response => {
                         ElMessage.success("新增成功");
                         open.value = false;
                         getList();
@@ -559,8 +580,8 @@
     /** 删除按钮操作 */
     function handleDelete(row) {
         const _${{pkColumn.javaField}}s = row.${{pkColumn.javaField}} || ids.value;
-        ElMessageBox.confirm('是否确认删除${{table.functionName}}编号为"' + _${{pkColumn.javaField}}s + '"的数据项？').then(function () {
-            return del${{table.businessName|capitalize}}(_${{pkColumn.javaField}}s);
+        ElMessageBox.confirm('是否确认删除${{functionName}}编号为"' + _${{pkColumn.javaField}}s + '"的数据项？').then(function () {
+            return del${{BusinessName}}(_${{pkColumn.javaField}}s);
         }).then(() => {
             getList();
             ElMessage.success.success("删除成功");
@@ -568,7 +589,7 @@
         });
     }
 
-    {% if table.sub %}
+    {% if sub %}
         /** ${{subTable.functionName}}序号 */
         function row${{subClassName|upper}}Index({row, rowIndex}) {
             row.index = rowIndex + 1;
@@ -610,9 +631,9 @@
 
     /** 导出按钮操作 */
     function handleExport() {
-        download('${{table.moduleName}}/${{table.businessName}}/export', {
+        download('${{moduleName}}/${{businessName}}/export', {
             ...queryParams.value
-        }, `${{table.businessName}}_${new Date().getTime()}.xlsx`)
+        }, `${{businessName}}_${new Date().getTime()}.xlsx`)
     }
 
     getList();

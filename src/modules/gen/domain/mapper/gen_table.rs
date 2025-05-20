@@ -5,7 +5,7 @@ use rbatis::{crud, html_sql, impl_select_page, pysql_select_page};
 use rbs::Error;
 use serde::{Deserialize, Serialize};
 
-#[derive(Clone, Debug, serde::Serialize, validator::Validate, serde::Deserialize)]
+#[derive(Clone, Debug, serde::Serialize, serde::Deserialize)]
 pub struct GenTable {
     //编号
     pub table_id: Option<String>,
@@ -23,6 +23,7 @@ pub struct GenTable {
     pub tpl_category: Option<String>,
     //前端类型（element-ui模版 element-plus模版）
     pub tpl_web_type: Option<String>,
+    pub tpl_back_type: Option<String>,
     //生成包路径
     pub package_name: Option<String>,
     //生成模块名
@@ -37,10 +38,12 @@ pub struct GenTable {
     pub fixed_header: Option<char>,
     //生成代码方式（0zip压缩包 1自定义路径）
     pub gen_type: Option<String>,
-    //生成路径（不填默认项目路径）
-    pub gen_path: Option<String>,
+    //前端生成路径（不填默认项目路径）
+    pub gen_path_back: Option<String>,
+    //后台生成路径（不填默认项目路径）
+    pub gen_path_front: Option<String>,
     //表列信息
-    pub options: Option<String>,
+    pub options: Option<serde_json::Value>,
     pub create_by: Option<String>,
     pub create_time: Option<DateTime>,
     pub update_by: Option<String>,
@@ -54,8 +57,10 @@ crud!(GenTable {});
 #[serde(rename_all = "camelCase")]
 pub struct TablePageDTO {
     pub table_name: Option<String>,
-    pub table_comment: Option<String>
+    pub table_comment: Option<String>,
 }
+
+//fixme 未修正
 impl_select_page!(GenTable{select_page(dto: &TablePageDTO) =>
     "`where 1=1`
     if dto.configName != '':
@@ -72,6 +77,7 @@ impl_select_page!(GenTable{select_page(dto: &TablePageDTO) =>
         ` and date_format(create_time,'%y%m%d') <= date_format(#{dto.params.endTime},'%y%m%d')`
     if do_count == false:
      ` order by create_time`"});
+
 pysql_select_page!(select_db_table_list(dto:&TablePageDTO) -> GenTable =>
     r#"select TABLE_NAME table_name, TABLE_COMMENT table_comment, CREATE_TIME create_time, UPDATE_TIME update_time from information_schema.tables
         ` where table_schema = (select database())`
@@ -89,6 +95,16 @@ pysql_select_page!(select_db_table_list(dto:&TablePageDTO) -> GenTable =>
         ` order by create_time desc`
         ` limit ${dto.pageNo - 1},${dto.pageSize}`"#);
 
+#[html_sql(r#"
+        <select id="select_gen_table_list_by_names">  select * from gen_table`
+        ` where table_name in`
+        <foreach collection="table_names" item="name" open="(" separator="," close=")">
+        ` #{name}`
+        </foreach></select>"#)]
+pub async fn select_gen_table_list_by_names(rb: &dyn Executor, table_names: &Vec<&str>) -> Result<Vec<GenTable>, Error> {
+    impled!()
+}
+
 
 
 #[html_sql(r#"
@@ -98,6 +114,6 @@ pysql_select_page!(select_db_table_list(dto:&TablePageDTO) -> GenTable =>
         <foreach collection="table_names" item="name" open="(" separator="," close=")">
         ` #{name}`
         </foreach></select>"#)]
-pub async fn select_db_table_list_by_names(rb: &dyn Executor, table_names:&Vec<&str>) ->  Result<Vec<GenTable>, Error> {
+pub async fn select_db_table_list_by_names(rb: &dyn Executor, table_names: &Vec<&str>) -> Result<Vec<GenTable>, Error> {
     impled!()
 }

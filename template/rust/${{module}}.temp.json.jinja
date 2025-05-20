@@ -1,0 +1,12 @@
+{
+"gen_service_a":"pub ${{moduleName}}_${{businessName}}_service: ${{className}}Service,",
+"gen_service_b":"${{moduleName}}_${{businessName}}_service: ${{className}}Service {},",
+"gen_router_a":".nest(\"/${{businessName}}\",${{businessName}}_api())",
+"gen_router_b":"fn ${{businessName}}_api() -> Router {\n    Router::new()\n        .route(\"/list\", post(${{file_name}}_controller::list))\n        .route(\"/{${{pkColumn.columnName}}}\", get(${{file_name}}_controller::detail))\n        .route(\"/\", post(${{file_name}}_controller::add))\n        .route(\"/\", put(${{file_name}}_controller::update))\n        .route(\"/{${{pkColumn.columnName}}}\", delete(${{file_name}}_controller::remove))\n}"
+}
+
+
+
+
+
+

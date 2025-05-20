@@ -1,5 +1,6 @@
 use rbatis::rbdc::DateTime;
 use rbatis::{crud, impl_select_page};
+
 #[derive(Clone, Debug, serde::Serialize, serde::Deserialize)]
 pub struct SysConfig {
     pub config_id: Option<String>,

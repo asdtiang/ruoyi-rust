@@ -1,0 +1,49 @@
+use crate::${{moduleName}}::domain::mapper::${{moduleName}}_${{businessName}}::${{className}};
+{% for use in useList %}
+use ${{use}};
+{% endfor %}
+
+
+#[derive(Clone, Debug, serde::Serialize, serde::Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct ${{className}}VO {
+pub ${{pkColumn.columnName}}:Option<${{pkColumn.javaType}}>,
+{% for column in columns %}
+{% if column.isDetail %}
+      // ${{column.columnComment}}
+    pub ${{column.columnName}}:Option<${{column.javaType}}>,
+{% endif %}
+{% endfor %}
+}
+
+impl From<${{className}}> for ${{className}}VO {
+    fn from(arg: ${{className}}) -> Self {
+        Self {
+        ${{pkColumn.columnName}}:arg.${{pkColumn.columnName}},
+            {% for column in columns %} {% if column.isDetail%} ${{column.columnName}}: arg.${{column.columnName}},{% endif %}{% endfor %}
+        }
+    }
+}
+
+#[derive(Clone, Debug, serde::Serialize, serde::Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct ${{className}}ListVO {
+pub ${{pkColumn.columnName}}:Option<${{pkColumn.javaType}}>,
+{% for column in columns %}
+{% if column.isList %}
+      // ${{column.columnComment}}
+    pub ${{column.columnName}}:Option<${{column.javaType}}>,
+{% endif %}
+{% endfor %}
+}
+
+impl From<${{className}}> for ${{className}}ListVO {
+    fn from(arg: ${{className}}) -> Self {
+        Self {
+        ${{pkColumn.columnName}}:arg.${{pkColumn.columnName}},
+            {% for column in columns %} {% if column.isList%} ${{column.columnName}}: arg.${{column.columnName}},{% endif %}{% endfor %}
+        }
+    }
+}
+
+

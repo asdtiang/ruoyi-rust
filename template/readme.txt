@@ -1,0 +1,10 @@
+模板规则：
+此目录文件夹为语言名称
+语言文件夹下面是模板
+模板文件命令规则：
+1、支持jinja语法
+2、后缀名为jinja
+3、以点号隔开
+例：
+${{module}}.controller.${{file_name}}.rs.jinja
+将在${{module}}/.controller创建${{file_name}}.rs文件

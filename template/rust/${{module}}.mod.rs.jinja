@@ -1,0 +1,34 @@
+use std::sync::LazyLock;
+use axum::Router;
+use axum::routing::{delete, get, post, put};
+
+pub mod controller;
+pub mod domain;
+pub mod service;
+use service::*;
+use controller::*;
+
+pub static ${{moduleName|upper}}_CONTEXT: LazyLock<${{ModuleName}}ServiceContext> =
+    LazyLock::new(|| ${{ModuleName}}ServiceContext::default());
+
+pub struct ${{ModuleName}}ServiceContext {
+    //gen_service_a
+    //endgen_service_a
+}
+
+impl Default for ${{ModuleName}}ServiceContext {
+    fn default() -> Self {
+        Self {
+           //gen_service_b
+           //endgen_service_b
+        }
+    }
+}
+
+pub(crate) fn build_${{moduleName}}_api() -> Router {
+    Router::new()
+        //gen_router_a
+        //endgen_router_a
+}
+//gen_router_b
+//endgen_router_b

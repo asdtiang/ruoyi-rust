@@ -1,10 +1,13 @@
-use crate::gen::domain::vo::table::GenTableGenVO;
+use crate::gen::domain::mapper::gen_table::GenTable;
+use crate::gen::domain::mapper::gen_table_column::GenTableColumn;
 use crate::gen::domain::vo::table_column::GenTableColumnGenVO;
+use crate::gen::service::{gen_constants, gen_utils};
 use crate::utils::string;
+use convert_case::{Case, Casing};
 use minijinja::context;
+use rbatis::object_id::ObjectId;
 use rbatis::rbatis_codegen::ops::AsProxy;
 use std::collections::HashSet;
-use crate::gen::service::{gen_constants, gen_utils};
 //不打算支持子表，只支持连接表！
 
 // package com.ruoyi.generator.util;
@@ -46,27 +49,44 @@ use crate::gen::service::{gen_constants, gen_utils};
  * @return 模板列表
  */
 pub fn prepare_context(
-    gen_table: GenTableGenVO,
-    columns:  Vec<GenTableColumnGenVO>,
+    gen_table: GenTable,
+    columns: Vec<GenTableColumn>,
 ) -> minijinja::value::Value {
-    let mut table = gen_table;
-    if table.function_name.is_none() {
-        table.function_name = Some("【请填写功能名称】".to_string());
-    }
+    let function_name = gen_table
+        .function_name
+        .unwrap_or("【请填写功能名称】".to_string());
+    let module_name = gen_table.module_name.unwrap_or_default();
+    let table_name = gen_table.table_name.unwrap_or_default();
 
-    let permission_prefix = get_permission_prefix(
-        &table.function_name.clone().unwrap_or_default(),
-        &table.business_name.clone().unwrap_or_default(),
-    );
+    let business_name = gen_table.business_name.unwrap_or_default();
 
-    let use_list = get_use_list(&columns);
-    let dicts = get_dicts(&columns);
+    let permission_prefix = format!("{module_name}:{business_name}");
+    let file_name = format!("{module_name}_{business_name}");
+    let class_name = gen_table.class_name.unwrap_or_default();
+    let fixed_header = gen_table
+        .fixed_header
+        .unwrap_or_default()
+        .eq(&gen_constants::REQUIRE);
+    let mut insert_edit_cnt = 0;
     let mut pk_column = None;
+
+    let columns = columns
+        .into_iter()
+        .map(|c| GenTableColumnGenVO::from(c))
+        .collect::<Vec<_>>();
+
     columns.iter().for_each(|c| {
+        if c.is_edit || c.is_insert {
+            insert_edit_cnt = insert_edit_cnt + 1;
+        }
         if c.is_pk {
             pk_column = Some(c);
         }
     });
+
+    let use_list = get_use_list(&columns);
+    let dicts = get_dicts(&columns);
+
     let columns = set_validation_info(&columns);
     //velocityContext.put("datetime", DateUtils.getDate());
 
@@ -79,12 +99,45 @@ pub fn prepare_context(
     // {
     //     setSubVelocityContext(velocityContext, table);
     // }
+    let mut sql_ids = vec![]; //用为生成sql语句主键
+    for i in 0..10 {
+        sql_ids.push(ObjectId::new().to_string())
+    }
+    let cust_table_name = if class_name.to_case(Case::Camel).eq(&table_name) {
+        "".to_string()
+    } else {
+        table_name
+    };
+    let has_between = columns
+        .iter()
+        .any(|c| c.query_type.eq(&Some("BETWEEN".to_string())));
+    let has_image_in_list = columns.iter().any(|c| {
+        c.is_list
+            && c.html_type
+                .eq(&Some(gen_constants::HTML_IMAGE_UPLOAD.to_string()))
+    });
     context! {
-        table=>table,
+        functionName => function_name,
+        module=>module_name,
+        moduleName=>module_name,
+        ModuleName=>module_name.to_case(Case::UpperCamel),
+        file_name=>file_name,
+        fileName=>file_name.to_case(Case::Camel),
+        className=>class_name,
+        class_name=>class_name.to_case(Case::Camel),
+        businessName=>business_name,
+        BusinessName=>business_name.to_case(Case::UpperCamel),
+        custTableName=>cust_table_name,
         columns=>columns,
         pkColumn=>pk_column,
         permissionPrefix=>permission_prefix,
+        fixedHeader=>fixed_header,
+        insertEditCnt=>insert_edit_cnt,
+        tableOptions=>gen_table.options.clone().unwrap_or_default(),
         useList=>use_list,
+        sqlIds=>sql_ids,
+        hasBetween=>has_between,
+        hasImageInList=>has_image_in_list,
         dicts=>dicts,
     }
 }
@@ -272,41 +325,32 @@ pub fn get_use_list(columns: &Vec<GenTableColumnGenVO>) -> HashSet<String> {
         let java_type = binding.as_str();
         if !column.is_pk {
             if gen_constants::TYPE_DATE.eq(java_type) {
-                use_list.insert("java.sql.Date".to_string());
-                use_list.insert("com.fasterxml.jackson.annotation.JsonFormat".to_string());
+                use_list.insert("rbatis::rbdc::Date".to_string());
             } else if gen_constants::TYPE_TIMESTAMP.eq(java_type) {
-                use_list.insert("java.sql.Timestamp".to_string());
-                use_list.insert("com.fasterxml.jackson.annotation.JsonFormat".to_string());
+                use_list.insert("rbatis::rbdc::DateTime".to_string());
             } else if gen_constants::TYPE_TIME.eq(java_type) {
-                use_list.insert("java.sql.Time".to_string());
-                use_list.insert("com.fasterxml.jackson.annotation.JsonFormat".to_string());
+                use_list.insert("rbatis::rbdc::Time".to_string());
             } else if gen_constants::TYPE_BIGDECIMAL.eq(java_type) {
                 use_list.insert("java.math.BigDecimal".to_string());
             }
         }
-        //支持json
-        if java_type.eq(gen_constants::TYPE_OBJECT_JSON) {
-            use_list.insert("com.fasterxml.jackson.databind.node.ObjectNode".to_string());
-        } else if java_type.eq(gen_constants::TYPE_ARRAY_JSON) {
-            use_list.insert("com.fasterxml.jackson.databind.node.ArrayNode".to_string());
-        }
 
-        if java_type.eq(gen_constants::TYPE_STRING)
-            && column.max_length.is_some_and(|i| i > 0)
-            && column.is_required
-        {
-            use_list.insert("javax.validation.constraints.NotBlank".to_string());
-            use_list.insert("javax.validation.constraints.Size".to_string());
-        } else if column.is_required {
-            use_list.insert("javax.validation.constraints.NotNull".to_string());
-        } else if java_type.eq(gen_constants::TYPE_BIGDECIMAL) {
-            use_list.insert("javax.validation.constraints.Digits".to_string());
-        } else if java_type.eq(gen_constants::TYPE_INTEGER) {
-            use_list.insert("javax.validation.constraints.Size".to_string());
-        } else if java_type.eq(gen_constants::TYPE_LONG) {
-            use_list.insert("javax.validation.constraints.Max".to_string());
-            use_list.insert("javax.validation.constraints.Min".to_string());
-        }
+        // if java_type.eq(gen_constants::TYPE_STRING)
+        //     && column.max_length.is_some_and(|i| i > 0)
+        //     && column.is_required
+        // {
+        //     use_list.insert("javax.validation.constraints.NotBlank".to_string());
+        //     use_list.insert("javax.validation.constraints.Size".to_string());
+        // } else if column.is_required {
+        //     use_list.insert("javax.validation.constraints.NotNull".to_string());
+        // } else if java_type.eq(gen_constants::TYPE_BIGDECIMAL) {
+        //     use_list.insert("javax.validation.constraints.Digits".to_string());
+        // } else if java_type.eq(gen_constants::TYPE_INTEGER) {
+        //     use_list.insert("javax.validation.constraints.Size".to_string());
+        // } else if java_type.eq(gen_constants::TYPE_LONG) {
+        //     use_list.insert("javax.validation.constraints.Max".to_string());
+        //     use_list.insert("javax.validation.constraints.Min".to_string());
+        // }
         // if (!StringUtils.isEmpty(column.more("pattern"))) {
         //     use_list.insert("javax.validation.constraints.Pattern");
         // }
@@ -346,12 +390,13 @@ pub fn set_validation_info(columns: &Vec<GenTableColumnGenVO>) -> Vec<GenTableCo
             let column_type = column.column_type.clone().unwrap_or_default();
             let html_type = column.html_type.clone().unwrap_or_default();
             let more = column.more.clone().unwrap_or_default();
-            println!("{more:?}");
             if java_type.eq(gen_constants::TYPE_STRING) {
                 let mut column_length = gen_utils::get_column_length(&column_type);
-                if more.get("utf").is_some_and(|v|v.as_str().unwrap_or_default().eq("1")){
-                    println!("utf");
-                    column_length = column_length /2;
+                if more
+                    .get("utf")
+                    .is_some_and(|v| v.as_str().unwrap_or_default().eq("1"))
+                {
+                    column_length = column_length / 2;
                 }
                 column.max_length = Some(column_length);
             } else if html_type.eq(gen_constants::HTML_NUMBER) {

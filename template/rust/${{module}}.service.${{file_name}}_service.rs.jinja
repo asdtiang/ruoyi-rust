@@ -1,0 +1,60 @@
+use rbatis::{field_name, Page, PageRequest};
+
+use crate::context::CONTEXT;
+use crate::${{moduleName}}::domain::dto::{${{className}}AddDTO, ${{className}}PageDTO, ${{className}}UpdateDTO};
+use crate::${{moduleName}}::domain::mapper::${{moduleName}}_${{businessName}}::${{className}};
+use crate::error::Error;
+use crate::error::Result;
+use crate::{pool, remove_batch};
+
+/// notice service
+pub struct ${{className}}Service {}
+
+impl ${{className}}Service {
+    pub async fn page(&self, arg: &${{className}}PageDTO) -> Result<Page<${{className}}>> {
+        let data = ${{className}}::select_page(pool!(), &PageRequest::from(arg), arg).await?;
+
+        Ok(data)
+    }
+
+    pub async fn detail(&self, ${{pkColumn.columnName}}: &str) -> Result<${{className}}> {
+        let notice =
+            ${{className}}::select_by_column(pool!(), field_name!(${{className}}.${{pkColumn.columnName}}), ${{pkColumn.columnName}})
+                .await?
+                .into_iter()
+                .next()
+                .ok_or_else(|| Error::from(format!("不存在:{:?} ！", ${{pkColumn.columnName}})))?;
+        Ok(notice)
+    }
+
+    pub async fn add(&self, dto: ${{className}}AddDTO) -> Result<u64> {
+        let mut data = ${{className}}::from(dto);
+        data.create_by = Some(crate::web_data::get_user_name());
+        data.create_time=Some(rbatis::rbdc::DateTime::now().set_nano(0));
+        let result = Ok(${{className}}::insert(pool!(), &data).await?.rows_affected);
+        result
+    }
+
+    pub async fn update(&self, dto: ${{className}}UpdateDTO) -> Result<u64> {
+        let mut data = ${{className}}::from(dto);
+        data.update_by = Some(crate::web_data::get_user_name());
+        data.update_time=Some(rbatis::rbdc::DateTime::now().set_nano(0));
+        let result = ${{className}}::update_by_column(pool!(), &data, "${{pkColumn.columnName}}").await;
+        Ok(result?.rows_affected)
+    }
+
+    pub async fn remove(&self, ${{pkColumn.columnName}}: &str) -> Result<u64> {
+        let targets = ${{className}}::select_by_column(pool!(), "${{pkColumn.columnName}}", ${{pkColumn.columnName}}).await?;
+
+        let r = ${{className}}::delete_by_column(pool!(), "${{pkColumn.columnName}}", ${{pkColumn.columnName}}).await?;
+        if r.rows_affected > 0 {
+            //copy data to trash
+            CONTEXT
+                .sys_trash_service
+                .add("${{moduleName}}_${{businessName}}", &targets)
+                .await?;
+        }
+        Ok(r.rows_affected)
+    }
+    remove_batch!(${{pkColumn.columnName}}s);
+}

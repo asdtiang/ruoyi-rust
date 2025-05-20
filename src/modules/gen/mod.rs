@@ -6,7 +6,7 @@ pub mod domain;
 pub mod service;
 
 pub use controller::*;
-use crate::gen::service::{GenConfig, GenTableColumnService, GenTableService};
+use crate::gen::service::{GenTableColumnService, GenTableService};
 
 pub(crate) fn build_gen_api() -> Router {
     Router::new()
@@ -20,7 +20,8 @@ fn gen_table_api() -> Router {
         .route("/{table_id}", get(gen_table_controller::detail))
         .route("/{table_id}", delete(gen_table_controller::remove))
         .route("/importTable", post(gen_table_controller::import_table))
-        .route("/batchGenCode", get(gen_table_controller::batch_gen_code))
+        .route("/genCode/{table_name}", get(gen_table_controller::batch_gen_code))
+        .route("/genCode/synchDb/{table_name}", get(gen_table_controller::synch_db))
 }
 
 pub static GEN_CONTEXT: LazyLock<GenServiceContext> =
@@ -43,4 +44,19 @@ impl Default for GenServiceContext {
             config,
         }
     }
+}
+
+#[derive(Debug, PartialEq, serde::Serialize, serde::Deserialize)]
+pub struct GenConfig {
+    /** 作者 */
+    pub author: String,
+
+    /** 生成包路径 */
+    pub package_name: String,
+
+    /** 自动去除表前缀，默认是false */
+    pub auto_remove_pre: bool,
+
+    /** 表前缀(类名不会包含表前缀) */
+    pub table_prefixes: Vec<String>,
 }

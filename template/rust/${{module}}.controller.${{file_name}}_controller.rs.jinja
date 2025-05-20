@@ -1,0 +1,45 @@
+use crate::${{moduleName}}::domain::vo::${{className}}VO;
+use crate::{PageVO, RespVO};
+use axum::Json;
+use axum::extract::Path;
+use axum::response::IntoResponse;
+use macros::pre_authorize;
+use rbatis::Page;
+use crate::${{moduleName}}::domain::dto::{${{className}}AddDTO, ${{className}}PageDTO, ${{className}}UpdateDTO};
+use crate::${{moduleName}}::${{moduleName|upper}}_CONTEXT;
+
+//查询${{functionName}}列表
+#[pre_authorize("${{permissionPrefix}}:list")]
+pub async fn list(dto: Json<${{className}}PageDTO>) -> impl IntoResponse {
+    let data = ${{moduleName|upper}}_CONTEXT.${{moduleName}}_${{businessName}}_service.page(&dto.0).await;
+    let data = data.map(|d| Page::<${{className}}VO>::from(d));
+    PageVO::from_result(&data).into_response()
+}
+//获取${{functionName}}详细信息
+#[pre_authorize("${{permissionPrefix}}:query")]
+pub async fn detail(${{pkColumn.columnName}}: Path<String>) -> impl IntoResponse {
+    let ${{businessName}} = ${{moduleName|upper}}_CONTEXT.${{moduleName}}_${{businessName}}_service.detail(&${{pkColumn.columnName}}.0).await;
+    let ${{businessName}} = ${{businessName}}.map(|d| ${{className}}VO::from(d));
+    RespVO::from_result(&${{businessName}}).into_response()
+}
+//新增${{functionName}}
+#[pre_authorize("${{permissionPrefix}}:add")]
+pub async fn add(dto: Json<${{className}}AddDTO>) -> impl IntoResponse {
+    let res = ${{moduleName|upper}}_CONTEXT.${{moduleName}}_${{businessName}}_service.add(dto.0).await;
+    RespVO::from_result(&res).into_response()
+}
+
+//更新${{functionName}}
+#[pre_authorize("${{permissionPrefix}}:edit")]
+pub async fn update(dto: Json<${{className}}UpdateDTO>) -> impl IntoResponse {
+    let res = ${{moduleName|upper}}_CONTEXT.${{moduleName}}_${{businessName}}_service.update(dto.0).await;
+    RespVO::from_result(&res).into_response()
+}
+
+//新增${{functionName}}
+#[pre_authorize("${{permissionPrefix}}:remove")]
+pub async fn remove(${{pkColumn.columnName}}: Path<String>) -> impl IntoResponse {
+    let rows_affected = ${{moduleName|upper}}_CONTEXT.${{moduleName}}_${{businessName}}_service.remove_batch(&${{pkColumn.columnName}}.0).await;
+    RespVO::<u64>::judge_result(&rows_affected, "", "删除失败！")
+        .into_response()
+}

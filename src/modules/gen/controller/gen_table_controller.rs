@@ -98,12 +98,20 @@ pub async fn import_table(table_name: axum::extract::Query<TableNamesDTO>) -> im
 }
 
 #[pre_authorize("tool:gen:code")]
-pub async fn batch_gen_code(table_name: axum::extract::Query<TableNamesDTO>) -> impl IntoResponse {
-    let tables = table_name.0.tables.unwrap_or_default();
+pub async fn batch_gen_code(table_name: Path<String>) -> impl IntoResponse {
+    let tables = table_name.0;
     let table_names = tables.split(",").collect::<Vec<&str>>();
     let tables = GEN_CONTEXT
         .gen_table_service
         .generator_code(table_names)
+        .await;
+    RespVO::from_result(&tables).into_response()
+}
+#[pre_authorize("tool:gen:code")]
+pub async fn synch_db(table_name: Path<String>) -> impl IntoResponse {
+    let tables = GEN_CONTEXT
+        .gen_table_service
+        .synch_db(&table_name.0)
         .await;
     RespVO::from_result(&tables).into_response()
 }

@@ -20,7 +20,7 @@ pub struct GenTableUpdateDTO {
     #[validate(required(message = "实体类名称不能为空"))]
     pub class_name: Option<String>,
     pub tpl_category: Option<String>,
-    pub tpl_web_type: Option<String>,
+    pub tpl_web_type: Option<String>,pub tpl_back_type: Option<String>,
     #[validate(required(message = "生成包路径不能为空"))]
     pub package_name: Option<String>,
     #[validate(required(message = "生成模块名不能为空"))]
@@ -33,8 +33,8 @@ pub struct GenTableUpdateDTO {
     pub function_author: Option<String>,
     pub fixed_header: Option<char>,
     pub gen_type: Option<String>,
-    pub gen_path: Option<String>,
-    pub options: Option<String>,
+    pub gen_path_back: Option<String>,pub gen_path_front: Option<String>,
+    pub options: Option<serde_json::Value>,
     pub remark: Option<String>,
     pub columns: Option<Vec<GenTableColumnUpdateDTO>>,
 }
@@ -49,6 +49,7 @@ impl From<GenTableUpdateDTO> for GenTable {
             class_name: arg.class_name,
             tpl_category: arg.tpl_category,
             tpl_web_type: arg.tpl_web_type,
+            tpl_back_type: arg.tpl_back_type,
             package_name: arg.package_name,
             module_name: arg.module_name,
             business_name: arg.business_name,
@@ -56,7 +57,8 @@ impl From<GenTableUpdateDTO> for GenTable {
             function_author: arg.function_author,
             fixed_header: arg.fixed_header,
             gen_type: arg.gen_type,
-            gen_path: arg.gen_path,
+            gen_path_back: arg.gen_path_back,
+            gen_path_front: arg.gen_path_front,
             options: arg.options,
             create_by: None,
             create_time: None,

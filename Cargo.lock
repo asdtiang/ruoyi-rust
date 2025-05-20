@@ -2123,6 +2123,12 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "78ca9ab1a0babb1e7d5695e3530886289c18cf2f87ec19a575a0abdce112e3a3"
 
 [[package]]
+name = "memo-map"
+version = "0.3.3"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "38d1115007560874e373613744c6fba374c17688327a71c1476d1a5954cc857b"
+
+[[package]]
 name = "merge-yaml-hash"
 version = "0.4.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -2155,6 +2161,8 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "77ed1d8c92cf7057b4f2efb42339dcd43f435ed3d7d90e937cd3ae071563206b"
 dependencies = [
  "aho-corasick",
+ "memo-map",
+ "self_cell",
  "serde",
 ]
 
@@ -3061,7 +3069,7 @@ dependencies = [
 
 [[package]]
 name = "ruoyi-rust"
-version = "0.1.0"
+version = "0.2.0"
 dependencies = [
  "aws-config",
  "aws-sdk-s3",
@@ -3306,6 +3314,12 @@ dependencies = [
  "core-foundation-sys",
  "libc",
 ]
+
+[[package]]
+name = "self_cell"
+version = "1.2.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "0f7d95a54511e0c7be3f51e8867aa8cf35148d7b9445d44de2f943e2b206e749"
 
 [[package]]
 name = "semver"

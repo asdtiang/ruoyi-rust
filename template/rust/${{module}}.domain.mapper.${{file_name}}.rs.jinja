@@ -1,0 +1,80 @@
+{% macro ifexpr(column) -%}
+{% if column.javaType == 'String' %}
+if dto.${{column.javaField}} != '':
+{% else %}
+if dto.${{column.javaField}} != null:
+{% endif %}
+{%- endmacro %}
+
+use rbatis::{crud, impl_select_page};
+{% for use in useList %}
+use ${{use}};
+{% endfor %}
+crud!(${{className}} {}{% if custTableName!="" %} ,"${{custTableName}}"{% endif %});
+
+
+impl_select_page!( ${{className}}{select_page(dto: &crate::${{moduleName}}::domain::dto::${{className}}PageDTO) =>
+{#    "`where 1=1`#}
+{#    if dto.noticeTitle != '':#}
+{#      ` and notice_title like #{'%'+dto.noticeTitle+'%'}`#}
+{#    if dto.createBy != '':#}
+{#      ` and create_by = #{dto.createBy}`#}
+{#    if dto.noticeType != '':#}
+{#      ` and notice_type = #{dto.noticeType}`#}
+{#    if do_count == false:#}
+{#     ` order by notice_title`"}{% if custTableName!="" %} ,"${{custTableName}}"{% endif %});#}
+ "`where 1=1`
+{% for column in columns %}
+{% if column.isQuery %}
+{% if column.queryType == "EQ" %}
+${{ ifexpr(column) }}
+  ` and ${{column.columnName}} = #{dto.${{column.javaField}}}`
+{% elif column.queryType == "NE" %}
+  ${{ ifexpr(column) }}
+  ` and ${{column.columnName}} != #{dto.${{column.javaField}}}`
+{% elif column.queryType == "GT" %}
+  ${{ ifexpr(column) }}
+  ` and ${{column.columnName}} > #{dto.${{column.javaField}}}`
+{% elif column.queryType == "GTE" %}
+  ${{ ifexpr(column) }}
+  ` and ${{column.columnName}} >= #{dto.${{column.javaField}}}`
+{% elif column.queryType == "LT" %}
+  ${{ ifexpr(column) }}
+  ` and ${{column.columnName}} <= #{dto.${{column.javaField}}}`
+{% elif column.queryType == "LTE" %}
+  ${{ ifexpr(column) }}
+  ` and ${{column.columnName}} <= #{dto.${{column.javaField}}}`
+{% elif column.queryType == "LIKE" %}
+  ${{ ifexpr(column) }}
+  ` and ${{column.columnName}} like concat('%', #{dto.${{column.javaField}}}, '%')`
+{% elif column.queryType == "START" %}
+  ${{ ifexpr(column) }}
+  ` and ${{column.columnName}} like concat(#{dto.${{column.javaField}}}, '%')`
+{% elif column.queryType == "BETWEEN" %}
+{% if column.javaType=="DateTime" %}
+{% set begin=["concat(#{params.begin",column.javaFieldCap,"},' 00:00:00')"]|join %}
+{% set end=["concat(#{params.end",column.javaFieldCap,"},' 23:59:59')"]|join %}
+{% elif column.javaType=="Date" %}
+{% set begin=["#{dto.params.begin",column.javaFieldCap,"}"]|join %}
+{% set end=["#{dto.params.end",column.javaFieldCap,"}"]|join %}
+{% else %}
+{% set begin=["#{dto.params.begin",column.javaFieldCap,"}"]|join %}
+{% set end=["#{dto.params.end",column.javaFieldCap,"}"]|join %}
+{% endif %}
+if  dto.params.begin${{ column.javaFieldCap }} != null {% if column.javaType == 'String'  %} and dto.params.begin${{ column.javaFieldCap }}.trim() != ''{% endif %}:
+  ` and ${{column.columnName}} >= ${{begin}}`
+if dto.params.end${{ column.javaFieldCap }} != null {% if column.javaType == 'String'  %} and dto.params.end${{ column.javaFieldCap }}.trim() != ''{% endif %}:
+  ` and ${{column.columnName}} <= ${{end}}`
+{% endif %}
+{% endif %}
+{% endfor %}
+if do_count == false:
+  ` order by create_time desc`
+"}{% if custTableName!="" %} ,"${{custTableName}}"{% endif %});
+#[derive(Clone, Debug, serde::Serialize, serde::Deserialize)]
+pub struct ${{className}} {
+{% for column in columns %}
+      // ${{column.columnComment}}
+    pub ${{column.columnName}}:Option<${{column.javaType}}>,
+{% endfor %}
+}

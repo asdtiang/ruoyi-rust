@@ -158,37 +158,37 @@ pub const  TYPE_STRING :&'static str =  "String";
 /**
  * 布尔型
  */
-pub const  TYPE_BOOLEAN :&'static str =  "Boolean";
+pub const  TYPE_BOOLEAN :&'static str =  "bool";
 /**
  * 整型
  */
-pub const  TYPE_INTEGER :&'static str =  "Integer";
+pub const  TYPE_INTEGER :&'static str =  "i32";
 /**
  * json类型 ObjectNode
  */
-pub const  TYPE_OBJECT_JSON :&'static str =  "ObjectNode";
+pub const  TYPE_OBJECT_JSON :&'static str =  "serde_json::Value";
 /**
  * json 类型 ArrayNode
  */
-pub const  TYPE_ARRAY_JSON :&'static str =  "ArrayNode";
+pub const  TYPE_ARRAY_JSON :&'static str =  "serde_json::Value";
 /**
  * char
  */
-pub const  TYPE_CHAR :&'static str =  "Character";
+pub const  TYPE_CHAR :&'static str =  "char";
 /**
  * 长整型
  */
-pub const  TYPE_LONG :&'static str =  "Long";
+pub const  TYPE_LONG :&'static str =  "u64";
 
 /**
  * 浮点型
  */
-pub const  TYPE_DOUBLE :&'static str =  "Double";
+pub const  TYPE_DOUBLE :&'static str =  "f64";
 
 /**
- * 高精度计算类型
+ * 高精度计算类型，fixme 引用bigdecimal crate
  */
-pub const  TYPE_BIGDECIMAL :&'static str =  "BigDecimal";
+pub const  TYPE_BIGDECIMAL :&'static str =  "f64";
 
 /**
  * 日期类型
@@ -197,7 +197,7 @@ pub const  TYPE_DATE :&'static str =  "Date";
 /**
  * 日期时间类型
  */
-pub const  TYPE_TIMESTAMP :&'static str =  "Timestamp";
+pub const  TYPE_TIMESTAMP :&'static str =  "DateTime";
 /**
  * 时间类型
  */
@@ -214,5 +214,10 @@ pub const  QUERY_EQ :&'static str =  "EQ";
 /** 需要 */
 pub const  REQUIRE  : char =  '1';
 
-/** 需要 */
+/** 不需要 */
 pub const  NOT_REQUIRE  : char =  '0';
+
+/**
+ * 需要在mod.rs加入pub use xx_xx::*
+ */
+pub const PUB_USE_NAME  : [&str; 4] =  ["dto", "mapper", "vo", "service"];

@@ -7,6 +7,7 @@ use axum::response::IntoResponse;
 use axum::Json;
 use macros::pre_authorize;
 use crate::{RespJson, RespVO};
+use crate::system::domain::vo::SysMenuVO;
 
 //#[get("/menu/list")]
 #[pre_authorize("system:menu:list")]
@@ -29,7 +30,7 @@ pub async fn routers() -> impl IntoResponse {
 #[pre_authorize("system:menu:query")]
 pub async fn detail(menu_id: Path<String>) -> impl IntoResponse {
     let menu_id = menu_id.0;
-    let menu_vo = CONTEXT.sys_menu_service.detail(&menu_id).await;
+    let menu_vo = CONTEXT.sys_menu_service.detail(&menu_id).await.map(|m|SysMenuVO::from(m));
     RespVO::from_result(&menu_vo).into_response()
 }
 

@@ -1,7 +1,8 @@
 use super::super::mapper::gen_table_column::GenTableColumn;
-use crate::utils::string::substring;
-use rbatis::rbdc::DateTime;
 use crate::gen::service::gen_constants;
+use crate::utils::string::substring;
+use convert_case::{Case, Casing};
+use rbatis::rbdc::DateTime;
 
 #[derive(Clone, Debug, serde :: Serialize, serde :: Deserialize)]
 #[serde(rename_all = "camelCase")]
@@ -112,6 +113,7 @@ pub struct GenTableColumnGenVO {
     pub column_type: Option<String>,
     pub java_type: Option<String>,
     pub java_field: Option<String>,
+    pub java_field_cap: Option<String>,
     pub is_pk: bool,
     pub is_increment: bool,
     pub is_required: bool,
@@ -130,9 +132,9 @@ pub struct GenTableColumnGenVO {
     pub max_length: Option<usize>,
     pub precision: Option<usize>,
     pub def_val: Option<String>,
+    pub special:bool,
     pub max: Option<usize>,
     pub min: Option<usize>,
-
 }
 impl From<GenTableColumn> for GenTableColumnGenVO {
     fn from(arg: GenTableColumn) -> Self {
@@ -158,7 +160,7 @@ impl From<GenTableColumn> for GenTableColumnGenVO {
             sort,
             more,
             def_val,
-           ..
+            ..
         } = arg;
         let comment = column_comment.clone();
         let comment = comment.map(|s| {
@@ -171,14 +173,15 @@ impl From<GenTableColumn> for GenTableColumnGenVO {
                 Some(_) => substring(&s, 0, idx.unwrap()),
             }
         });
-
+        let java_field_cap = java_field.clone().map(|s| s.to_case(Case::UpperCamel));
         Self {
-            column_name,
+            column_name:column_name.clone(),
             column_comment,
             comment,
             column_type,
             java_type,
             java_field,
+            java_field_cap,
             is_pk: is_pk.is_some_and(|b| b == gen_constants::REQUIRE),
             is_increment: is_increment.is_some_and(|b| b == gen_constants::REQUIRE),
             is_required: is_required.is_some_and(|b| b == gen_constants::REQUIRE),
@@ -194,9 +197,10 @@ impl From<GenTableColumn> for GenTableColumnGenVO {
             dict_type,
             sort,
             more,
-            max_length:None,
+            max_length: None,
             precision: None,
             def_val,
+            special: gen_constants::COLUMNNAME_NOT_LIST.contains(&column_name.unwrap_or_default().as_str()),
             max: None,
             min: None,
         }

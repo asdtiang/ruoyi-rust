@@ -1,6 +1,6 @@
 [package]
 name = "ruoyi-rust"
-version = "0.1.0"
+version = "0.2.0"
 authors = ["2537660666@qq.com"]
 edition = "2021"
 
@@ -77,7 +77,7 @@ convert_case = "0.8"
 regex = "1.11.1"
 
 
-minijinja = { version = "2.10.0", optional = true, features = ["custom_syntax"] }
+minijinja = { version = "2.10.0", optional = true, features = ["custom_syntax","loader"] }
 markup_fmt = { version = "0.20.0" }
 prettify-js = "0.1.0"
 prettyplease = "*"
