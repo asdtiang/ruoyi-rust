@@ -1,4 +1,4 @@
-use crate::config::global_variables::ADMIN_NAME;
+use crate::config::global_constants::ADMIN_NAME;
 use crate::context::CONTEXT;
 use  crate::system::domain::dto::{RoleAuthUserPageDTO, RolePageDTO};
 use  crate::system::domain::mapper::sys_role::SysRole;

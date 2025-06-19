@@ -1,7 +1,7 @@
 pub mod log;
 
-use crate::config::cache_variables::LOGIN_TOKEN_KEY;
-use crate::config::global_variables::ADMIN_NAME;
+use crate::config::global_constants::LOGIN_TOKEN_KEY;
+use crate::config::global_constants::ADMIN_NAME;
 use crate::context::CONTEXT;
 use crate::error::Error;
 use crate::system::domain::vo::{JWTToken, UserCache};

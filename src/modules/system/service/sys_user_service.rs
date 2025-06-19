@@ -1,22 +1,22 @@
+use crate::config::global_constants::LOGIN_TOKEN_KEY;
+use crate::config::global_constants::{ADMIN_NAME, ADMIN_USERID};
+use crate::context::CONTEXT;
+use crate::error::Error;
+use crate::error::Result;
+use crate::system::domain::dto::{DeptQueryDTO, UserAddDTO, UserPageDTO, UserUpdateDTO};
+use crate::system::domain::mapper::sys_user;
+use crate::system::domain::mapper::sys_user::SysUser;
+use crate::system::domain::vo::{JWTToken, SysDeptVO, SysUserVO, UserCache};
+use crate::system::service::dict_utils::get_dict_label_default;
+use crate::utils::password_encoder::PasswordEncoder;
+use crate::web_data::{get_token, get_user_name};
+use crate::{check_unique, pool, remove_batch};
 use macros::data_scope;
 use rbatis::page::{Page, PageRequest};
 use rbatis::{field_name, IPage};
 use rbs::to_value;
+use rust_xlsxwriter::{ColNum, Color, Format, Workbook};
 use std::collections::HashMap;
-
-use crate::config::cache_variables::LOGIN_TOKEN_KEY;
-use crate::config::global_variables::{ADMIN_NAME, ADMIN_USERID};
-use crate::context::CONTEXT;
-use  crate::system::domain::dto::{DeptQueryDTO, UserAddDTO, UserPageDTO, UserUpdateDTO};
-use  crate::system::domain::mapper::sys_user;
-use  crate::system::domain::mapper::sys_user::SysUser;
-use  crate::system::domain::vo::user::SysUserVO;
-use  crate::system::domain::vo::{JWTToken, SysDeptVO, UserCache};
-use crate::error::Error;
-use crate::error::Result;
-use crate::utils::password_encoder::PasswordEncoder;
-use crate::web_data::{get_token, get_user_name};
-use crate::{check_unique, pool, remove_batch};
 
 pub struct SysUserService {}
 
@@ -133,9 +133,11 @@ impl SysUserService {
     }
 
     pub async fn remove(&self, user_id: &str) -> Result<u64> {
-
-        let user_cache=CONTEXT.sys_user_service.get_user_cache_by_token(&get_token()).await?;
-        if user_cache.id.eq(user_id){
+        let user_cache = CONTEXT
+            .sys_user_service
+            .get_user_cache_by_token(&get_token())
+            .await?;
+        if user_cache.id.eq(user_id) {
             return Err(Error::from("不能删除自己！"));
         }
 
@@ -266,4 +268,81 @@ impl SysUserService {
             .ok_or_else(|| Error::from("找不到此用户"))
     }
     remove_batch!(user_ids);
+
+    pub async fn export(&self, arg: &UserPageDTO) -> Result<Vec<u8>> {
+        let mut dto = arg.clone();
+        dto.page_size = Some(u64::MAX);
+        let mut res = Vec::new();
+        loop {
+            let data = sys_user::select_page(pool!(), &PageRequest::from(arg), arg).await?;
+            data.records
+                .into_iter()
+                .for_each(|r| res.push(SysUserVO::from(r)));
+            if data.page_size * data.page_no >= data.total {
+                break;
+            }
+            dto.page_no = dto.page_no.map(|p| p + 1);
+        }
+        let mut excel_attrs = SysUserVO::get_excel_attr();
+
+        let mut workbook = Workbook::new();
+        let worksheet = workbook.add_worksheet();
+
+        // Add formats
+        let bold_format = Format::new().set_bold().set_background_color(Color::Gray);
+        //let money_format = Format::new().set_num_format("$#,##0.00");
+
+        for (i, attr) in excel_attrs.iter_mut().enumerate() {
+            // Write headers
+            worksheet.write_string_with_format(0, i as ColNum, attr.name.clone(), &bold_format)?;
+            worksheet.set_column_width(i as ColNum, attr.width.unwrap_or(16.0))?;
+            if let Some(read_converter_exp) = attr.read_converter_exp.clone() {
+                let mut exp = HashMap::new();
+                read_converter_exp.split(",").for_each(|s| {
+                    let ss = s.split("=").collect::<Vec<&str>>();
+                    if ss.len() == 2 {
+                        exp.insert(ss[0].to_string(), ss[1].to_string());
+                    }
+                });
+                attr.read_converter_map = Some(exp);
+            }
+        }
+        // Write data
+        for (row, vo) in res.iter().enumerate() {
+            let row = row as u32 + 1;
+            let values = serde_json::json!(vo);
+            for (col, attr) in excel_attrs.iter().enumerate() {
+                let value = match values.get(&attr.camel_case_indent) {
+                    None => &attr.default_value.clone().unwrap_or_default(),
+                    Some(e) => {
+                        if e.is_number() {
+                            let v = e.as_f64().map(|n| n as f64).unwrap_or(0.0);
+                            worksheet.write_number(row, col as ColNum, v)?;
+                            if attr.num_format.is_some() {
+                                worksheet.set_cell_format(row, col as ColNum)
+                            }
+                        }
+                        e.as_str().unwrap_or_default()
+                    }
+                };
+                //只处理string
+                if value.len() > 0 {
+                    let to_write = if let Some(dict_type) = attr.dict_type.clone() {
+                        &get_dict_label_default(&dict_type, value).await?
+                    } else if let Some(map) = attr.read_converter_map.clone() {
+                        &(map
+                            .get(value)
+                            .map(|s| s.clone())
+                            .unwrap_or_default()
+                            .clone())
+                    } else {
+                        value
+                    };
+                    worksheet.write_string(row, col as ColNum, to_write)?;
+                }
+            }
+        }
+
+        Ok(workbook.save_to_buffer()?)
+    }
 }

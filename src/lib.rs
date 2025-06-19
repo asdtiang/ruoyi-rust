@@ -8,6 +8,7 @@ pub mod log;
 pub mod macros;
 pub mod modules;
 pub use modules::*;
+pub use utils::excel_utils::ExcelGenAttr;
 
 pub trait DataScopeTrait {
     fn clear_data_scope_params(&mut self) ;

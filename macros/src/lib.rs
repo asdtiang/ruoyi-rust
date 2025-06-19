@@ -1,7 +1,9 @@
 use proc_macro::TokenStream;
+use proc_macro2::Ident;
 use quote::{quote, ToTokens};
+use syn::parse::Parse;
 use syn::Data::Struct;
-use syn::{parse_macro_input, DataStruct, DeriveInput, Field, FnArg, ItemFn, LitStr, Meta};
+use syn::{parse_macro_input, DataStruct, DeriveInput, Field, FnArg, ItemFn, LitFloat, LitInt, LitStr, Meta};
 
 #[proc_macro_attribute]
 pub fn pre_authorize(attr: TokenStream, item: TokenStream) -> TokenStream {
@@ -34,7 +36,7 @@ pub fn pre_authorize(attr: TokenStream, item: TokenStream) -> TokenStream {
     //         _ => unreachable!("it's not gonna happen."),
     //     }
     // });
-    let permit_str  = parse_macro_input!(attr as LitStr);
+    let permit_str = parse_macro_input!(attr as LitStr);
     let expanded = quote! { // 重新构建函数执行
         #(#func_attrs)*
         #func_vis #func_asyncness fn #func_name #func_generics(header_map_in_permit: axum::http::HeaderMap,#func_inputs) #func_output{
@@ -264,21 +266,29 @@ pub fn page_request(attr: TokenStream, input: TokenStream) -> TokenStream {
             }
         }
 
-        let struct_page_extend =if no_page{quote! {}}else{quote!{
-            #[serde(rename(deserialize = "pageNum"))]
-            #[validate(range(min = 1))]
-            pub page_no: Option<u64>,
-            #[validate(range(min = 1, max = 50))]
-            pub page_size: Option<u64>,
-        }};
-        let page_impl_extend =if no_page{quote! {}}else{quote!{
-           impl From<&#ident> for rbatis::PageRequest {
-            fn from(arg: &#ident) -> Self {
-            rbatis::PageRequest::new(arg.page_no.unwrap_or(1), arg.page_size.unwrap_or(10))
+        let struct_page_extend = if no_page {
+            quote! {}
+        } else {
+            quote! {
+                #[serde(rename(deserialize = "pageNum"))]
+                #[validate(range(min = 1))]
+                pub page_no: Option<u64>,
+                #[validate(range(min = 1, max = 50))]
+                pub page_size: Option<u64>,
             }
-        }
+        };
+        let page_impl_extend = if no_page {
+            quote! {}
+        } else {
+            quote! {
+               impl From<&#ident> for rbatis::PageRequest {
+                fn from(arg: &#ident) -> Self {
+                rbatis::PageRequest::new(arg.page_no.unwrap_or(1), arg.page_size.unwrap_or(10))
+                }
+            }
 
-        }};
+            }
+        };
         let res = quote! {
         #(#atrrs_s)*
         #[derive(validator::Validate)]
@@ -298,10 +308,10 @@ pub fn page_request(attr: TokenStream, input: TokenStream) -> TokenStream {
     }
 }
 
-//根据注释情况生成DTO
+//不打算使用，实际情况太复杂
+// 根据注释情况生成DTO
 #[proc_macro_attribute]
 pub fn gen_dto(attr: TokenStream, input: TokenStream) -> TokenStream {
-
     let mut add_additional: Option<LitStr> = None;
     let mut update_additional: Option<LitStr> = None;
 
@@ -319,8 +329,6 @@ pub fn gen_dto(attr: TokenStream, input: TokenStream) -> TokenStream {
     });
 
     parse_macro_input!(attr with parser);
-
-
 
     // 将输入的 token 流解析为 `DeriveInput`
     let original_struct = parse_macro_input!(input as DeriveInput);
@@ -370,15 +378,15 @@ pub fn gen_dto(attr: TokenStream, input: TokenStream) -> TokenStream {
             for attr in attrs {
                 if attr.path().is_ident("validate") {
                     validate_expand.extend(quote! {#attr});
-                }else  if attr.path().is_ident("serde") {
+                } else if attr.path().is_ident("serde") {
                     serde_attr_expand.extend(quote! {#attr});
-                }   else if attr.path().is_ident("dto") {
+                } else if attr.path().is_ident("dto") {
                     match attr.meta {
                         Meta::List(e) => {
                             //fixme 更改
                             let s = e.tokens.to_string();
                             println!("{s}");
-                            let ss = s.split(",").map(|s|s.trim()).collect::<Vec<_>>();
+                            let ss = s.split(",").map(|s| s.trim()).collect::<Vec<_>>();
                             if ss.contains(&"add") {
                                 has_add = true;
                             }
@@ -386,7 +394,6 @@ pub fn gen_dto(attr: TokenStream, input: TokenStream) -> TokenStream {
                                 has_update = true;
                             }
                             if ss.contains(&"vo") {
-
                                 has_vo = true;
                             }
                         }
@@ -438,10 +445,10 @@ pub fn gen_dto(attr: TokenStream, input: TokenStream) -> TokenStream {
             }
         }
 
-        if add_additional.is_some(){
-            let a= add_additional.unwrap().to_token_stream().to_string();
-            let a=a[1..a.len()-1].to_string();
-            let a=a.parse::<proc_macro2::TokenStream>().unwrap();
+        if add_additional.is_some() {
+            let a = add_additional.unwrap().to_token_stream().to_string();
+            let a = a[1..a.len() - 1].to_string();
+            let a = a.parse::<proc_macro2::TokenStream>().unwrap();
             add_dto_expand.extend(a);
         }
 
@@ -549,7 +556,7 @@ pub fn data_scope(attr: TokenStream, item: TokenStream) -> TokenStream {
             _ => {}
         }
     });
-    let dept_alias=dept_alias.map(|a| a.to_token_stream()).unwrap_or_default();
+    let dept_alias = dept_alias.map(|a| a.to_token_stream()).unwrap_or_default();
     let expanded = quote! { // 重新构建函数执行
         #(#func_attrs)*
         #func_vis #func_asyncness fn #func_name #func_generics(#func_inputs) #func_output{
@@ -559,13 +566,13 @@ pub fn data_scope(attr: TokenStream, item: TokenStream) -> TokenStream {
 
         }
     };
-  //  println!("{}", expanded.to_string());
+    //  println!("{}", expanded.to_string());
     expanded.into()
 }
 
-
 #[proc_macro_attribute]
-pub fn transactional(_: TokenStream, item: TokenStream) -> TokenStream {
+pub fn transactional(ident: TokenStream, item: TokenStream) -> TokenStream {
+    let ident = parse_macro_input!(ident as Ident);
     let func = parse_macro_input!(item as ItemFn); // 我们传入的是一个函数，所以要用到ItemFn
     let func_vis = &func.vis; // pub
     let func_block = &func.block; //.stmts.iter().map(|r|r.to_token_stream().to_string()).collect::<Vec<_>>().join("\n"); // 函数主体实现部分{}
@@ -576,22 +583,212 @@ pub fn transactional(_: TokenStream, item: TokenStream) -> TokenStream {
     let expanded = quote! { // 重新构建函数执行
         #(#func_attrs)*
         #func_vis #func_decl{
-            let tx = crate::pool!().acquire_begin().await?;
+            let #ident = crate::pool!().acquire_begin().await?;
             let res=#func_block;
             match res {
-                Ok(_)=>{tx.commit().await?;}
+                Ok(_)=>{#ident.commit().await?;}
                 Err(_)=>{
                      println!("error ");
-                    tx.rollback().await?;}
+                    #ident.rollback().await?;}
             }
             res
         }
     };
     expanded.into()
 }
-#[proc_macro_attribute]
-pub fn show_streams(attr: TokenStream, item: TokenStream) -> TokenStream {
-    println!("attr: \"{}\"", attr.to_string());
-    println!("item: \"{}\"", item.to_string());
-    item
+#[derive(Debug)]
+struct ExcelAttribute {
+    name: Option<LitStr>,
+    dict_type: Option<LitStr>,
+    default_value: Option<LitStr>,
+    read_converter_exp:Option<LitStr>,
+    num_format: Option<LitStr>,
+    width:Option<LitFloat>,
+}
+macro_rules! to_token_string {
+    ($self_:ident,$name:ident,$tokens:ident) => {
+        match &$self_.$name {
+            None => $tokens.extend(quote! {
+                $name:None,
+            }),
+            Some(t) => $tokens.extend(quote! {
+                $name:Some(#t.to_string()),
+            }),
+        }
+    };
+}
+macro_rules! to_token_int {
+    ($self_:ident,$name:ident,$tokens:ident) => {
+        match &$self_.$name {
+            None => $tokens.extend(quote! {
+                $name:None,
+            }),
+            Some(t) => $tokens.extend(quote! {
+                $name:Some(#t),
+            }),
+        }
+    };
+}
+impl ToTokens for ExcelAttribute {
+    fn to_tokens(&self, tokens: &mut proc_macro2::TokenStream) {
+        match &self.name {
+            None => tokens.extend(quote! {
+                name:"".to_string(),
+            }),
+            Some(t) => tokens.extend(quote! {
+                name:#t.to_string(),
+            }),
+        }
+        to_token_string! (self,dict_type,tokens);
+        to_token_string! (self,default_value,tokens);
+        to_token_string! (self,read_converter_exp,tokens);
+        to_token_string! (self,num_format,tokens);
+        to_token_int! (self,width,tokens);
+    }
+}
+#[proc_macro_derive(Export, attributes(excel))]
+pub fn export(item: TokenStream) -> TokenStream {
+    // 将输入的 token 流解析为 `DeriveInput`
+    let original_struct = syn::parse_macro_input!(item as syn::DeriveInput);
+    let DeriveInput {
+        data,
+        ident,
+        attrs: atrrs_s,
+        ..
+    } = original_struct.clone();
+    let mut expand = quote! {};
+
+    let parser = |input: syn::parse::ParseStream| {
+        let mut excel_attr = ExcelAttribute {
+            name: None,
+            dict_type: None,
+            default_value: None,
+            read_converter_exp:None,
+            num_format: None,
+            width:None
+        };
+        // 解析位置参数（字符串字面量）
+        if input.peek(syn::LitStr) {
+            excel_attr.name = Some(input.parse::<syn::LitStr>()?);
+        }
+
+        // 解析逗号分隔的参数
+        while !input.is_empty() {
+            input.parse::<syn::Token![,]>()?;
+
+            // 解析命名参数
+            if input.peek(syn::Ident) && input.peek2(syn::Token![=]) {
+                let ident: syn::Ident = input.parse()?;
+                input.parse::<syn::Token![=]>()?;
+
+                match ident.to_string().as_str() {
+                    "name" => {
+                        if input.peek(syn::LitStr) {
+                            excel_attr.name = Some(input.parse::<syn::LitStr>()?);
+                        }
+                    }
+                    "dictType" => {
+                        if input.peek(syn::LitStr) {
+                            excel_attr.dict_type = Some(input.parse::<syn::LitStr>()?);
+                        }
+                    }
+                    "defaultValue" => {
+                        if input.peek(syn::LitStr) {
+                            excel_attr.default_value = Some(input.parse::<syn::LitStr>()?);
+                        }
+                    }
+                    "readConverterExp" => {
+                        if input.peek(syn::LitStr) {
+                            excel_attr.read_converter_exp = Some(input.parse::<syn::LitStr>()?);
+                        }
+                    }
+                    "numFormat" => {
+                        if input.peek(syn::LitStr) {
+                            excel_attr.num_format = Some(input.parse::<syn::LitStr>()?);
+                        }
+                    }
+                    "width" => {
+                        if input.peek(syn::LitFloat) {
+                            excel_attr.width = Some(input.parse::<syn::LitFloat>()?);
+                        }
+                    }
+                    _ => return Err(input.error("Unknown parameter, expected `path`")),
+                }
+            } else if excel_attr.name.is_none() && input.peek(syn::LitStr) {
+                // 处理没有前置逗号的位置参数
+                excel_attr.name = Some(input.parse::<syn::LitStr>()?);
+            } else {
+                return Err(input.error("Expected named parameter or string literal"));
+            }
+        }
+        Ok(excel_attr)
+    };
+
+    if let Struct(data_struct) = data {
+        // 从这个数据结构中提取字段
+        let DataStruct { fields, .. } = data_struct;
+        // 创建用于作为输出的变量 new_fields
+        // let mut new_fields = quote!();
+        for Field {
+            // 该字段的标识符
+            ident,
+            // 该字段的属性
+            attrs,
+            // 该字段的可见性
+            vis,
+            // 分隔符 `:`
+            // colon_token,
+            // 该字段的类型
+            ty,
+            ..
+        } in fields
+        {
+            for attr in attrs {
+                if attr.path().is_ident("excel") {
+                    let dto_attr = attr.parse_args_with(parser).unwrap();
+                    let ident_camel_case =
+                        to_camel_case(&(ident.clone().map(|s| s.to_string()).unwrap_or_default()));
+                    expand.extend(quote! {
+                        excel_gen_attr.push(crate::ExcelGenAttr{
+                                camel_case_indent: #ident_camel_case.to_string(),
+                               #dto_attr
+                            read_converter_map:None
+                        });
+                    })
+                }
+            }
+        }
+    }
+    let res = quote! {
+       impl #ident {
+         pub fn get_excel_attr()->Vec<crate::ExcelGenAttr> {
+                let mut excel_gen_attr=vec!();
+                #expand
+               excel_gen_attr
+            }
+        }
+    };
+    println!("result: {}", res);
+    res.into()
+}
+
+use regex::Regex;
+
+fn to_camel_case(text: &str) -> String {
+    Regex::new(r"[_-]")
+        .unwrap()
+        .split(text)
+        .enumerate()
+        .map(|(i, x)| {
+            if i != 0usize {
+                let mut s = x.to_string();
+                if let Some(r) = s.get_mut(0..1) {
+                    r.make_ascii_uppercase()
+                }
+                s
+            } else {
+                x.to_string()
+            }
+        })
+        .collect()
 }

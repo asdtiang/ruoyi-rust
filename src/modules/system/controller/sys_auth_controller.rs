@@ -1,8 +1,7 @@
-use crate::config::cache_variables::{LOGIN_TOKEN_KEY, REDIS_UUID_CAPTCHA};
-use crate::config::global_variables::LOGIN_SUC;
+use crate::config::global_constants::{LOGIN_SUC, LOGIN_TOKEN_KEY};
 use crate::context::CONTEXT;
-use  crate::system::domain::dto::SignInDTO;
-use  crate::system::domain::vo::JWTToken;
+use crate::system::domain::dto::SignInDTO;
+use crate::system::domain::vo::JWTToken;
 use crate::{RespJson, RespVO};
 use crate::token_auth::get_token;
 use crate::utils::base64::encode;
@@ -15,6 +14,7 @@ use captcha::Captcha;
 use macros::pre_authorize;
 use std::time::Duration;
 use uuid::Uuid;
+use crate::modules::system::constants::REDIS_UUID_CAPTCHA;
 
 pub async fn login(header_map: HeaderMap, arg: Json<SignInDTO>) -> impl IntoResponse {
     let token = CONTEXT.sys_auth_service.login(&arg.0, &header_map).await;

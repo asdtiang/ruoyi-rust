@@ -1,17 +1,18 @@
-use crate::config::global_variables::{ADMIN_NAME, DEPT_DISABLE, DEPT_NORMAL, STATUS_NORMAL};
+use crate::config::global_constants::{ADMIN_NAME, STATUS_NORMAL};
 use crate::context::CONTEXT;
-use  crate::system::domain::dto::{DeptAddDTO, DeptQueryDTO, DeptUpdateDTO};
-use  crate::system::domain::mapper;
-use  crate::system::domain::mapper::sys_dept;
-use  crate::system::domain::mapper::sys_dept::SysDept;
-use  crate::system::domain::vo::{DeptTreeVO, SysDeptVO};
+use crate::system::domain::dto::{DeptAddDTO, DeptQueryDTO, DeptUpdateDTO};
+use crate::system::domain::mapper;
+use crate::system::domain::mapper::sys_dept;
+use crate::system::domain::mapper::sys_dept::SysDept;
+use crate::system::domain::vo::{DeptTreeVO, SysDeptVO};
 use crate::error::Error;
 use crate::error::Result;
 use crate::web_data::get_user_name;
-use crate::{ check_unique_sql, pool};
+use crate::{check_unique_sql, pool};
 use macros::data_scope;
 use rbatis::field_name;
 use rbs::to_value;
+use crate::modules::system::constants::{DEPT_DISABLE, DEPT_NORMAL};
 
 pub struct SysDeptService {}
 

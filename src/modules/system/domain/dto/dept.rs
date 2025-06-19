@@ -1,4 +1,4 @@
-use crate::config::global_variables::{DEL_FLAG_NORMAL, STATUS_NORMAL};
+use crate::config::global_constants::{DEL_FLAG_NORMAL, STATUS_NORMAL};
 use  crate::system::domain::mapper::sys_dept::SysDept;
 use macros::page_request;
 use rbatis::object_id::ObjectId;

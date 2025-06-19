@@ -1,4 +1,4 @@
-use crate::config::global_variables::SYS_YES;
+use crate::modules::system::constants::SYS_YES;
 use crate::context::CONTEXT;
 use  crate::system::domain::dto::{ConfigAddDTO, ConfigPageDTO, ConfigUpdateDTO};
 use  crate::system::domain::mapper::sys_config::SysConfig;

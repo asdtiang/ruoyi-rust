@@ -1,4 +1,4 @@
-use crate::config::global_variables::STATUS_NORMAL;
+use crate::config::global_constants::STATUS_NORMAL;
 use crate::context::CONTEXT;
 use  crate::system::domain::dto::{DictTypeAddDTO, DictTypePageDTO, DictTypeUpdateDTO};
 use  crate::system::domain::mapper::sys_dict_type::SysDictType;

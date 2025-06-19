@@ -19,6 +19,7 @@ mod sys_user_post_service;
 mod sys_user_role_service;
 mod sys_user_service;
 pub mod cache;
+pub mod dict_utils;
 
 pub use sys_auth_service::*;
 pub use sys_config_service::*;

@@ -8,9 +8,7 @@ use crate::{check_unique, pool, remove_batch};
 use rbatis::{field_name, Page, PageRequest};
 use rbs::to_value;
 use std::collections::HashMap;
-
-const DICT_KEY: &'static str = "sys_dict_data:all";
-
+use crate::system::service::dict_utils::get_dict_redis_key;
 
 pub struct SysDictDataService {}
 
@@ -80,7 +78,10 @@ impl SysDictDataService {
                 dict_data_map.insert(key, vec![data_sim]);
             }
         }
-          CONTEXT.cache_service.set_json(DICT_KEY, &dict_data_map).await?;
+        for (key, sims) in dict_data_map {
+            CONTEXT.cache_service.set_json(&get_dict_redis_key(&key), &sims).await?;
+        }
+         
         Ok(())
     }
 

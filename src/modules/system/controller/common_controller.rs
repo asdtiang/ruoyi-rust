@@ -36,3 +36,4 @@ pub async fn upload(mut multipart: Multipart) -> impl IntoResponse {
     }
     RespVO::<u64>::from_error_info(500, "上传失败！").into_response()
 }
+

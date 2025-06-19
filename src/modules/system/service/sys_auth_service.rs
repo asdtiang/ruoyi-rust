@@ -1,10 +1,9 @@
-use crate::config::cache_variables::{LOGIN_TOKEN_KEY, REDIS_UUID_CAPTCHA};
-use crate::config::global_variables::{ADMIN_NAME, ALL_PERMISSIONS, LOGIN_FAIL, LOGIN_SUC, STATUS_FORBIDDEN};
+use crate::config::global_constants::{ADMIN_NAME, LOGIN_FAIL, LOGIN_SUC, LOGIN_TOKEN_KEY, STATUS_FORBIDDEN};
 use crate::context::CONTEXT;
-use  crate::system::domain::dto::SignInDTO;
-use  crate::system::domain::mapper::sys_user::SysUser;
-use  crate::system::domain::mapper::sys_user_role::SysUserRole;
-use  crate::system::domain::vo::{JWTToken, SysUserVO, UserCache};
+use crate::system::domain::dto::SignInDTO;
+use crate::system::domain::mapper::sys_user::SysUser;
+use crate::system::domain::mapper::sys_user_role::SysUserRole;
+use crate::system::domain::vo::{JWTToken, SysUserVO, UserCache};
 use crate::error::Error;
 use crate::pool;
 use crate::utils::password_encoder::PasswordEncoder;
@@ -13,6 +12,8 @@ use rbatis::field_name;
 use rbatis::rbdc::DateTime;
 use std::time::Duration;
 use uuid::Uuid;
+use crate::modules::system::constants::{ALL_PERMISSIONS, REDIS_UUID_CAPTCHA};
+
 const REDIS_KEY_RETRY: &'static str = "login:login_retry";
 pub struct SysAuthService {}
 

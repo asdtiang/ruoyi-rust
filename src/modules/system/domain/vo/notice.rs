@@ -1,12 +1,16 @@
-use  crate::system::domain::mapper::sys_notice::SysNotice;
+use crate::system::domain::mapper::sys_notice::SysNotice;
+use macros::Export;
 use rbatis::rbdc::datetime::DateTime;
 
 #[derive(Clone, Debug, serde::Serialize, serde::Deserialize)]
 #[serde(rename_all = "camelCase")]
+#[derive(Export)]
 pub struct SysNoticeVO {
     pub notice_id: Option<String>,
+    #[excel("标题")]
     pub notice_title: Option<String>,
     pub notice_content: Option<String>,
+    #[excel("类型", dictType = "sys_notice_type", defaultValue = "12")]
     pub notice_type: Option<char>,
     pub create_by: Option<String>,
     pub create_time: Option<DateTime>,

@@ -1,4 +1,4 @@
-use crate::config::cache_variables::LOGIN_TOKEN_KEY;
+use crate::config::global_constants::LOGIN_TOKEN_KEY;
 use crate::context::CONTEXT;
 use  crate::system::domain::vo::{SysUserOnlineVO, UserCache};
 use crate::error::Error;

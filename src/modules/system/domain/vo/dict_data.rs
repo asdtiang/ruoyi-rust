@@ -1,10 +1,9 @@
-use  crate::system::domain::mapper::sys_dict_data::SysDictData;
+use crate::system::domain::mapper::sys_dict_data::SysDictData;
 use rbatis::rbdc::types::datetime::DateTime;
 
 #[derive(Clone, Debug, serde::Serialize, serde::Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct SysDictDataVO {
-
     pub dict_code: Option<String>,
     pub dict_sort: Option<u32>,
     pub dict_label: Option<String>,
@@ -44,23 +43,22 @@ impl From<SysDictData> for SysDictDataVO {
 
 impl SysDictDataVO {}
 
-
 #[derive(Clone, Debug, serde::Serialize, serde::Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct SysDictDataSimpleVO {
-    pub dict_label: Option<String>,
-    pub dict_value: Option<String>,
-    pub css_class: Option<String>,
-    pub list_class: Option<String>,
+    pub dict_label: String,
+    pub dict_value: String,
+    pub css_class: String,
+    pub list_class: String,
 }
 
 impl From<SysDictData> for SysDictDataSimpleVO {
     fn from(arg: SysDictData) -> Self {
         Self {
-            dict_label: arg.dict_label,
-            dict_value: arg.dict_value,
-            css_class: arg.css_class,
-            list_class: arg.list_class,
+            dict_label: arg.dict_label.unwrap_or_default(),
+            dict_value: arg.dict_value.unwrap_or_default(),
+            css_class: arg.css_class.unwrap_or_default(),
+            list_class: arg.list_class.unwrap_or_default(),
         }
     }
 }

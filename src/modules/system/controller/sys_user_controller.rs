@@ -1,10 +1,12 @@
-use crate::config::global_variables::ADMIN_NAME;
+use axum::body::Bytes;
+use crate::config::global_constants::ADMIN_NAME;
 use crate::context::CONTEXT;
 use  crate::system::domain::dto::{UserAddDTO, UserPageDTO, UserRoleAuthQueryDTO, UserUpdateDTO};
 use  crate::system::domain::vo::SysUserVO;
 use crate::{PageVO, RespJson, RespVO};
 use crate::web_data::{ get_user_name};
 use axum::extract::{Path, Query};
+use axum::http::{header, HeaderMap, HeaderValue};
 use axum::response::IntoResponse;
 use axum::Json;
 use macros::pre_authorize;
@@ -171,4 +173,27 @@ pub async fn reset_pwd(dto: Json<UserUpdateDTO>) -> impl IntoResponse {
 pub async fn change_status(dto: Json<UserUpdateDTO>) -> impl IntoResponse {
     let res = CONTEXT.sys_user_service.update_status(&dto.0).await;
     RespVO::<u64>::judge_result(&res, "更新成功！", "").into_response()
+}
+#[pre_authorize("system:user:export")]
+pub async fn export_to_excel(dto: Json<UserPageDTO>) -> impl IntoResponse {
+    let bytes = CONTEXT.sys_user_service.export(&dto.0).await;
+
+    if let Ok(bytes) = bytes {
+        // 设置响应头
+        let mut headers = HeaderMap::new();
+        headers.insert(
+            header::CONTENT_TYPE,
+            HeaderValue::from_static(
+                "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+            )
+        );
+        headers.insert(
+            header::CONTENT_DISPOSITION,
+            HeaderValue::from_str("attachment; filename=\"export.xlsx\"").unwrap()
+        );
+        headers.insert(header::CONTENT_LENGTH, HeaderValue::from(bytes.len()));
+        (headers, Bytes::from(bytes)).into_response()
+    } else {
+        RespVO::<u64>::from_error_info(500, "导出错误！").into_response()
+    }
 }

@@ -57,7 +57,7 @@ impl GenTableService {
     //     result
     // }
 
-    #[transactional]
+    #[transactional(tx)]
     pub async fn update(&self, dto: GenTableUpdateDTO) -> Result<u64> {
         let columns = dto.columns.clone();
         let mut data = GenTable::from(dto);
@@ -76,7 +76,7 @@ impl GenTableService {
         Ok(result.rows_affected)
     }
 
-    #[transactional]
+    #[transactional(tx)]
     pub async fn remove(&self, table_id: &str) -> Result<u64> {
         // let targets = GenTable::select_by_column(&tx, "table_id", table_id).await?;
 
@@ -88,7 +88,7 @@ impl GenTableService {
     }
     remove_batch!(table_ids);
 
-    #[transactional]
+    #[transactional(tx)]
     pub async fn import_gen_table(&self, table_name_list: Vec<&str>) -> Result<Vec<GenTable>> {
         let tables = gen_table::select_db_table_list_by_names(&tx, &table_name_list).await?;
         let mut res = vec![];

@@ -65,6 +65,11 @@ impl From<rbatis::Error> for Error {
         Error::E(arg.to_string())
     }
 }
+impl From<rust_xlsxwriter::XlsxError> for Error {
+    fn from(arg: rust_xlsxwriter::XlsxError) -> Self {
+        Error::E(arg.to_string())
+    }
+}
 
 impl Clone for Error {
     fn clone(&self) -> Self {

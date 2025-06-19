@@ -1,4 +1,4 @@
-use crate::config::global_variables::ADMIN_NAME;
+use crate::config::global_constants::ADMIN_NAME;
 use crate::context::CONTEXT;
 use  crate::system::domain::dto::{MenuAddDTO, MenuPageDTO, MenuUpdateDTO};
 use  crate::system::domain::mapper::sys_menu::SysMenu;

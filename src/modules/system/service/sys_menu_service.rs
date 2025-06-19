@@ -1,16 +1,17 @@
-use crate::config::global_variables::{
-    ADMIN_NAME, CHAR_FALSE, INNER_LINK, LAYOUT, PARENT_VIEW, TYPE_DIR, TYPE_MENU,
+use crate::config::global_constants::{
+    ADMIN_NAME, CHAR_FALSE,
 };
-use  crate::system::domain::dto::MenuPageDTO;
+use crate::system::domain::dto::MenuPageDTO;
 use rbatis::field_name;
 use rbs::to_value;
 use std::collections::BTreeMap;
 
 use crate::context::CONTEXT;
-use  crate::system::domain::mapper::sys_menu::SysMenu;
-use  crate::system::domain::vo::{MenuTreeSelectVO, MetaVO, RouterVO, SysMenuVO, UserCache};
+use crate::system::domain::mapper::sys_menu::SysMenu;
+use crate::system::domain::vo::{MenuTreeSelectVO, MetaVO, RouterVO, SysMenuVO, UserCache};
 use crate::error::Error;
 use crate::error::Result;
+use crate::modules::system::constants::{INNER_LINK, LAYOUT, PARENT_VIEW, TYPE_DIR, TYPE_MENU};
 use crate::pool;
 use crate::utils::string::capitalize;
 

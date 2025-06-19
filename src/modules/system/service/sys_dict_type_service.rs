@@ -2,11 +2,11 @@ use rbatis::{field_name, Page, PageRequest};
 use rbs::to_value;
 
 use crate::context::CONTEXT;
-use  crate::system::domain::dto::DictTypePageDTO;
-use  crate::system::domain::mapper::sys_dict_type::SysDictType;
-use  crate::system::domain::vo::SysDictTypeVO;
 use crate::error::Error;
 use crate::error::Result;
+use crate::system::domain::dto::DictTypePageDTO;
+use crate::system::domain::mapper::sys_dict_type::SysDictType;
+use crate::system::domain::vo::SysDictTypeVO;
 use crate::{check_unique, pool, remove_batch};
 
 pub struct SysDictTypeService {}

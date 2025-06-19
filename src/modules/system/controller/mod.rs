@@ -62,6 +62,7 @@ fn user_api() -> Router {
         .route("/profile", get(sys_profile_controller::profile))
         .route("/profile", put(sys_profile_controller::profile))
         .route("/updatePwd", put(sys_profile_controller::update_pwd))
+        .route("/export", post(sys_user_controller::export_to_excel))
 }
 
 fn menu_api() -> Router {
@@ -171,4 +172,5 @@ fn notice_api() -> Router {
         .route("/", post(sys_notice_controller::add))
         .route("/", put(sys_notice_controller::update))
         .route("/{notice_id}", delete(sys_notice_controller::remove))
+        .route("/export", post(sys_notice_controller::export_to_excel))
 }

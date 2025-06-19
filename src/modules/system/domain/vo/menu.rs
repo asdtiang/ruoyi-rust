@@ -1,6 +1,7 @@
-use crate::config::global_variables::{CHAR_FALSE, TYPE_DIR, TYPE_MENU};
-use  crate::system::domain::mapper::sys_menu::SysMenu;
+use crate::config::global_constants::CHAR_FALSE;
+use crate::system::domain::mapper::sys_menu::SysMenu;
 use rbatis::rbdc::types::datetime::DateTime;
+use crate::modules::system::constants::{TYPE_DIR, TYPE_MENU};
 
 #[derive(Clone, Debug, serde::Serialize, serde::Deserialize)]
 #[serde(rename_all = "camelCase")]
