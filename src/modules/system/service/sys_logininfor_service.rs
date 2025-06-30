@@ -1,9 +1,9 @@
 use  crate::system::domain::dto::LogininforPageDTO;
 use  crate::system::domain::mapper::sys_logininfor::SysLogininfor;
 use crate::error::Result;
-use crate::pool;
+use crate::{export_excel_service, pool};
 use rbatis::{Page, PageRequest};
-
+use crate::system::domain::vo::SysLogininforVO;
 
 pub struct SysLogininforService {}
 
@@ -33,4 +33,5 @@ impl SysLogininforService {
                          vec![]).await.unwrap();
         Ok(res.rows_affected)
     }
+    export_excel_service!(LogininforPageDTO, SysLogininforVO,SysLogininfor::select_page);
 }

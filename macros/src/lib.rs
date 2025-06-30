@@ -604,6 +604,7 @@ struct ExcelAttribute {
     read_converter_exp:Option<LitStr>,
     num_format: Option<LitStr>,
     width:Option<LitFloat>,
+    attr_type:Option<syn::Path>
 }
 macro_rules! to_token_string {
     ($self_:ident,$name:ident,$tokens:ident) => {
@@ -644,6 +645,7 @@ impl ToTokens for ExcelAttribute {
         to_token_string! (self,read_converter_exp,tokens);
         to_token_string! (self,num_format,tokens);
         to_token_int! (self,width,tokens);
+        to_token_int! (self,attr_type,tokens);
     }
 }
 #[proc_macro_derive(Export, attributes(excel))]
@@ -665,7 +667,8 @@ pub fn export(item: TokenStream) -> TokenStream {
             default_value: None,
             read_converter_exp:None,
             num_format: None,
-            width:None
+            width:None,
+            attr_type: None,
         };
         // 解析位置参数（字符串字面量）
         if input.peek(syn::LitStr) {
@@ -712,7 +715,10 @@ pub fn export(item: TokenStream) -> TokenStream {
                             excel_attr.width = Some(input.parse::<syn::LitFloat>()?);
                         }
                     }
-                    _ => return Err(input.error("Unknown parameter, expected `path`")),
+                    "attrType" => {
+                            excel_attr.attr_type = Some(input.parse::<syn::Path>()?);
+                    }
+                    _ => return Err(input.error(format!("Unknown parameter {}, expected `path`",ident.to_string().as_str()))),
                 }
             } else if excel_attr.name.is_none() && input.peek(syn::LitStr) {
                 // 处理没有前置逗号的位置参数
@@ -752,7 +758,6 @@ pub fn export(item: TokenStream) -> TokenStream {
                         excel_gen_attr.push(crate::ExcelGenAttr{
                                 camel_case_indent: #ident_camel_case.to_string(),
                                #dto_attr
-                            read_converter_map:None
                         });
                     })
                 }
@@ -760,8 +765,8 @@ pub fn export(item: TokenStream) -> TokenStream {
         }
     }
     let res = quote! {
-       impl #ident {
-         pub fn get_excel_attr()->Vec<crate::ExcelGenAttr> {
+       impl crate::ExcelGenAttrTrait for #ident {
+         fn get_excel_attr()->Vec<crate::ExcelGenAttr> {
                 let mut excel_gen_attr=vec!();
                 #expand
                excel_gen_attr

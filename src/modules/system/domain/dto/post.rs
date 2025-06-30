@@ -1,4 +1,4 @@
-use  crate::system::domain::mapper::sys_post::SysPost;
+use crate::system::domain::mapper::sys_post::SysPost;
 use macros::page_request;
 use rbatis::object_id::ObjectId;
 use rbatis::rbdc::datetime::DateTime;
@@ -13,12 +13,21 @@ pub struct PostPageDTO {
     pub status: Option<char>,
 }
 
-#[derive(Serialize, Deserialize, Clone, Debug)]
+#[derive(Serialize, Deserialize, validator::Validate, Clone, Debug)]
 #[serde(rename_all = "camelCase")]
 pub struct PostAddDTO {
+    /** 岗位编码 */
+    #[validate(custom(function = "crate::string_required", message = "岗位编码不能为空"))]
+    #[validate(length(max = 64, message = "岗位编码长度不能超过64个字符"))]
     pub post_code: Option<String>,
+    /** 岗位名称 */
+    #[validate(custom(function = "crate::string_required", message = "岗位名称不能为空"))]
+    #[validate(length(max = 50, message = "岗位名称长度不能超过50个字符"))]
     pub post_name: Option<String>,
+    /** 岗位排序 */
+    #[validate(required(message = "显示顺序不能为空"))]
     pub post_sort: Option<u16>,
+    /** 状态（0正常 1停用） */
     pub status: Option<char>,
     pub remark: Option<String>,
 }
@@ -40,13 +49,23 @@ impl From<PostAddDTO> for SysPost {
     }
 }
 
-#[derive(Serialize, Deserialize, Clone, Debug)]
+#[derive(Serialize, Deserialize, validator::Validate, Clone, Debug)]
 #[serde(rename_all = "camelCase")]
 pub struct PostUpdateDTO {
+    /** 岗位序号 */
     pub post_id: Option<String>,
+    /** 岗位编码 */
+    #[validate(custom(function = "crate::string_required", message = "岗位编码不能为空"))]
+    #[validate(length(max = 64, message = "岗位编码长度不能超过64个字符"))]
     pub post_code: Option<String>,
+    /** 岗位名称 */
+    #[validate(custom(function = "crate::string_required", message = "岗位名称不能为空"))]
+    #[validate(length(max = 50, message = "岗位名称长度不能超过50个字符"))]
     pub post_name: Option<String>,
+    /** 岗位排序 */
+    #[validate(required(message = "显示顺序不能为空"))]
     pub post_sort: Option<u16>,
+    /** 状态（0正常 1停用） */
     pub status: Option<char>,
     pub remark: Option<String>,
 }

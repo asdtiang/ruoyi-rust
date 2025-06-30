@@ -8,29 +8,42 @@ use serde::{Deserialize, Serialize};
 #[serde(rename_all = "camelCase")]
 #[derive(Export)]
 pub struct SysUserVO {
-    #[excel("用户序号", width = 20.0)]
+    /** 用户ID */
+    #[excel( "用户序号")]
     pub user_id: Option<String>,
-    #[excel("部门编号")]
+    /** 部门ID */
+    #[excel( "部门编号", attrType = crate::AttrType::IMPORT )]
     pub dept_id: Option<String>,
-    #[excel("登录名称")]
+    /** 用户账号 */
+    #[excel( "登录名称")]
     pub user_name: Option<String>,
-    #[excel("用户昵称")]
+    /** 用户昵称 */
+    #[excel( "用户名称")]
     pub nick_name: Option<String>,
-    #[excel("用户邮箱")]
+    /** 用户邮箱 */
+    #[excel( "用户邮箱")]
     pub email: Option<String>,
-    #[excel("手机号码")]
+    /** 手机号码 */
+    #[excel( "手机号码")]
     pub phonenumber: Option<String>,
-    #[excel("用户性别", readConverterExp = "0=男,1=女,2=未知")]
+    /** 用户性别 */
+    #[excel( "用户性别", readConverterExp = "0=男,1=女,2=未知")]
     pub sex: Option<char>,
+    /** 用户头像 */
     pub avatar: Option<String>,
+    /** 密码 */
     pub password: Option<String>,
-    #[excel("帐号状态", readConverterExp = "0=正常,1=停用")]
+    /** 帐号状态（0正常 1停用） */
+    #[excel( "帐号状态", readConverterExp = "0=正常,1=停用")]
     pub status: Option<char>,
+    /** 删除标志（0代表存在 2代表删除） */
     pub del_flag: Option<char>,
-    #[excel("最后登录IP")]
+    /** 最后登录IP */
+    #[excel( "最后登录IP", attrType = crate::AttrType::EXPORT )]
     pub login_ip: Option<String>,
-    #[excel("最后登录时间")]
     #[serde(with = "crate::utils::date_time_format")]
+    #[excel( "最后登录时间", width = 30.0, attrType = crate::AttrType::EXPORT )]
+    /** 最后登录时间 */
     pub login_date: Option<DateTime>,
     pub create_by: Option<String>,
     #[serde(with = "crate::utils::date_time_format")]
@@ -40,7 +53,9 @@ pub struct SysUserVO {
     pub remark: Option<String>,
     pub admin: bool,
     //fixme 将移除，以提高性能
+    /** 部门对象 */
     pub dept: Option<SysDeptVO>,
+    /** 角色对象 */
     pub roles: Option<Vec<SysRoleVO>>,
 }
 

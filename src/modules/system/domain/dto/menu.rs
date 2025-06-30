@@ -18,35 +18,42 @@ impl Default for MenuPageDTO {
         }
     }
 }
-#[derive(Serialize, Deserialize, Clone, Debug)]
+#[derive(Serialize, Deserialize,validator::Validate, Clone, Debug)]
 #[serde(rename_all = "camelCase")]
 pub struct MenuAddDTO {
-    //#[validate(length(min = 2, max = 10, message = "菜单名称长度在2到10之间"))]
-    //#[validate(required(message = "菜单"))]
+    /** 菜单名称 */
+    #[validate(custom(function = "crate::string_required", message = "菜单名称不能为空"))]
+    #[validate(length(max = 50, message = "菜单名称长度不能超过50个字符"))]
     pub menu_name: Option<String>,
     //父id(可空)
+    /** 父菜单ID */
     pub parent_id: Option<String>,
-    //顺序
+    /** 显示顺序 */
+    #[validate(required(message = "显示顺序不能为空"))]
     pub order_num: Option<u32>,
-    //前端-菜单路径
+    /** 路由地址 */
+    #[validate(length(max = 200, message = "路由地址不能超过200个字符"))]
     pub path: Option<String>,
-    //组件路径
+    /** 组件路径 */
+    #[validate(length(max = 200, message = "组件路径不能超过255个字符"))]
     pub component: Option<String>,
-    //组件路径
+    /** 路由参数 */
     pub query: Option<String>,
-    //是否为外链
+    /** 是否为外链（0是 1否） */
     pub is_frame: Option<char>,
-    //是否缓存
+    /** 是否缓存（0缓存 1不缓存） */
     pub is_cache: Option<char>,
-    //菜单类型
+    /** 类型（M目录 C菜单 F按钮） */
+    #[validate(required(message = "菜单类型不能为空"))]
     pub menu_type: Option<char>,
-    //菜单可见
+    /** 显示状态（0显示 1隐藏） */
     pub visible: Option<char>,
-    //菜单状态
+    /** 菜单状态（0正常 1停用） */
     pub status: Option<char>,
-    //权限标识
+    /** 权限字符串 */
+    #[validate(length(max = 100, message = "权限标识长度不能超过100个字符"))]
     pub perms: Option<String>,
-    //图标
+    /** 菜单图标 */
     pub icon: Option<String>,
     pub remark: Option<String>,
 }
@@ -78,34 +85,43 @@ impl From<MenuAddDTO> for SysMenu {
     }
 }
 
-#[derive(Serialize, Deserialize, Clone, Debug)]
+#[derive(Serialize, Deserialize, validator::Validate,Clone, Debug)]
 #[serde(rename_all = "camelCase")]
 pub struct MenuUpdateDTO {
+    /** 菜单ID */
     pub menu_id: Option<String>,
+    /** 菜单名称 */
+    #[validate(custom(function = "crate::string_required", message = "菜单名称不能为空"))]
+    #[validate(length(max = 50, message = "菜单名称长度不能超过50个字符"))]
     pub menu_name: Option<String>,
-    //父id(可空)
+    /** 父菜单ID */
     pub parent_id: Option<String>,
-    //顺序
+    /** 显示顺序 */
+    #[validate(required(message = "显示顺序不能为空"))]
     pub order_num: Option<u32>,
-    //前端-菜单路径
+    /** 路由地址 */
+    #[validate(length(max = 200, message = "路由地址不能超过200个字符"))]
     pub path: Option<String>,
-    //组件路径
+    /** 组件路径 */
+    #[validate(length(max = 200, message = "组件路径不能超过255个字符"))]
     pub component: Option<String>,
-    //组件路径
+    /** 路由参数 */
     pub query: Option<String>,
-    //是否为外链
+    /** 是否为外链（0是 1否） */
     pub is_frame: Option<char>,
-    //是否缓存
+    /** 是否缓存（0缓存 1不缓存） */
     pub is_cache: Option<char>,
-    //菜单类型
+    /** 类型（M目录 C菜单 F按钮） */
+    #[validate(required(message = "菜单类型不能为空"))]
     pub menu_type: Option<char>,
-    //菜单可见
+    /** 显示状态（0显示 1隐藏） */
     pub visible: Option<char>,
-    //菜单状态
+    /** 菜单状态（0正常 1停用） */
     pub status: Option<char>,
-    //权限标识
+    /** 权限字符串 */
+    #[validate(length(max = 100, message = "权限标识长度不能超过100个字符"))]
     pub perms: Option<String>,
-    //图标
+    /** 菜单图标 */
     pub icon: Option<String>,
     pub update_by: Option<String>,
     pub update_time: Option<DateTime>,

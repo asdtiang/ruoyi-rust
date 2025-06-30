@@ -111,3 +111,56 @@ macro_rules! remove_batch {
     }
     };
 }
+
+#[macro_export]
+macro_rules! export_excel_controller {
+    ($priv:expr,$page_dto:ident,$context:ident,$service:ident,$export_method:ident  )=> {
+         #[pre_authorize($priv)]
+        pub async fn export_to_excel(dto: Json<$page_dto>) -> impl IntoResponse {
+            let bytes = $context.$service.$export_method(&dto.0).await;
+        
+            if let Ok(bytes) = bytes {
+                // 设置响应头
+                let mut headers = axum::http::HeaderMap::new();
+                headers.insert(
+                    axum::http::header::CONTENT_TYPE,
+                    axum::http::HeaderValue::from_static(
+                        "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+                    )
+                );
+                headers.insert(
+                    axum::http::header::CONTENT_DISPOSITION,
+                    axum::http::HeaderValue::from_str("attachment; filename=\"export.xlsx\"").unwrap()
+                );
+                headers.insert(axum::http::header::CONTENT_LENGTH, axum::http::HeaderValue::from(bytes.len()));
+                (headers, axum::body::Bytes::from(bytes)).into_response()
+            } else {
+                RespVO::<u64>::from_error_info(500, "导出错误！").into_response()
+            }
+        }
+    };
+}
+
+#[macro_export]
+macro_rules! export_excel_service {
+    ($page_dto:ident,$entity_vo:ident,$page_method:path)=> {
+          pub async fn export_as_excel_bytes(&self, arg: &$page_dto) -> Result<Vec<u8>> {
+        let mut dto = arg.clone();
+        dto.page_no=Some(1);
+        dto.page_size = Some(u64::MAX);
+        let mut res = Vec::new();
+        loop {
+            let data = $page_method(pool!(), &PageRequest::from(&dto), &dto).await?;
+            data.records
+                .into_iter()
+                .for_each(|r| res.push($entity_vo::from(r)));
+            if data.page_size * data.page_no >= data.total {
+                break;
+            }
+            dto.page_no = dto.page_no.map(|p| p + 1);
+        }
+
+        crate::utils::excel_utils::to_excel(& res).await
+    }
+    };
+}

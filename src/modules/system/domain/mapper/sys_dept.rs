@@ -6,15 +6,25 @@ use rbs::Error;
 crud!(SysDept {});
 #[derive(Clone, Debug, serde::Serialize, serde::Deserialize)]
 pub struct SysDept {
+    /** 部门ID */
     pub dept_id: Option<String>,
+    /** 父部门ID */
     pub parent_id: Option<String>,
+    /** 祖级列表 */
     pub ancestors: Option<String>,
+    /** 部门名称 */
     pub dept_name: Option<String>,
+    /** 显示顺序 */
     pub order_num: Option<u16>,
+    /** 负责人 */
     pub leader: Option<String>,
+    /** 联系电话 */
     pub phone: Option<String>,
+    /** 邮箱 */
     pub email: Option<String>,
+    /** 部门状态:0正常,1停用 */
     pub status: Option<char>,
+    /** 删除标志（0代表存在 2代表删除） */
     pub del_flag: Option<char>,
     pub create_by: Option<String>,
     pub create_time: Option<DateTime>,

@@ -1,18 +1,29 @@
-use  crate::system::domain::mapper::sys_dept::SysDept;
+use crate::system::domain::mapper::sys_dept::SysDept;
 use rbatis::rbdc::datetime::DateTime;
 
 #[derive(Clone, Debug, serde::Serialize, serde::Deserialize)]
 #[serde(rename_all = "camelCase")]
+#[derive( macros::Export)]
 pub struct SysDeptVO {
+    /** 部门ID */
     pub dept_id: Option<String>,
+    /** 父部门ID */
     pub parent_id: Option<String>,
+    /** 祖级列表 */
     pub ancestors: Option<String>,
+    /** 部门名称 */
     pub dept_name: Option<String>,
+    /** 显示顺序 */
     pub order_num: Option<u16>,
+    /** 负责人 */
     pub leader: Option<String>,
+    /** 联系电话 */
     pub phone: Option<String>,
+    /** 邮箱 */
     pub email: Option<String>,
+    /** 部门状态:0正常,1停用 */
     pub status: Option<char>,
+    /** 删除标志（0代表存在 2代表删除） */
     pub del_flag: Option<char>,
     pub create_by: Option<String>,
     pub create_time: Option<DateTime>,
@@ -41,14 +52,15 @@ impl From<SysDept> for SysDeptVO {
     }
 }
 
-
 #[derive(Clone, Debug, serde::Serialize, serde::Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct DeptTreeVO {
     pub id: Option<String>,
+    /** 父部门ID */
     #[serde(skip_serializing)]
     pub parent_id: Option<String>,
     pub label: Option<String>,
+    /** 子部门 */
     #[serde(skip_serializing_if = "Option::is_none")]
     pub children: Option<Vec<DeptTreeVO>>,
 }

@@ -5,19 +5,32 @@ use rbatis::{crud, impl_select, pysql_select_page};
 
 #[derive(Clone, Debug, serde::Serialize, serde::Deserialize)]
 pub struct SysUser {
+    /** 用户ID */
     pub user_id: Option<String>,
+    /** 部门ID */
     pub dept_id: Option<String>,
+    /** 用户账号 */
     pub user_name: Option<String>,
+    /** 用户昵称 */
     pub nick_name: Option<String>,
     // pub user_type: Option<String>, fixme 目前没有用上
+    /** 用户邮箱 */
     pub email: Option<String>,
+    /** 手机号码 */
     pub phonenumber: Option<String>,
+    /** 用户性别 */
     pub sex: Option<char>,
+    /** 用户头像 */
     pub avatar: Option<String>,
+    /** 密码 */
     pub password: Option<String>,
+    /** 帐号状态（0正常 1停用） */
     pub status: Option<char>,
+    /** 删除标志（0代表存在 2代表删除） */
     pub del_flag: Option<char>,
+    /** 最后登录IP */
     pub login_ip: Option<String>,
+    /** 最后登录时间 */
     pub login_date: Option<DateTime>,
     pub create_by: Option<String>,
     pub create_time: Option<DateTime>,

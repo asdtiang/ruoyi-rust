@@ -1,4 +1,4 @@
-use  crate::system::domain::mapper::sys_dict_type::SysDictType;
+use crate::system::domain::mapper::sys_dict_type::SysDictType;
 use macros::page_request;
 use rbatis::object_id::ObjectId;
 use rbatis::rbdc::datetime::DateTime;
@@ -14,13 +14,21 @@ pub struct DictTypePageDTO {
     pub status: Option<char>,
 }
 
-#[derive(Serialize, Deserialize, Clone, Debug)]
+#[derive(Serialize, Deserialize, validator::Validate, Clone, Debug)]
 #[serde(rename_all = "camelCase")]
 pub struct DictTypeAddDTO {
+    /** 字典名称 */
+    #[validate(custom(function = "crate::string_required", message = "字典名称不能为空"))]
+    #[validate(length(max = 100, message = "字典类型名称长度不能超过100个字符"))]
     pub dict_name: Option<String>,
+    /** 字典类型 */
+    #[validate(custom(function = "crate::string_required", message = "字典类型不能为空"))]
+    #[validate(length(max = 100, message = "字典类型类型长度不能超过100个字符"))]
+    //todo @Pattern(regexp = "^[a-z][a-z0-9_]*$", message = "字典类型必须以字母开头，且只能为（小写字母，数字，下滑线）")))]
     pub dict_type: Option<String>,
+    /** 状态（0正常 1停用） */
     pub status: Option<char>,
-    pub remark: Option<String>
+    pub remark: Option<String>,
 }
 
 impl From<DictTypeAddDTO> for SysDictType {
@@ -34,17 +42,26 @@ impl From<DictTypeAddDTO> for SysDictType {
             create_time: DateTime::now().set_nano(0).into(),
             update_by: None,
             update_time: None,
-            remark: arg.remark
+            remark: arg.remark,
         }
     }
 }
 
-#[derive(Serialize, Deserialize, Clone, Debug)]
+#[derive(Serialize, Deserialize, validator::Validate, Clone, Debug)]
 #[serde(rename_all = "camelCase")]
 pub struct DictTypeUpdateDTO {
+    /** 字典主键 */
     pub dict_id: Option<String>,
+    /** 字典名称 */
+    #[validate(custom(function = "crate::string_required", message = "字典名称不能为空"))]
+    #[validate(length(max = 100, message = "字典类型名称长度不能超过100个字符"))]
     pub dict_name: Option<String>,
+    /** 字典类型 */
+    #[validate(custom(function = "crate::string_required", message = "字典类型不能为空"))]
+    #[validate(length(max = 100, message = "字典类型类型长度不能超过100个字符"))]
+    //todo @Pattern(regexp = "^[a-z][a-z0-9_]*$", message = "字典类型必须以字母开头，且只能为（小写字母，数字，下滑线）")))]
     pub dict_type: Option<String>,
+    /** 状态（0正常 1停用） */
     pub status: Option<char>,
     pub remark: Option<String>,
 }

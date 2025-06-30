@@ -1,12 +1,10 @@
-use axum::body::Bytes;
 use crate::config::global_constants::ADMIN_NAME;
 use crate::context::CONTEXT;
-use  crate::system::domain::dto::{UserAddDTO, UserPageDTO, UserRoleAuthQueryDTO, UserUpdateDTO};
-use  crate::system::domain::vo::SysUserVO;
-use crate::{PageVO, RespJson, RespVO};
-use crate::web_data::{ get_user_name};
+use crate::system::domain::dto::{UserAddDTO, UserPageDTO, UserRoleAuthQueryDTO, UserUpdateDTO};
+use crate::system::domain::vo::SysUserVO;
+use crate::web_data::get_user_name;
+use crate::{export_excel_controller, PageVO, RespJson, RespVO};
 use axum::extract::{Path, Query};
-use axum::http::{header, HeaderMap, HeaderValue};
 use axum::response::IntoResponse;
 use axum::Json;
 use macros::pre_authorize;
@@ -20,8 +18,8 @@ pub async fn list(dto: Json<UserPageDTO>) -> impl IntoResponse {
 
 //#[post("/user")]
 #[pre_authorize("system:user:add")]
-pub async fn add(arg: Json<UserAddDTO>) -> impl IntoResponse {
-    let rows_affected = CONTEXT.sys_user_service.add(&arg.0).await;
+pub async fn add(arg: axum_valid::Valid<Json<UserAddDTO>>) -> impl IntoResponse {
+    let rows_affected = CONTEXT.sys_user_service.add(&arg.0 .0).await;
 
     RespVO::from_result(&rows_affected).into_response()
 }
@@ -76,32 +74,31 @@ pub async fn detail(user_id: Option<Path<String>>) -> impl IntoResponse {
 
 //#[put("/user")]
 #[pre_authorize("system:user:edit")]
-pub async fn update(arg: Json<UserUpdateDTO>) -> impl IntoResponse {
-    let res = CONTEXT.sys_user_service.update(arg.0).await;
+pub async fn update(arg: axum_valid::Valid<Json<UserUpdateDTO>>) -> impl IntoResponse {
+    let res = CONTEXT.sys_user_service.update(arg.0 .0).await;
     RespVO::from_result(&res).into_response()
 }
 
 //#[get("/user/{user_id}")]
 #[pre_authorize("system:user:remove")]
 pub async fn remove(user_id: Path<String>) -> impl IntoResponse {
-
-   //  let user_ids=user_id.0.split(",").collect::<Vec<&str>>();
-   //  let user_cache=CONTEXT.sys_user_service.get_user_cache_by_token(&get_token()).await;
-   //  match user_cache {
-   //      Ok(u) => {
-   //          if user_ids.contains(&u.id.as_str()) {
-   //              return RespVO::<u64>::from_error_info(500,"当前用户不能删除").into_response();
-   //          }
-   //      }
-   //      Err(_) => {}
-   //  }
-   //  let mut cnt=0;
-   // for user_id in user_ids {
-   //     let rows_affected = CONTEXT.sys_user_service.remove(user_id).await;
-   //     cnt=cnt+rows_affected.unwrap_or_default();
-   // }
+    //  let user_ids=user_id.0.split(",").collect::<Vec<&str>>();
+    //  let user_cache=CONTEXT.sys_user_service.get_user_cache_by_token(&get_token()).await;
+    //  match user_cache {
+    //      Ok(u) => {
+    //          if user_ids.contains(&u.id.as_str()) {
+    //              return RespVO::<u64>::from_error_info(500,"当前用户不能删除").into_response();
+    //          }
+    //      }
+    //      Err(_) => {}
+    //  }
+    //  let mut cnt=0;
+    // for user_id in user_ids {
+    //     let rows_affected = CONTEXT.sys_user_service.remove(user_id).await;
+    //     cnt=cnt+rows_affected.unwrap_or_default();
+    // }
     let rows_affected = CONTEXT.sys_user_service.remove_batch(&user_id).await;
-    RespVO::<u64>::judge_result(&rows_affected,"删除成功","删除失败").into_response()
+    RespVO::<u64>::judge_result(&rows_affected, "删除成功", "删除失败").into_response()
 }
 
 //#[get("/user/deptTree")]
@@ -174,26 +171,10 @@ pub async fn change_status(dto: Json<UserUpdateDTO>) -> impl IntoResponse {
     let res = CONTEXT.sys_user_service.update_status(&dto.0).await;
     RespVO::<u64>::judge_result(&res, "更新成功！", "").into_response()
 }
-#[pre_authorize("system:user:export")]
-pub async fn export_to_excel(dto: Json<UserPageDTO>) -> impl IntoResponse {
-    let bytes = CONTEXT.sys_user_service.export(&dto.0).await;
-
-    if let Ok(bytes) = bytes {
-        // 设置响应头
-        let mut headers = HeaderMap::new();
-        headers.insert(
-            header::CONTENT_TYPE,
-            HeaderValue::from_static(
-                "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-            )
-        );
-        headers.insert(
-            header::CONTENT_DISPOSITION,
-            HeaderValue::from_str("attachment; filename=\"export.xlsx\"").unwrap()
-        );
-        headers.insert(header::CONTENT_LENGTH, HeaderValue::from(bytes.len()));
-        (headers, Bytes::from(bytes)).into_response()
-    } else {
-        RespVO::<u64>::from_error_info(500, "导出错误！").into_response()
-    }
-}
+export_excel_controller!(
+    "system:user:export",
+    UserPageDTO,
+    CONTEXT,
+    sys_user_service,
+    export_as_excel_bytes
+);

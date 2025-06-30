@@ -1,13 +1,16 @@
+use axum::error_handling::HandleErrorLayer;
+use axum::extract::DefaultBodyLimit;
+use axum::http::{Request, StatusCode};
+use ruoyi_rust::build_api;
+use ruoyi_rust::context::CONTEXT;
 use std::fmt::format;
 use std::net::SocketAddr;
 use std::path::PathBuf;
-use axum::extract::DefaultBodyLimit;
-use axum::Router;
-use tower_http::compression::{CompressionLayer};
+use axum::{middleware,  Router};
 use tower_http::compression::predicate::SizeAbove;
-use ruoyi_rust::context::CONTEXT;
+use tower_http::compression::CompressionLayer;
 use tower_http::services::{ServeDir, ServeFile};
-use ruoyi_rust::build_api;
+use ruoyi_rust::token_auth::middleware::error_handler;
 
 #[tokio::main]
 async fn main() -> std::io::Result<()> {
@@ -34,15 +37,19 @@ async fn main() -> std::io::Result<()> {
     );
     //router
     let app = Router::new()
-        .nest(&CONTEXT.config.base_api, build_api().nest_service(
-            "/profile",
-            ServeDir::new(PathBuf::from(&CONTEXT.config.upload_path).join("profile")),
-        ))
-        .layer(CompressionLayer::new().compress_when(SizeAbove::new(2048)))//启动压缩
+        .nest(
+            &CONTEXT.config.base_api,
+            build_api().nest_service(
+                "/profile",
+                ServeDir::new(PathBuf::from(&CONTEXT.config.upload_path).join("profile")),
+            ),
+        )
+        .layer(CompressionLayer::new().compress_when(SizeAbove::new(2048))) //启动压缩
         .layer(DefaultBodyLimit::disable())
         .layer(tower_http::limit::RequestBodyLimitLayer::new(
-            CONTEXT.config.upload_max_size * 1024 * 1024, 
+            CONTEXT.config.upload_max_size * 1024 * 1024,
         ))
+        .layer(middleware::from_fn(error_handler))
         .fallback_service(
             ServeDir::new("./dist/").not_found_service(ServeFile::new("./dist/index.html")),
         )
@@ -59,5 +66,11 @@ async fn main() -> std::io::Result<()> {
     let listener = tokio::net::TcpListener::bind(&CONTEXT.config.server_url)
         .await
         .unwrap();
-    axum::serve(listener, app.into_make_service_with_connect_info::<SocketAddr>()).await
+    axum::serve(
+        listener,
+        app.into_make_service_with_connect_info::<SocketAddr>(),
+    )
+    .await
 }
+
+

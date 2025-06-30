@@ -4,7 +4,7 @@ use  crate::system::domain::mapper::sys_dict_data::SysDictData;
 use  crate::system::domain::vo::{SysDictDataSimpleVO, SysDictDataVO};
 use crate::error::Error;
 use crate::error::Result;
-use crate::{check_unique, pool, remove_batch};
+use crate::{check_unique, export_excel_service, pool, remove_batch};
 use rbatis::{field_name, Page, PageRequest};
 use rbs::to_value;
 use std::collections::HashMap;
@@ -88,4 +88,6 @@ impl SysDictDataService {
 
     check_unique!(check_dict_value_unique,"sys_dict_data",dict_code, dict_type, dict_value,"字典数据键值已存在");
     remove_batch!(dict_data_ids);
+
+    export_excel_service!(DictDataPageDTO, SysDictDataVO,SysDictData::select_page);
 }

@@ -14,12 +14,19 @@ pub struct NoticePageDTO {
 }
 
 
-#[derive(Serialize, Deserialize, Clone, Debug)]
+#[derive(Serialize, Deserialize,validator::Validate, Clone, Debug)]
 #[serde(rename_all = "camelCase")]
 pub struct NoticeAddDTO {
+    /** 公告标题 */
+    //todo @Xss(message = "公告标题不能包含脚本字符")))]
+    #[validate(custom(function = "crate::string_required", message = "公告标题不能为空"))]
+    #[validate(length(max = 50, message = "公告标题不能超过50个字符"))]
     pub notice_title: Option<String>,
+    /** 公告内容 */
     pub notice_content: Option<String>,
+    /** 公告类型（1通知 2公告） */
     pub notice_type: Option<char>,
+    /** 公告状态（0正常 1关闭） */
     pub status: Option<char>,
     pub remark: Option<String>,
 }
@@ -41,13 +48,21 @@ impl From<NoticeAddDTO> for SysNotice {
     }
 }
 
-#[derive(Serialize, Deserialize, Clone, Debug)]
+#[derive(Serialize, Deserialize,validator::Validate, Clone, Debug)]
 #[serde(rename_all = "camelCase")]
 pub struct NoticeUpdateDTO {
+    /** 公告ID */
     pub notice_id: Option<String>,
+    /** 公告标题 */
+    //todo @Xss(message = "公告标题不能包含脚本字符")))]
+    #[validate(custom(function = "crate::string_required", message = "公告标题不能为空"))]
+    #[validate(length(max = 50, message = "公告标题不能超过50个字符"))]
     pub notice_title: Option<String>,
+    /** 公告内容 */
     pub notice_content: Option<String>,
+    /** 公告类型（1通知 2公告） */
     pub notice_type: Option<char>,
+    /** 公告状态（0正常 1关闭） */
     pub status: Option<char>,
     pub remark: Option<String>,
 }

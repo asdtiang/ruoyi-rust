@@ -4,9 +4,10 @@ use  crate::system::domain::dto::{ConfigAddDTO, ConfigPageDTO, ConfigUpdateDTO};
 use  crate::system::domain::mapper::sys_config::SysConfig;
 use crate::error::Error;
 use crate::error::Result;
-use crate::{check_unique, pool, remove_batch};
+use crate::{check_unique, export_excel_service, pool, remove_batch};
 use rbatis::{field_name, Page, PageRequest};
 use rbs::to_value;
+use crate::system::domain::vo::SysConfigVO;
 
 const SYS_CONFIG_KEY: &'static str = "sys_config:";
 
@@ -171,4 +172,5 @@ impl SysConfigService {
         config_id,
         "参数键名重复"
     );
+    export_excel_service!(ConfigPageDTO, SysConfigVO,SysConfig::select_page);
 }

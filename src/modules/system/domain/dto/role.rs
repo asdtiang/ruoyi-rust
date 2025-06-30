@@ -16,16 +16,29 @@ pub struct RolePageDTO {
 }
 
 
-#[derive(Serialize, Deserialize, Clone, Debug)]
+#[derive(Serialize, Deserialize, validator::Validate,Clone, Debug)]
 #[serde(rename_all = "camelCase")]
 pub struct RoleAddDTO {
+    /** 角色名称 */
+    #[validate(custom(function = "crate::string_required", message = "角色名称不能为空"))]
+    #[validate(length(max = 30, message = "角色名称长度不能超过30个字符"))]
     pub role_name: Option<String>,
+    /** 角色权限 */
+    #[validate(custom(function = "crate::string_required", message = "权限字符不能为空"))]
+    #[validate(length(max = 100, message = "权限字符长度不能超过100个字符"))]
     pub role_key: Option<String>,
+    /** 角色排序 */
+    #[validate(required(message = "显示顺序不能为空"))]
     pub role_sort: Option<u32>,
+    /** 数据范围（1：所有数据权限；2：自定义数据权限；3：本部门数据权限；4：本部门及以下数据权限；5：仅本人数据权限） */
     pub data_scope: Option<char>,
+    /** 菜单树选择项是否关联显示（ 0：父子不互相关联显示 1：父子互相关联显示） */
     pub menu_check_strictly: Option<bool>,
+    /** 部门树选择项是否关联显示（0：父子不互相关联显示 1：父子互相关联显示 ） */
     pub dept_check_strictly: Option<bool>,
+    /** 菜单组 */
     pub menu_ids: Option<Vec<String>>,
+    /** 角色状态（0正常 1停用） */
     pub status: Option<char>,
     pub remark: Option<String>,
 }
@@ -61,20 +74,35 @@ impl From<RoleAddDTO> for SysRole {
 }
 
 
-#[derive(Serialize, Deserialize, Clone, Debug)]
+#[derive(Serialize, Deserialize, validator::Validate,Clone, Debug)]
 #[serde(rename_all = "camelCase")]
 pub struct RoleUpdateDTO {
+    /** 角色ID */
     pub role_id: Option<String>,
+    /** 角色名称 */
+    #[validate(custom(function = "crate::string_required", message = "角色名称不能为空"))]
+    #[validate(length(max = 30, message = "角色名称长度不能超过30个字符"))]
     pub role_name: Option<String>,
+    /** 角色权限 */
+    #[validate(custom(function = "crate::string_required", message = "权限字符不能为空"))]
+    #[validate(length(max = 100, message = "权限字符长度不能超过100个字符"))]
     pub role_key: Option<String>,
+    /** 角色排序 */
+    #[validate(required(message = "显示顺序不能为空"))]
     pub role_sort: Option<u32>,
+    /** 数据范围（1：所有数据权限；2：自定义数据权限；3：本部门数据权限；4：本部门及以下数据权限；5：仅本人数据权限） */
     pub data_scope: Option<char>,
+    /** 菜单树选择项是否关联显示（ 0：父子不互相关联显示 1：父子互相关联显示） */
     pub menu_check_strictly: Option<bool>,
+    /** 部门树选择项是否关联显示（0：父子不互相关联显示 1：父子互相关联显示 ） */
     pub dept_check_strictly: Option<bool>,
+    /** 菜单组 */
     pub menu_ids: Option<Vec<String>>,
+    /** 角色状态（0正常 1停用） */
     pub status: Option<char>,
     pub remark: Option<String>,
 
+    /** 部门组（数据权限） */
     pub dept_ids: Option<Vec<String>>
 }
 

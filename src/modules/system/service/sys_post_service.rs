@@ -8,7 +8,7 @@ use  crate::system::domain::mapper::sys_user_post::SysUserPost;
 use  crate::system::domain::vo::SysPostVO;
 use crate::error::Error;
 use crate::error::Result;
-use crate::{pool, remove_batch};
+use crate::{export_excel_service, pool, remove_batch};
 
 pub struct SysPostService {}
 
@@ -80,4 +80,5 @@ impl SysPostService {
         Ok(ids)
     }
     remove_batch!(post_ids);
+    export_excel_service!(PostPageDTO, SysPostVO,SysPost::select_page);
 }

@@ -13,23 +13,23 @@ pub struct TableNamesDTO {
 #[serde(rename_all = "camelCase")]
 pub struct GenTableUpdateDTO {
     pub table_id: Option<String>,
-    #[validate(required(message = "表描述不能为空"))]
+    #[validate(custom(function = "crate::string_required", message = "表描述不能为空"))]
     pub table_comment: Option<String>,
     pub sub_table_name: Option<String>,
     pub sub_table_fk_name: Option<String>,
-    #[validate(required(message = "实体类名称不能为空"))]
+    #[validate(custom(function = "crate::string_required", message = "实体类名称不能为空"))]
     pub class_name: Option<String>,
     pub tpl_category: Option<String>,
     pub tpl_web_type: Option<String>,pub tpl_back_type: Option<String>,
-    #[validate(required(message = "生成包路径不能为空"))]
+    #[validate(custom(function = "crate::string_required", message = "生成包路径不能为空"))]
     pub package_name: Option<String>,
-    #[validate(required(message = "生成模块名不能为空"))]
+    #[validate(custom(function = "crate::string_required", message = "生成模块名不能为空"))]
     pub module_name: Option<String>,
-    #[validate(required(message = "生成业务名不能为空"))]
+    #[validate(custom(function = "crate::string_required", message = "生成业务名不能为空"))]
     pub business_name: Option<String>,
-    #[validate(required(message = "生成功能名不能为空"))]
+    #[validate(custom(function = "crate::string_required", message = "生成功能名不能为空"))]
     pub function_name: Option<String>,
-    #[validate(required(message = "作者不能为空"))]
+    #[validate(custom(function = "crate::string_required", message = "作者不能为空"))]
     pub function_author: Option<String>,
     pub fixed_header: Option<char>,
     pub gen_type: Option<String>,

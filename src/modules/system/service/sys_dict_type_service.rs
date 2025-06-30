@@ -7,7 +7,7 @@ use crate::error::Result;
 use crate::system::domain::dto::DictTypePageDTO;
 use crate::system::domain::mapper::sys_dict_type::SysDictType;
 use crate::system::domain::vo::SysDictTypeVO;
-use crate::{check_unique, pool, remove_batch};
+use crate::{check_unique, export_excel_service, pool, remove_batch};
 
 pub struct SysDictTypeService {}
 
@@ -87,4 +87,5 @@ impl SysDictTypeService {
         "字典已存在"
     );
     remove_batch!(dict_type_ids);
+    export_excel_service!(DictTypePageDTO, SysDictTypeVO,SysDictType::select_page);
 }

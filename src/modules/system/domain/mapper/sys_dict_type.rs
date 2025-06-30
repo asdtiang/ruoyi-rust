@@ -21,9 +21,13 @@ impl_select_page!(SysDictType{select_page(dto: &crate::system::domain::dto::Dict
 ///dictionary table
 #[derive(Clone, Debug, serde::Serialize, serde::Deserialize)]
 pub struct SysDictType {
+    /** 字典主键 */
     pub dict_id: Option<String>,
+    /** 字典名称 */
     pub dict_name: Option<String>,
+    /** 字典类型 */
     pub dict_type: Option<String>,
+    /** 状态（0正常 1停用） */
     pub status: Option<char>,
     pub create_by: Option<String>,
     pub create_time: Option<DateTime>,
@@ -34,6 +38,8 @@ pub struct SysDictType {
 
 #[derive(Clone, Debug, serde::Serialize, serde::Deserialize)]
 pub struct SysDictTypeSimple {
+    /** 字典名称 */
     pub dict_name: Option<String>,
+    /** 字典类型 */
     pub dict_type: Option<String>,
 }

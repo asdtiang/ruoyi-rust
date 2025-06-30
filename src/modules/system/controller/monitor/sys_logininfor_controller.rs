@@ -1,7 +1,7 @@
 use crate::context::CONTEXT;
 use  crate::system::domain::dto::LogininforPageDTO;
 use  crate::system::domain::vo::SysLogininforVO;
-use crate::{PageVO, RespVO};
+use crate::{export_excel_controller, PageVO, RespVO};
 use axum::extract::Path;
 use axum::response::IntoResponse;
 use axum::Json;
@@ -33,3 +33,13 @@ pub async fn clean() -> impl IntoResponse {
     let rows_affected = CONTEXT .sys_logininfor_service.  clean() .await;
     RespVO::<u64>::judge_result(&rows_affected, "", "清空失败！").into_response()
 }
+export_excel_controller!(
+    "system:logininfor:export",
+    LogininforPageDTO,
+    CONTEXT,
+    sys_logininfor_service,
+    export_as_excel_bytes
+);
+
+
+

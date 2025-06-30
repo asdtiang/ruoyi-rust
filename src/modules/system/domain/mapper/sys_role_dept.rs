@@ -3,8 +3,8 @@ crud!(SysRoleDept {});
 
 #[derive(Clone, Debug, Eq, PartialEq, Hash, serde::Serialize, serde::Deserialize)]
 pub struct SysRoleDept {
-    //角色id
+    /** 角色ID */
     pub role_id: Option<String>,
-    //菜单id
+    /** 部门ID */
     pub dept_id: Option<String>,
 }

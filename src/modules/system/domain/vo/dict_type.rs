@@ -1,12 +1,22 @@
+use macros::Export;
 use  crate::system::domain::mapper::sys_dict_type::SysDictType;
 use rbatis::rbdc::types::datetime::DateTime;
 
 #[derive(Clone, Debug, serde::Serialize, serde::Deserialize)]
 #[serde(rename_all = "camelCase")]
+#[derive(Export)]
 pub struct SysDictTypeVO {
+    /** 字典主键 */
+    #[excel( "字典主键")]
     pub dict_id: Option<String>,
+    /** 字典名称 */
+    #[excel( "字典名称")]
     pub dict_name: Option<String>,
+    /** 字典类型 */
+    #[excel( "字典类型")]
     pub dict_type: Option<String>,
+    /** 状态（0正常 1停用） */
+    #[excel( "状态", readConverterExp = "0=正常,1=停用")]
     pub status: Option<char>,
     pub create_by: Option<String>,
     pub create_time: Option<DateTime>,

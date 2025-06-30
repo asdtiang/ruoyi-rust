@@ -2,7 +2,7 @@ use crate::config::global_constants::STATUS_NORMAL;
 use crate::context::CONTEXT;
 use  crate::system::domain::dto::{DictDataAddDTO, DictDataPageDTO, DictDataUpdateDTO};
 use  crate::system::domain::mapper::sys_dict_data::SysDictData;
-use crate::{PageVO, RespVO};
+use crate::{export_excel_controller, PageVO, RespVO};
 use axum::extract::Path;
 use axum::response::IntoResponse;
 use axum::Json;
@@ -26,8 +26,8 @@ pub async fn detail(dict_data_id: Path<String>) -> impl IntoResponse {
 
 //#[post("/dict/data")]
 #[pre_authorize("system:dict:add")]
-pub async fn add(arg: Json<DictDataAddDTO>) -> impl IntoResponse {
-    let mut data = SysDictData::from(arg.0);
+pub async fn add(arg: axum_valid::Valid<Json<DictDataAddDTO>>) -> impl IntoResponse {
+    let mut data = SysDictData::from(arg.0.0);
     data.create_by = Some(crate::web_data::get_user_name());
     if data.status.is_none() {
         data.status = Some(STATUS_NORMAL);
@@ -38,8 +38,8 @@ pub async fn add(arg: Json<DictDataAddDTO>) -> impl IntoResponse {
 
 //#[put("/dict/data")]
 #[pre_authorize("system:dict:edit")]
-pub async fn update(arg: Json<DictDataUpdateDTO>) -> impl IntoResponse {
-    let mut data = SysDictData::from(arg.0);
+pub async fn update(arg: axum_valid::Valid<Json<DictDataUpdateDTO>>) -> impl IntoResponse {
+    let mut data = SysDictData::from(arg.0.0);
     data.update_by = Some(crate::web_data::get_user_name());
     let rows_affected = CONTEXT.sys_dict_data_service.update(data).await;
     RespVO::<u64>::judge_result(&rows_affected, "", "更新失败！").into_response()
@@ -64,3 +64,14 @@ pub async fn get_by_dict_type(dict_type: Path<String>) -> impl IntoResponse {
     let dict_data_vo = CONTEXT.sys_dict_data_service.get_by_dict_type(&dict_type).await;
     RespVO::from_result(&dict_data_vo).into_response()
 }
+
+
+export_excel_controller!(
+    "system:dictData:export",
+    DictDataPageDTO,
+    CONTEXT,
+    sys_dict_data_service,
+    export_as_excel_bytes
+);
+
+

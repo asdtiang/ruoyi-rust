@@ -1,4 +1,4 @@
-pub mod log;
+pub mod middleware;
 
 use crate::config::global_constants::LOGIN_TOKEN_KEY;
 use crate::config::global_constants::ADMIN_NAME;

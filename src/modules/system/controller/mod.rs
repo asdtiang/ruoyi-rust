@@ -14,7 +14,7 @@ pub mod common_controller;
 
 use axum::routing::{delete, get, post, put};
 use axum::{middleware, Router};
-use crate::token_auth::log::log_write;
+use crate::token_auth::middleware::log_write;
 
 pub(crate) fn build_auth_api() -> Router {
     Router::new()
@@ -118,6 +118,9 @@ fn role_api() -> Router {
             get(sys_role_controller::get_dept_tree_by_role_id),
         )
         .route("/dataScope", put(sys_role_controller::data_scope))
+        .route("/export", post(sys_role_controller::export_to_excel))
+
+
 }
 
 fn dict_type_api() -> Router {
@@ -128,6 +131,7 @@ fn dict_type_api() -> Router {
         .route("/", post(sys_dict_type_controller::add))
         .route("/", put(sys_dict_type_controller::update))
         .route("/{dict_type_id}", delete(sys_dict_type_controller::remove))
+        .route("/export", post(sys_dict_type_controller::export_to_excel))
 }
 
 fn dict_data_api() -> Router {
@@ -141,6 +145,7 @@ fn dict_data_api() -> Router {
             "/type/{dict_type}",
             get(sys_dict_data_controller::get_by_dict_type),
         )
+        .route("/export", post(sys_dict_data_controller::export_to_excel))
 }
 
 fn post_api() -> Router {
@@ -150,6 +155,7 @@ fn post_api() -> Router {
         .route("/", post(sys_post_controller::add))
         .route("/", put(sys_post_controller::update))
         .route("/{post_id}", delete(sys_post_controller::remove))
+        .route("/export", post(sys_post_controller::export_to_excel))
 }
 
 fn config_api() -> Router {
@@ -163,6 +169,7 @@ fn config_api() -> Router {
             "/refreshCache",
             delete(sys_config_controller::refresh_cache),
         )
+        .route("/export", post(sys_config_controller::export_to_excel))
 }
 
 fn notice_api() -> Router {

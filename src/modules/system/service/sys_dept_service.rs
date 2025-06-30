@@ -8,7 +8,7 @@ use crate::system::domain::vo::{DeptTreeVO, SysDeptVO};
 use crate::error::Error;
 use crate::error::Result;
 use crate::web_data::get_user_name;
-use crate::{check_unique_sql, pool};
+use crate::{check_unique_sql, export_excel_service, pool};
 use macros::data_scope;
 use rbatis::field_name;
 use rbs::to_value;
@@ -294,4 +294,7 @@ impl SysDeptService {
             .ok_or_else(|| Error::from(format!("不存在：{:?} ！", dept_id)))?;
         Ok(dept)
     }
+
+
+   // export_excel_service!(DeptPageDTO, SysDeptVO,sys_dept::select_page);
 }

@@ -1,6 +1,6 @@
 use crate::context::CONTEXT;
 use  crate::system::domain::vo::SysOperLogVO;
-use crate::{PageVO, RespVO};
+use crate::{export_excel_controller, PageVO, RespVO};
 use axum::extract::Path;
 use axum::response::IntoResponse;
 use axum::Json;
@@ -15,6 +15,19 @@ pub async fn list(dto: Json<OperLogPageDTO>) -> impl IntoResponse {
     let data=data.map(|l|Page::<SysOperLogVO>::from(l));
     PageVO::from_result(&data).into_response()
 }
+
+
+export_excel_controller!(
+    "system:operLog:export",
+    OperLogPageDTO,
+    CONTEXT,
+    sys_oper_log_service,
+    export_as_excel_bytes
+);
+
+
+
+
 
 
 //#[delete("/logininfor/{oper_id}")]

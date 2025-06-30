@@ -2,7 +2,7 @@ use crate::config::global_constants::STATUS_NORMAL;
 use crate::context::CONTEXT;
 use  crate::system::domain::dto::{DictTypeAddDTO, DictTypePageDTO, DictTypeUpdateDTO};
 use  crate::system::domain::mapper::sys_dict_type::SysDictType;
-use crate::{PageVO, RespVO};
+use crate::{export_excel_controller, PageVO, RespVO};
 use axum::extract::Path;
 use axum::response::IntoResponse;
 use axum::Json;
@@ -33,8 +33,8 @@ pub async fn detail(dict_type_id: Path<String>) -> impl IntoResponse {
 
 //#[post("/dict/type")]
 #[pre_authorize("system:dict:add")]
-pub async fn add(arg: Json<DictTypeAddDTO>) -> impl IntoResponse {
-    let mut data = SysDictType::from(arg.0);
+pub async fn add(arg: axum_valid::Valid<Json<DictTypeAddDTO>>) -> impl IntoResponse {
+    let mut data = SysDictType::from(arg.0.0);
     data.create_by = Some(crate::web_data::get_user_name());
     if data.dict_name.is_none() {
         return RespVO::<u64>::from_error_info(500, "字典名字不能为空!").into_response();
@@ -48,8 +48,8 @@ pub async fn add(arg: Json<DictTypeAddDTO>) -> impl IntoResponse {
 
 //#[put("/dict/type")]
 #[pre_authorize("system:dict:edit")]
-pub async fn update(arg: Json<DictTypeUpdateDTO>) -> impl IntoResponse {
-    let mut data = SysDictType::from(arg.0);
+pub async fn update(arg: axum_valid::Valid<Json<DictTypeUpdateDTO>>) -> impl IntoResponse {
+    let mut data = SysDictType::from(arg.0.0);
     data.update_by = Some(crate::web_data::get_user_name());
     let data = CONTEXT.sys_dict_type_service.update(data).await;
     RespVO::from_result(&data).into_response()
@@ -63,3 +63,15 @@ pub async fn remove(dict_type_id: Path<String>) -> impl IntoResponse {
         .remove_batch(&dict_type_id).await;
     RespVO::from_result(&data).into_response()
 }
+
+export_excel_controller!(
+    "system:dictType:export",
+    DictTypePageDTO,
+    CONTEXT,
+    sys_dict_type_service,
+    export_as_excel_bytes
+);
+
+
+
+

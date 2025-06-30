@@ -1,9 +1,9 @@
 use  crate::system::domain::dto::OperLogPageDTO;
 use  crate::system::domain::mapper::sys_oper_log::SysOperLog;
 use crate::error::Result;
-use crate::{pool, remove_batch};
+use crate::{export_excel_service, pool, remove_batch};
 use rbatis::{Page, PageRequest};
-
+use crate::system::domain::vo::SysOperLogVO;
 
 pub struct SysOperLogService {}
 
@@ -34,4 +34,5 @@ impl SysOperLogService {
         Ok(res.rows_affected)
     }
     remove_batch!(log_ids);
+    export_excel_service!(OperLogPageDTO, SysOperLogVO,SysOperLog::select_page);
 }

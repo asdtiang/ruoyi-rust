@@ -3,10 +3,15 @@ use rbatis::{crud, impl_select_page};
 
 #[derive(Clone, Debug, serde::Serialize, serde::Deserialize)]
 pub struct SysConfig {
+    /** 参数主键 */
     pub config_id: Option<String>,
+    /** 参数名称 */
     pub config_name: Option<String>,
+    /** 参数键名 */
     pub config_key: Option<String>,
+    /** 参数键值 */
     pub config_value: Option<String>,
+    /** 系统内置（Y是 N否） */
     pub config_type: Option<char>,
     pub create_by: Option<String>,
     pub create_time: Option<DateTime>,

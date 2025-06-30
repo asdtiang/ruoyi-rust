@@ -2,7 +2,7 @@ use crate::config::global_constants::STATUS_NORMAL;
 use crate::context::CONTEXT;
 use  crate::system::domain::dto::{PostAddDTO, PostPageDTO, PostUpdateDTO};
 use  crate::system::domain::mapper::sys_post::SysPost;
-use crate::{PageVO, RespVO};
+use crate::{export_excel_controller, PageVO, RespVO};
 use axum::extract::Path;
 use axum::response::IntoResponse;
 use axum::Json;
@@ -27,8 +27,8 @@ pub async fn detail(dict_id: Path<String>) -> impl IntoResponse {
 
 //#[post("/post")]
 #[pre_authorize("system:post:add")]
-pub async fn add(arg: Json<PostAddDTO>) -> impl IntoResponse {
-    let mut data = SysPost::from(arg.0);
+pub async fn add(arg: axum_valid::Valid<Json<PostAddDTO>>) -> impl IntoResponse {
+    let mut data = SysPost::from(arg.0.0);
     data.create_by = Some(crate::web_data::get_user_name());
     if data.status.is_none() {
         data.status = Some(STATUS_NORMAL);
@@ -39,8 +39,8 @@ pub async fn add(arg: Json<PostAddDTO>) -> impl IntoResponse {
 
 //#[put("/post")]
 #[pre_authorize("system:post:edit")]
-pub async fn update(arg: Json<PostUpdateDTO>) -> impl IntoResponse {
-    let mut data = SysPost::from(arg.0);
+pub async fn update(arg: axum_valid::Valid<Json<PostUpdateDTO>>) -> impl IntoResponse {
+    let mut data = SysPost::from(arg.0.0);
     data.update_by = Some(crate::web_data::get_user_name());
     let rows_affected = CONTEXT.sys_post_service.update(data).await;
     RespVO::<u64>::judge_result(&rows_affected, "", "更新失败！").into_response()
@@ -57,4 +57,11 @@ pub async fn remove(dict_id: Path<String>) -> impl IntoResponse {
     RespVO::<u64>::judge_result(&rows_affected, "", "删除失败！").into_response()
 }
 
+export_excel_controller!(
+    "system:post:export",
+    PostPageDTO,
+    CONTEXT,
+    sys_post_service,
+    export_as_excel_bytes
+);
 

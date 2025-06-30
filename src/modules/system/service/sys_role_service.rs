@@ -8,7 +8,7 @@ use  crate::system::domain::mapper::sys_user::SysUser;
 use  crate::system::domain::mapper::sys_user_role::SysUserRole;
 use  crate::system::domain::vo::{SysRoleVO, SysUserVO};
 use crate::error::{Error, Result};
-use crate::{pool, remove_batch};
+use crate::{export_excel_service, pool, remove_batch};
 use crate::web_data::get_user_name;
 use macros::data_scope;
 use rbatis::{field_name, Page, PageRequest};
@@ -238,4 +238,5 @@ impl SysRoleService {
         Ok(true)
     }
     remove_batch!(role_ids);
+    export_excel_service!(RolePageDTO, SysRoleVO,SysRole::select_page);
 }

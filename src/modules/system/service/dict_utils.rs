@@ -1,5 +1,6 @@
 use crate::context::CONTEXT;
 use crate::error::Result;
+use std::collections::HashMap;
 
 use crate::system::domain::vo::SysDictDataSimpleVO;
 
@@ -141,4 +142,21 @@ pub async fn get_dict_value(dict_type: &str, dict_label: &str, separator: &str) 
  */
 pub fn get_dict_redis_key(dict_type: &str) -> String {
     format!("{}:{}", DICT_KEY, dict_type)
+}
+
+/**
+ * 根据字典类型获取字典标签hashmap
+ *
+ * @param dict_type 字典类型
+ * @param separator 分隔符
+ * @return 字典标签
+ */
+pub async fn get_dict_label_map(dict_type: &str) -> Result<HashMap<String, String>> {
+    let datas = get_dict_cache(dict_type).await?;
+
+    let mut map = HashMap::new();
+    datas.into_iter().for_each(|dict_data| {
+        map.insert(dict_data.dict_value.clone(), dict_data.dict_label.clone());
+    });
+    Ok(map)
 }
