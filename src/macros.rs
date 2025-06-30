@@ -164,3 +164,10 @@ macro_rules! export_excel_service {
     }
     };
 }
+//简化一下
+#[macro_export]
+macro_rules! router_with_handler {
+    ($method:ident,$func:path,$($middle_func_list:ident),*)=> {
+       $method($func)$(.route_layer(middleware::from_fn($middle_func_list)))*
+    };
+}
