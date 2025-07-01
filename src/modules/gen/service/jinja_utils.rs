@@ -391,13 +391,8 @@ pub fn set_validation_info(columns: &Vec<GenTableColumnGenVO>) -> Vec<GenTableCo
             let html_type = column.html_type.clone().unwrap_or_default();
             let more = column.more.clone().unwrap_or_default();
             if java_type.eq(gen_constants::TYPE_STRING) {
-                let mut column_length = gen_utils::get_column_length(&column_type);
-                if more
-                    .get("utf")
-                    .is_some_and(|v| v.as_str().unwrap_or_default().eq("1"))
-                {
-                    column_length = column_length / 2;
-                }
+                //数据库要求 utf8mb4 编码，
+                let column_length = gen_utils::get_column_length(&column_type);
                 column.max_length = Some(column_length);
             } else if html_type.eq(gen_constants::HTML_NUMBER) {
                 match more.get("min") {

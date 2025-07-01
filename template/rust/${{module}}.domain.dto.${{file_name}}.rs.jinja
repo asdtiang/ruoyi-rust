@@ -33,7 +33,7 @@ pub struct ${{className}}AddDTO {
       {% endif %}
     {% endif %}
     {% if column.javaType=="String" and column.more["checkLength"]=="1" and column.maxLength>0 %}
-  #[validate(length(max = ${{ column.maxLength}}, message = "${{column.comment}}不能超过${{maxLength}}个字符"))]
+  #[validate(length(max = ${{ column.maxLength}}, message = "${{column.comment}}不能超过${{column.maxLength}}个字符"))]
     {% endif %}
 {#{% if column.javaType=="BigDecimal" %}#}
 {#    @Digits(integer = column.maxLength, fraction =column.precision, message = "${column.comment}输入错误，整数长度最长为column.maxLength{% if column.precision>0 %}，小数点长度最长为column.precision{% endif %}" %}#}
@@ -73,7 +73,7 @@ pub struct ${{className}}UpdateDTO {
       {% endif %}
     {% endif %}
     {% if column.javaType=="String" and column.more["checkLength"]=="1" and column.maxLength>0 %}
-  #[validate(length(max = ${{ column.maxLength}}, message = "${{column.comment}}不能超过${{maxLength}}个字符"))]
+  #[validate(length(max = ${{ column.maxLength}}, message = "${{column.comment}}不能超过${{column.maxLength}}个字符"))]
     {% endif %}
 {#{% if column.javaType=="BigDecimal" %}#}
 {#    @Digits(integer = column.maxLength, fraction =column.precision, message = "${column.comment}输入错误，整数长度最长为column.maxLength{% if column.precision>0 %}，小数点长度最长为column.precision{% endif %}" %}#}

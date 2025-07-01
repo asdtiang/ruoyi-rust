@@ -70,8 +70,6 @@ pub fn init_column_field(column: &mut GenTableColumn, table: &GenTable) {
                     gen_constants::HTML_INPUT
                 };
             column.html_type = Some(html_type.to_string());
-
-            more.insert("utf".to_string(), "1".to_string());
             more.insert("checkLength".to_string(), "1".to_string());
             column.more=Some(json!(more));
         }

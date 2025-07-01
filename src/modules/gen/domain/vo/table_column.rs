@@ -111,6 +111,7 @@ pub struct GenTableColumnGenVO {
     pub column_comment: Option<String>,
     pub comment: Option<String>,
     pub column_type: Option<String>,
+    pub read_converter_exp: Option<String>,
     pub java_type: Option<String>,
     pub java_field: Option<String>,
     pub java_field_cap: Option<String>,
@@ -132,6 +133,8 @@ pub struct GenTableColumnGenVO {
     pub max_length: Option<usize>,
     pub precision: Option<usize>,
     pub def_val: Option<String>,
+    //特殊字段，即是："id", "create_by", "create_time", "del_flag", "update_by",
+    // "update_time"
     pub special:bool,
     pub max: Option<usize>,
     pub min: Option<usize>,
@@ -162,6 +165,7 @@ impl From<GenTableColumn> for GenTableColumnGenVO {
             def_val,
             ..
         } = arg;
+        let mut read_converter_exp =None;
         let comment = column_comment.clone();
         let comment = comment.map(|s| {
             let mut idx = s.find("(");
@@ -170,7 +174,9 @@ impl From<GenTableColumn> for GenTableColumnGenVO {
             }
             match idx {
                 None => s,
-                Some(_) => substring(&s, 0, idx.unwrap()),
+                Some(idx) => {
+                    read_converter_exp=Some(substring(&s,idx+1,s.len()-1));
+                    substring(&s, 0, idx) },
             }
         });
         let java_field_cap = java_field.clone().map(|s| s.to_case(Case::UpperCamel));
@@ -178,6 +184,7 @@ impl From<GenTableColumn> for GenTableColumnGenVO {
             column_name:column_name.clone(),
             column_comment,
             comment,
+            read_converter_exp,
             column_type,
             java_type,
             java_field,
