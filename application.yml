@@ -13,7 +13,7 @@ cache: "redis://127.0.0.1:6379"
 #storage: "s3://{\"bucket\":\"test\",\"endpoint\":\"http://127.0.0.1:9000\",\"access_key\":\"minioadmin\",\"secret_key\":\"minioadmin\",\"region\":\"\"}",
 storage: "local"
 #后台用数据库地址
-db_url: "mysql://root:123456@127.0.0.1/rouyi-rust"
+db_url: "mysql://rouyi-rust:rust123456@127.0.0.1/rouyi-rust"
 #database pool len
 db_pool_len: 32
 #pool get timeout
@@ -97,6 +97,13 @@ errors:
   vcode_error: 验证码不正确
   req_frequently: '操作过于频繁,请等待{}秒后重试'
   id_empty: id不能为空
+
+# 文件上传
+# 文件路径 示例（ Windows配置D:/ruoyi/uploadPath，Linux配置 /home/ruoyi/uploadPath）
+upload_path: D:/ruoyi
+# 上传文件最大值（mb)
+upload_max_size: 50
+
 
 
 
