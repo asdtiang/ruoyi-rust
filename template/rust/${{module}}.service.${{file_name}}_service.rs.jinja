@@ -1,11 +1,12 @@
 use rbatis::{field_name, Page, PageRequest};
 
 use crate::context::CONTEXT;
+use crate::${{moduleName}}::domain::vo::${{className}}VO;
 use crate::${{moduleName}}::domain::dto::{${{className}}AddDTO, ${{className}}PageDTO, ${{className}}UpdateDTO};
 use crate::${{moduleName}}::domain::mapper::${{moduleName}}_${{businessName}}::${{className}};
 use crate::error::Error;
 use crate::error::Result;
-use crate::{pool, remove_batch};
+use crate::{export_excel_service, pool, remove_batch};
 
 /// notice service
 pub struct ${{className}}Service {}
@@ -57,4 +58,5 @@ impl ${{className}}Service {
         Ok(r.rows_affected)
     }
     remove_batch!(${{pkColumn.columnName}}s);
+    export_excel_service!(${{className}}PageDTO, ${{className}}VO, ${{className}}::select_page);
 }

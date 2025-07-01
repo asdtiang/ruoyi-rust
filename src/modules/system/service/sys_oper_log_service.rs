@@ -29,8 +29,8 @@ impl SysOperLogService {
     }
     pub async fn clean(&self) -> Result<u64> {
         let res =
-            pool!().exec("delete from sys_operLog",
-                         vec![]).await.unwrap();
+            pool!().exec("delete from sys_oper_log",
+                         vec![]).await?;
         Ok(res.rows_affected)
     }
     remove_batch!(log_ids);

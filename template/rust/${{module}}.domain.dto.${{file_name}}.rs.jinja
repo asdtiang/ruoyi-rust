@@ -26,7 +26,11 @@ pub struct ${{className}}AddDTO {
   {% if column.isInsert and not column.isPk %}
       // ${{column.columnComment}}
     {% if column.isRequired %}
-  #[validate(required(message = "${{column.comment}}不能为空"))]
+      {% if column.javaType=="String" %}
+      #[validate(custom(function = "crate::string_required", message = "${{column.comment}}不能为空"))]
+      {% else %}
+      #[validate(required(message = "${{column.comment}}不能为空"))]
+      {% endif %}
     {% endif %}
     {% if column.javaType=="String" and column.more["checkLength"]=="1" and column.maxLength>0 %}
   #[validate(length(max = ${{ column.maxLength}}, message = "${{column.comment}}不能超过${{maxLength}}个字符"))]
@@ -62,7 +66,11 @@ pub struct ${{className}}UpdateDTO {
   {% if column.isEdit %}
       // ${{column.columnComment}}
     {% if column.isRequired %}
-  #[validate(required(message = "${{column.comment}}不能为空"))]
+      {% if column.javaType=="String" %}
+      #[validate(custom(function = "crate::string_required", message = "${{column.comment}}不能为空"))]
+      {% else %}
+      #[validate(required(message = "${{column.comment}}不能为空"))]
+      {% endif %}
     {% endif %}
     {% if column.javaType=="String" and column.more["checkLength"]=="1" and column.maxLength>0 %}
   #[validate(length(max = ${{ column.maxLength}}, message = "${{column.comment}}不能超过${{maxLength}}个字符"))]

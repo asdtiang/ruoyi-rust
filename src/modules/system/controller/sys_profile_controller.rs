@@ -13,7 +13,6 @@ use std::time::Duration;
 */
 
 //的用户信息
-//#[get("/user/profile")]
 #[pre_authorize("")]
 pub async fn profile() -> impl IntoResponse {
     let user_cache = CONTEXT
@@ -52,7 +51,6 @@ pub async fn profile() -> impl IntoResponse {
 }
 
 //用户自行修改用户信息
-//#[put("/user/profile")]
 #[pre_authorize("")]
 pub async fn update_profile(mut arg: Json<UserUpdateDTO>) -> impl IntoResponse {
     let mut user_cache = CONTEXT
@@ -81,7 +79,6 @@ pub async fn update_profile(mut arg: Json<UserUpdateDTO>) -> impl IntoResponse {
 }
 
 //用户自行修改密码
-//#[put("/user/profile/updatePwd")]
 #[pre_authorize("")]
 pub async fn update_pwd(arg: Query<PasswordUpdateDTO>) -> impl IntoResponse {
     let user_cache = CONTEXT

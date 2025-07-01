@@ -6,11 +6,15 @@ use ${{use}};
 
 #[derive(Clone, Debug, serde::Serialize, serde::Deserialize)]
 #[serde(rename_all = "camelCase")]
+#[derive(macros::Export)]
 pub struct ${{className}}VO {
 pub ${{pkColumn.columnName}}:Option<${{pkColumn.javaType}}>,
 {% for column in columns %}
 {% if column.isDetail %}
       // ${{column.columnComment}}
+    {% if column.isExport %}
+      #[excel( "${{column.columnComment}}" {% if column.dictType %}, dictType = "${{column.dictType}}",{% endif %} {% if column.readConverterExp %}, dictType = "${{column.readConverterExp}}",{% endif %})]
+    {% endif %}
     pub ${{column.columnName}}:Option<${{column.javaType}}>,
 {% endif %}
 {% endfor %}

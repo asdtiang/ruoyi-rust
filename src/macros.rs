@@ -118,7 +118,7 @@ macro_rules! export_excel_controller {
          #[pre_authorize($priv)]
         pub async fn export_to_excel(dto: Json<$page_dto>) -> impl IntoResponse {
             let bytes = $context.$service.$export_method(&dto.0).await;
-        
+
             if let Ok(bytes) = bytes {
                 // 设置响应头
                 let mut headers = axum::http::HeaderMap::new();

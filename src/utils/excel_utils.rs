@@ -72,7 +72,7 @@ pub trait ExcelGenAttrTrait {
 /**
  * 字段类型（0：导出导入；1：仅导出；2：仅导入）
  */
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub enum AttrType {
     ALL,
     EXPORT,
@@ -85,6 +85,14 @@ where
 {
     let mut excel_gens = Vec::new();
     for excel_attr in T::get_excel_attr() {
+        if excel_attr.attr_type.clone().is_some_and(|a| {
+            return match a {
+                AttrType::IMPORT => true,
+                _ => false,
+            };
+        }) {
+            continue;
+        }
         let dict_type = excel_attr.dict_type.clone();
         let mut excel_gen = ExcelGen::from(excel_attr);
         if let Some(dict_type) = dict_type {
