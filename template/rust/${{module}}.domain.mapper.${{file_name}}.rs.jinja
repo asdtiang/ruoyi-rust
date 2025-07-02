@@ -14,7 +14,11 @@ crud!(${{className}} {}{% if custTableName!="" %} ,"${{custTableName}}"{% endif 
 
 
 impl_select_page!( ${{className}}{select_page(dto: &crate::${{moduleName}}::domain::dto::${{className}}PageDTO) =>
- "`where 1=1`
+{% if tableOptions.softDelete %}
+ "`where ${{tableOptions.softDeleteColumn}} != '2'`
+{% else %}
+"`where 1=1`
+{% endif %}
 {% for column in columns %}
 {% if column.isQuery %}
 {% if column.queryType == "EQ" %}

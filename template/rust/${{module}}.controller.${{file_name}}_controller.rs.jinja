@@ -40,7 +40,7 @@ pub async fn update(dto: axum_valid::Valid<Json<${{className}}UpdateDTO>>) -> im
 #[pre_authorize("${{permissionPrefix}}:remove")]
 pub async fn remove(${{pkColumn.columnName}}: Path<String>) -> impl IntoResponse {
     let rows_affected = ${{moduleName|upper}}_CONTEXT.${{moduleName}}_${{businessName}}_service.remove_batch(&${{pkColumn.columnName}}.0).await;
-    RespVO::<u64>::judge_result(rows_affected, "", "删除失败！")
+    RespVO::<u64>::judge_result(rows_affected, "删除成功！", "删除失败！")
         .into_response()
 }
 //导出${{functionName}}

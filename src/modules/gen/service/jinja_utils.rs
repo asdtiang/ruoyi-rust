@@ -106,7 +106,7 @@ pub fn prepare_context(
     let cust_table_name = if class_name.to_case(Case::Snake).eq(&table_name) {
         "".to_string()
     } else {
-        table_name
+        table_name.clone()
     };
     let has_between = columns
         .iter()
@@ -127,6 +127,7 @@ pub fn prepare_context(
         class_name=>class_name.to_case(Case::Camel),
         businessName=>business_name,
         BusinessName=>business_name.to_case(Case::UpperCamel),
+        tableName=>table_name.clone(),
         custTableName=>cust_table_name,
         columns=>columns,
         pkColumn=>pk_column,

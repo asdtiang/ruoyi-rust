@@ -1,6 +1,4 @@
 use rbatis::{field_name, Page, PageRequest};
-
-use crate::context::CONTEXT;
 use crate::${{moduleName}}::domain::vo::${{className}}VO;
 use crate::${{moduleName}}::domain::dto::{${{className}}AddDTO, ${{className}}PageDTO, ${{className}}UpdateDTO};
 use crate::${{moduleName}}::domain::mapper::${{moduleName}}_${{businessName}}::${{className}};
@@ -45,16 +43,25 @@ impl ${{className}}Service {
     }
 
     pub async fn remove(&self, ${{pkColumn.columnName}}: &str) -> Result<u64> {
-        let targets = ${{className}}::select_by_column(pool!(), "${{pkColumn.columnName}}", ${{pkColumn.columnName}}).await?;
+        {% if tableOptions.softDelete %}
+         let r = pool!()
+                    .exec(
+                        "update ${{tableName}} set ${{tableOptions.softDeleteColumn}} = '2' where ${{pkColumn.columnName}} = ?",
+                        vec![rbs::to_value!(${{pkColumn.columnName}})],
+                    )
+                    .await?;
+         {% else %}
+         let targets = ${{className}}::select_by_column(pool!(), "${{pkColumn.columnName}}", ${{pkColumn.columnName}}).await?;
+         let r = ${{className}}::delete_by_column(pool!(), "${{pkColumn.columnName}}", ${{pkColumn.columnName}}).await?;
+         if r.rows_affected > 0 {
+             //copy data to trash
+             CONTEXT
+                 .sys_trash_service
+                 .add("${{moduleName}}_${{businessName}}", &targets)
+                 .await?;
+         }
 
-        let r = ${{className}}::delete_by_column(pool!(), "${{pkColumn.columnName}}", ${{pkColumn.columnName}}).await?;
-        if r.rows_affected > 0 {
-            //copy data to trash
-            CONTEXT
-                .sys_trash_service
-                .add("${{moduleName}}_${{businessName}}", &targets)
-                .await?;
-        }
+        {% endif %}
         Ok(r.rows_affected)
     }
     remove_batch!(${{pkColumn.columnName}}s);
