@@ -43,7 +43,7 @@ pub async fn update(dto: axum_valid::Valid<Json<NoticeUpdateDTO>>) -> impl IntoR
 #[pre_authorize("system:notice:remove")]
 pub async fn remove(notice_id: Path<String>) -> impl IntoResponse {
     let rows_affected = CONTEXT.sys_notice_service.remove_batch(&notice_id.0).await;
-    RespVO::<u64>::judge_result(&rows_affected, "", "删除失败！").into_response()
+    RespVO::<u64>::judge_result(rows_affected, "", "删除失败！").into_response()
 }
 
 export_excel_controller!(

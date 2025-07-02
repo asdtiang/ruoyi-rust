@@ -1,7 +1,7 @@
 use crate::gen::domain::mapper::gen_table::GenTable;
 use crate::gen::domain::mapper::gen_table_column::GenTableColumn;
 use crate::utils::string;
-use crate::utils::string::substring;
+use crate::utils::string::substring_unicode;
 use convert_case::{Case, Casing};
 use serde_json::json;
 use std::collections::HashMap;
@@ -178,7 +178,7 @@ pub fn get_module_name(package_name: &str) -> String {
     match last_index {
         Some(index) => {
             let name_length = package_name.len();
-            substring(package_name, index + 1, name_length)
+            substring_unicode(package_name, index + 1, name_length)
         }
         None => package_name.to_string(),
     }
@@ -195,7 +195,7 @@ pub fn get_business_name(table_name: &str) -> String {
     match last_index {
         Some(index) => {
             let name_length = table_name.len();
-            substring(table_name, index + 1, name_length)
+            substring_unicode(table_name, index + 1, name_length)
         }
         None => table_name.to_string(),
     }
@@ -254,7 +254,7 @@ pub fn replace_text(text: &str) -> String {
  */
 pub fn get_db_type(column_type: &str) -> String {
     match column_type.find("(") {
-        Some(index) => substring(column_type, 0, index),
+        Some(index) => substring_unicode(column_type, 0, index),
         None => column_type.to_string(),
     }
 }
@@ -269,7 +269,7 @@ pub fn get_column_length(column_type: &str) -> usize {
     let idx1 = column_type.find("(");
     let idx2 = column_type.find(")");
     if idx1.is_some_and(|idx| idx > 0) && idx2.is_some_and(|idx| idx1.unwrap() < idx) {
-        let s = substring(column_type, idx1.unwrap() + 1, idx2.unwrap());
+        let s = substring_unicode(column_type, idx1.unwrap() + 1, idx2.unwrap());
         s.parse::<usize>().unwrap_or(0)
     } else {
         0

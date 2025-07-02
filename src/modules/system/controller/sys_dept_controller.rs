@@ -66,7 +66,7 @@ pub async fn detail(dept_id: Path<String>) -> impl IntoResponse {
 pub async fn add(dto: axum_valid::Valid<Json<DeptAddDTO>>) -> impl IntoResponse {
 
     let res = CONTEXT.sys_dept_service.add(dto.0.0).await;
-    RespVO::<u64>::judge_result(&res, "", "添加失败！")
+    RespVO::<u64>::judge_result(res, "", "添加失败！")
         .into_response()
 }
 
@@ -74,7 +74,7 @@ pub async fn add(dto: axum_valid::Valid<Json<DeptAddDTO>>) -> impl IntoResponse 
 #[pre_authorize("system:dept:edit")]
 pub async fn update(arg: axum_valid::Valid<Json<DeptUpdateDTO>>) -> impl IntoResponse {
     let res = CONTEXT.sys_dept_service.update(arg.0.0).await;
-    RespVO::<u64>::judge_result(&res, "", "更新失败！")
+    RespVO::<u64>::judge_result(res, "", "更新失败！")
         .into_response()
 }
 
@@ -82,6 +82,6 @@ pub async fn update(arg: axum_valid::Valid<Json<DeptUpdateDTO>>) -> impl IntoRes
 #[pre_authorize("system:dept:remove")]
 pub async fn remove(dept_id: Path<String>) -> impl IntoResponse {
     let res = CONTEXT.sys_dept_service.remove(&dept_id.0).await;
-    RespVO::<u64>::judge_result(&res, "", "删除失败！")
+    RespVO::<u64>::judge_result(res, "", "删除失败！")
         .into_response()
 }

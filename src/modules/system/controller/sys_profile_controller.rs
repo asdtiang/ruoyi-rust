@@ -111,5 +111,5 @@ pub async fn update_pwd(arg: Query<PasswordUpdateDTO>) -> impl IntoResponse {
             &user_id,
         )
         .await;
-    RespVO::<u64>::judge_result(&res, "修改密码成功！", "修改密码失败！").into_response()
+    RespVO::<u64>::judge_result(res, "修改密码成功！", "修改密码失败！").into_response()
 }

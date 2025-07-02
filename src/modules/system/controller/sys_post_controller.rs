@@ -34,7 +34,7 @@ pub async fn add(arg: axum_valid::Valid<Json<PostAddDTO>>) -> impl IntoResponse 
         data.status = Some(STATUS_NORMAL);
     }
     let rows_affected = CONTEXT.sys_post_service.add(&data).await;
-    RespVO::<u64>::judge_result(&rows_affected, "", "添加失败！").into_response()
+    RespVO::<u64>::judge_result(rows_affected, "", "添加失败！").into_response()
 }
 
 //#[put("/post")]
@@ -43,7 +43,7 @@ pub async fn update(arg: axum_valid::Valid<Json<PostUpdateDTO>>) -> impl IntoRes
     let mut data = SysPost::from(arg.0.0);
     data.update_by = Some(crate::web_data::get_user_name());
     let rows_affected = CONTEXT.sys_post_service.update(data).await;
-    RespVO::<u64>::judge_result(&rows_affected, "", "更新失败！").into_response()
+    RespVO::<u64>::judge_result(rows_affected, "", "更新失败！").into_response()
 }
 
 //#[delete("/post/{post_id}")]
@@ -54,7 +54,7 @@ pub async fn remove(dict_id: Path<String>) -> impl IntoResponse {
         .sys_post_service
         .remove_batch(&dict_id)
         .await;
-    RespVO::<u64>::judge_result(&rows_affected, "", "删除失败！").into_response()
+    RespVO::<u64>::judge_result(rows_affected, "", "删除失败！").into_response()
 }
 
 export_excel_controller!(

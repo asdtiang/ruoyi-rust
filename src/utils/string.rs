@@ -1,3 +1,5 @@
+use unicode_segmentation::UnicodeSegmentation;
+
 pub trait IsEmptyString {
     fn is_empty(&self) -> bool;
 }
@@ -32,44 +34,18 @@ pub fn capitalize(s: &str) -> String {
  * @param start 开始
  * @param end 结束
  * @return 结果
-fixme 关注小于0情况
  */
-pub fn substring(str: &str, start: usize, end: usize) -> String {
-    if str.len() == 0 {
-        return str.to_string();
-    }
-    let mut end = end;
-    // if end < 0 {
-    //     end = str.len() + end;
-    // }
-    let mut start = start;
-    // if start < 0 {
-    //     start = str.len() + start;
-    // }
 
-    if end > str.len() {
-        end = str.len();
-    }
 
-    if start > end {
-        return "".to_string();
-    }
-
-    // if start < 0 {
-    //     start = 0;
-    // }
-    // if end < 0 {
-    //     end = 0;
-    // }
-
-    str[start..end].to_string()
+pub fn substring_unicode(str: &str, start: usize, end: usize) -> String {
+    str.graphemes(true).skip(start).take(end - start).collect()
 }
 
 pub fn substring_between(src_str: &str, open: &str, close: &str) -> String {
     let idx1 = src_str.find(open);
     let idx2 = src_str.find(close);
     if idx1.is_some_and(|idx| idx > 0) && idx2.is_some_and(|idx| idx1.unwrap() < idx) {
-        substring(src_str, idx1.unwrap()+1 , idx2.unwrap() )
+        substring_unicode(src_str, idx1.unwrap()+1, idx2.unwrap() )
     } else {
         "".to_string()
     }

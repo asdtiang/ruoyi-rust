@@ -1,5 +1,5 @@
 use convert_case::{Case, Casing};
-use ruoyi_rust::utils::string::substring;
+use ruoyi_rust::utils::string::substring_unicode;
 use std::collections::HashMap;
 use std::fs;
 use std::path::PathBuf;
@@ -13,7 +13,7 @@ async fn from_java_domain() -> ruoyi_rust::error::Result<()> {
             let path = entry.path();
             let file_name = path.file_name().unwrap().to_str().unwrap().to_string();
             let idx = file_name.rfind(".").unwrap_or(file_name.len());
-            let file_name = substring(file_name.as_str(), 0, idx);
+            let file_name = substring_unicode(file_name.as_str(), 0, idx);
 
             if let Some(ext) = path.extension() {
                 if ext == "java" {
@@ -51,7 +51,7 @@ async fn read_java_file_vo(file_name: String, file: PathBuf) {
     for  line in lines {
         let line = line.trim();
         if line.starts_with("@Excel") {
-            let line = substring(line, 7, line.len() - 1);
+            let line = substring_unicode(line, 7, line.len() - 1);
             let line = format!("#[excel({})]", &line.replace("name =", ""));
             excel = line.replace("type = Type.", "attrType = crate::AttrType::");
         }else if line.starts_with("@") {

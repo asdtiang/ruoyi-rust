@@ -2971,6 +2971,7 @@ dependencies = [
  "sysinfo",
  "tokio",
  "tower-http",
+ "unicode-segmentation",
  "user-agent-parser",
  "uuid",
  "validator",

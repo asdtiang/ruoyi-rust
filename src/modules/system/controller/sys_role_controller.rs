@@ -59,7 +59,7 @@ pub async fn update(arg: axum_valid::Valid<Json<RoleUpdateDTO>>) -> impl IntoRes
 pub async fn remove(role_id: Path<String>) -> impl IntoResponse {
     let role_id = role_id.0;
     let rows_affected = CONTEXT.sys_role_service.remove_batch(&role_id).await;
-    RespVO::<u64>::judge_result(&rows_affected, "", "更新失败！").into_response()
+    RespVO::<u64>::judge_result(rows_affected, "", "更新失败！").into_response()
 }
 
 //已分配此角色的用户
@@ -92,7 +92,7 @@ pub async fn cancel_user(arg: Json<UserRoleDTO>) -> impl IntoResponse {
         .sys_user_role_service
         .remove(&SysUserRole::from(arg.0))
         .await;
-    RespVO::<u64>::judge_result(&rows_affected, "取消授权成功。", "取消授权失败！").into_response()
+    RespVO::<u64>::judge_result(rows_affected, "取消授权成功。", "取消授权失败！").into_response()
 }
 
 //对多个用户进行授权
@@ -104,7 +104,7 @@ pub async fn auth_user_all(arg: Query<UsersRoleDTO>) -> impl IntoResponse {
         .sys_user_role_service
         .add_users_role(&arg.0.role_id, &user_ids)
         .await;
-    RespVO::<u64>::judge_result(&rows_affected, "批量授权成功。", "批量授权失败！").into_response()
+    RespVO::<u64>::judge_result(rows_affected, "批量授权成功。", "批量授权失败！").into_response()
 }
 //对多个用户进行授权
 //#[put("/role/authUser/cancelAll")]
@@ -115,7 +115,7 @@ pub async fn cancel_user_all(arg: Query<UsersRoleDTO>) -> impl IntoResponse {
         .sys_user_role_service
         .remove_users_role(&arg.0.role_id, &user_ids)
         .await;
-    RespVO::<u64>::judge_result(&rows_affected, "批量取消授权成功。", "批量取消授权失败！")
+    RespVO::<u64>::judge_result(rows_affected, "批量取消授权成功。", "批量取消授权失败！")
         .into_response()
 }
 

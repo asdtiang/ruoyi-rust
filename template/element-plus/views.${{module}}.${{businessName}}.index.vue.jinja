@@ -228,7 +228,8 @@ label="${{ column.comment }}" {% if column.sortable %} sortable="custom" {% endi
     <!-- 添加或修改${{functionName}}对话框 -->
     <el-dialog :title="title" v-model="open" {% if insertEditCnt>=8 %}width="650px"{% else %}
                width="500px"{% endif %}>
-      <el-form ref="${{ businessName }}Ref" :model="form" :rules="rules">
+     {% if insertEditCnt>=12 %} <el-scrollbar height="600px" class="pr-2" > {% endif %}
+      <el-form ref="${{ businessName }}Ref" :model="form" :rules="rules"  {% if insertEditCnt>=12 %} class="mr-2"  {% endif %}>
         {% if insertEditCnt>=8 %}
           <el-row :gutter="15">
         {% endif %}
@@ -361,6 +362,7 @@ label="${{ column.comment }}" {% if column.sortable %} sortable="custom" {% endi
         {% endif %}
         {% if insertEditCnt>=8 %}</el-row>{% endif %}
       </el-form>
+      {% if insertEditCnt>=12 %} </el-scrollbar> {% endif %}
       <template #footer>
         <el-button type="primary" @click="submitForm">确 定</el-button>
         <el-button @click="cancel">取 消</el-button>

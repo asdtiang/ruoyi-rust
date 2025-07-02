@@ -26,7 +26,7 @@ pub async fn detail(config_id: Path<String>) -> impl IntoResponse {
 #[pre_authorize("system:config:add")]
 pub async fn add(dto: axum_valid::Valid<Json<ConfigAddDTO>>) -> impl IntoResponse {
     let res = CONTEXT.sys_config_service.add(dto.0.0).await;
-    RespVO::<u64>::judge_result(&res, "添加成功！", "添加失败！").into_response()
+    RespVO::<u64>::judge_result(res, "添加成功！", "添加失败！").into_response()
 }
 
 #[pre_authorize("system:config:edit")]
@@ -38,7 +38,7 @@ pub async fn update(dto: axum_valid::Valid<Json<ConfigUpdateDTO>>) -> impl IntoR
 #[pre_authorize("system:config:remove")]
 pub async fn remove(config_id: Path<String>) -> impl IntoResponse {
     let res = CONTEXT.sys_config_service.remove_batch(&config_id).await;
-    RespVO::<u64>::judge_result(&res, "", "删除失败！").into_response()
+    RespVO::<u64>::judge_result(res, "", "删除失败！").into_response()
 }
 
 #[pre_authorize("system:config:remove")]

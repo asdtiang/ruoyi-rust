@@ -25,13 +25,13 @@ pub async fn remove(info_id: Path<String>) -> impl IntoResponse {
         .sys_logininfor_service
         .remove(&info_id)
         .await;
-    RespVO::<u64>::judge_result(&rows_affected, "", "删除失败！").into_response()
+    RespVO::<u64>::judge_result(rows_affected, "", "删除失败！").into_response()
 }
 #[pre_authorize("monitor:logininfor:remove")]
 pub async fn clean() -> impl IntoResponse {
 
     let rows_affected = CONTEXT .sys_logininfor_service.  clean() .await;
-    RespVO::<u64>::judge_result(&rows_affected, "", "清空失败！").into_response()
+    RespVO::<u64>::judge_result(rows_affected, "", "清空失败！").into_response()
 }
 export_excel_controller!(
     "system:logininfor:export",

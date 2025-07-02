@@ -1,6 +1,6 @@
 use super::super::mapper::gen_table_column::GenTableColumn;
 use crate::gen::service::gen_constants;
-use crate::utils::string::substring;
+use crate::utils::string::substring_unicode;
 use convert_case::{Case, Casing};
 use rbatis::rbdc::DateTime;
 
@@ -175,8 +175,8 @@ impl From<GenTableColumn> for GenTableColumnGenVO {
             match idx {
                 None => s,
                 Some(idx) => {
-                    read_converter_exp=Some(substring(&s,idx+1,s.len()-1));
-                    substring(&s, 0, idx) },
+                    read_converter_exp=Some(substring_unicode(&s, idx+1, s.len()-1));
+                    substring_unicode(&s, 0, idx) },
             }
         });
         let java_field_cap = java_field.clone().map(|s| s.to_case(Case::UpperCamel));

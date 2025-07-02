@@ -98,7 +98,7 @@ pub async fn remove(user_id: Path<String>) -> impl IntoResponse {
     //     cnt=cnt+rows_affected.unwrap_or_default();
     // }
     let rows_affected = CONTEXT.sys_user_service.remove_batch(&user_id).await;
-    RespVO::<u64>::judge_result(&rows_affected, "删除成功", "删除失败").into_response()
+    RespVO::<u64>::judge_result(rows_affected, "删除成功", "删除失败").into_response()
 }
 
 //#[get("/user/deptTree")]
@@ -161,7 +161,7 @@ pub async fn get_auth_roles(user_id: Path<String>) -> impl IntoResponse {
 #[pre_authorize("system:user:resetPwd")]
 pub async fn reset_pwd(dto: Json<UserUpdateDTO>) -> impl IntoResponse {
     let res = CONTEXT.sys_user_service.update_password(dto.0).await;
-    RespVO::<u64>::judge_result(&res, "更新成功！", "").into_response()
+    RespVO::<u64>::judge_result(res, "更新成功！", "").into_response()
 }
 
 //更改用户当前状态
@@ -169,7 +169,7 @@ pub async fn reset_pwd(dto: Json<UserUpdateDTO>) -> impl IntoResponse {
 #[pre_authorize("system:user:edit")]
 pub async fn change_status(dto: Json<UserUpdateDTO>) -> impl IntoResponse {
     let res = CONTEXT.sys_user_service.update_status(&dto.0).await;
-    RespVO::<u64>::judge_result(&res, "更新成功！", "").into_response()
+    RespVO::<u64>::judge_result(res, "更新成功！", "").into_response()
 }
 export_excel_controller!(
     "system:user:export",

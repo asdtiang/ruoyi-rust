@@ -62,7 +62,7 @@ pub fn get_multistage_reverse_proxy_ip(ip: &str) -> String {
         for sub_ip in ips {
             let sub_ip = sub_ip.trim();
             if sub_ip.len() > 0 && !sub_ip.eq("unknown") {
-                return string::substring(ip, 0, 255);
+                return string::substring_unicode(ip, 0, 255);
             }
         }
     }

@@ -33,7 +33,7 @@ pub async fn add(arg: axum_valid::Valid<Json<DictDataAddDTO>>) -> impl IntoRespo
         data.status = Some(STATUS_NORMAL);
     }
     let rows_affected = CONTEXT.sys_dict_data_service.add(&data).await;
-    RespVO::<u64>::judge_result(&rows_affected, "", "添加失败！").into_response()
+    RespVO::<u64>::judge_result(rows_affected, "", "添加失败！").into_response()
 }
 
 //#[put("/dict/data")]
@@ -42,7 +42,7 @@ pub async fn update(arg: axum_valid::Valid<Json<DictDataUpdateDTO>>) -> impl Int
     let mut data = SysDictData::from(arg.0.0);
     data.update_by = Some(crate::web_data::get_user_name());
     let rows_affected = CONTEXT.sys_dict_data_service.update(data).await;
-    RespVO::<u64>::judge_result(&rows_affected, "", "更新失败！").into_response()
+    RespVO::<u64>::judge_result(rows_affected, "", "更新失败！").into_response()
 }
 
 //#[delete("/dict/data/{dict_code}")]
@@ -53,7 +53,7 @@ pub async fn remove(dict_code: Path<String>) -> impl IntoResponse {
         .sys_dict_data_service
         .remove_batch(&dict_code)
         .await;
-    RespVO::<u64>::judge_result(&rows_affected, "", "删除失败！").into_response()
+    RespVO::<u64>::judge_result(rows_affected, "", "删除失败！").into_response()
 }
 
 

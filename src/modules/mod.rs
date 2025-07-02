@@ -103,29 +103,32 @@ where
     }
 
     pub fn judge_result(
-        rows_affected: &Result<u64, Error>,
+        rows_affected: Result<u64, Error>,
         success_msg: &str,
         fail_message: &str,
     ) -> Self {
-        if rows_affected.is_err() {
-            return Self {
-                code: CODE_FAIL,
-                msg: Some(rows_affected.clone().err().unwrap().to_string()),
-                data: None,
-            };
-        }
-        let affected = rows_affected.clone().unwrap();
-        if affected >= 1 {
-            Self {
-                code: CODE_SUCCESS,
-                msg: Some(success_msg.to_string()),
-                data: None,
+         match rows_affected {
+            Ok(affected) => {
+                if affected >= 1 {
+                    Self {
+                        code: CODE_SUCCESS,
+                        msg: Some(success_msg.to_string()),
+                        data: None,
+                    }
+                } else {
+                    Self {
+                        code: CODE_FAIL,
+                        msg: Some(fail_message.to_string()),
+                        data: None,
+                    }
+                }
             }
-        } else {
-            Self {
-                code: CODE_FAIL,
-                msg: Some(fail_message.to_string()),
-                data: None,
+            Err(err) => {
+                Self {
+                    code: CODE_FAIL,
+                    msg: Some(err.to_string()),
+                    data: None,
+                }
             }
         }
     }

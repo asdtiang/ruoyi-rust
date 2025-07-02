@@ -103,7 +103,7 @@ pub fn prepare_context(
     for i in 0..10 {
         sql_ids.push(ObjectId::new().to_string())
     }
-    let cust_table_name = if class_name.to_case(Case::Camel).eq(&table_name) {
+    let cust_table_name = if class_name.to_case(Case::Snake).eq(&table_name) {
         "".to_string()
     } else {
         table_name

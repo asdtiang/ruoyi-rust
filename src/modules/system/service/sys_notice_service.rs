@@ -9,7 +9,7 @@ use crate::{export_excel_service, pool, remove_batch};
 use rbatis::{field_name, Page, PageRequest};
 use rust_xlsxwriter::{ColNum, Format, Workbook};
 
-/// notice service
+
 pub struct SysNoticeService {}
 
 impl SysNoticeService {

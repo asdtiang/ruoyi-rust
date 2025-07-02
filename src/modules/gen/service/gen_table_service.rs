@@ -9,7 +9,7 @@ use crate::gen::domain::mapper::gen_table_column::{
 use crate::gen::service::{gen_constants, gen_utils, jinja_utils};
 use crate::gen::GEN_CONTEXT;
 use crate::utils::file_utils::find_files_with_extension;
-use crate::utils::string::substring;
+use crate::utils::string::substring_unicode;
 use crate::web_data::get_user_name;
 use crate::{pool, remove_batch};
 use macros::transactional;
@@ -89,9 +89,8 @@ impl GenTableService {
     remove_batch!(table_ids);
 
     #[transactional(tx)]
-    pub async fn import_gen_table(&self, table_name_list: Vec<&str>) -> Result<Vec<GenTable>> {
+    pub async fn import_gen_table(&self, table_name_list: Vec<&str>) -> Result<u64> {
         let tables = gen_table::select_db_table_list_by_names(&tx, &table_name_list).await?;
-        let mut res = vec![];
         let oper_name = get_user_name();
         for mut table in tables {
             let table_name = table.table_name.clone().unwrap_or_default();
@@ -107,10 +106,9 @@ impl GenTableService {
                     GenTableColumn::insert(&tx, &column).await?;
                 }
             }
-            res.push(table);
         }
 
-        Ok(res)
+        Ok(table_name_list.len() as u64)
     }
     async fn generator_code_type(
         &self,
@@ -237,7 +235,7 @@ impl GenTableService {
                 let path = entry.path();
                 let file_name = path.file_name().unwrap().to_str().unwrap().to_string();
                 let idx = file_name.rfind(".").unwrap_or(file_name.len());
-                let file_name = substring(file_name.as_str(), 0, idx);
+                let file_name = substring_unicode(file_name.as_str(), 0, idx);
                 if path.is_dir() {
                     // 递归处理子目录
                     self.fill_mod(&path, false)?;
@@ -297,7 +295,7 @@ impl GenTableService {
                     let idx_end = mod_rs.find(&end_key);
                     let mut is_have = false;
                     if idx.is_some() && idx_end.is_some() {
-                        let substring = substring(
+                        let substring = substring_unicode(
                             &mod_rs,
                             idx.unwrap_or_default(),
                             idx_end.unwrap_or_default(),
