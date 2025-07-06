@@ -36,8 +36,8 @@ pub async fn detail(menu_id: Path<String>) -> impl IntoResponse {
 
 //#[post("/menu")]
 #[pre_authorize("system:menu:add")]
-pub async fn add(arg: axum_valid::Valid<Json<MenuAddDTO>>) -> impl IntoResponse {
-    let mut data = SysMenu::from(arg.0.0);
+pub async fn add(arg: crate::ValidatedForm<MenuAddDTO>) -> impl IntoResponse {
+    let mut data = SysMenu::from(arg.0);
     data.create_by = Some(crate::web_data::get_user_name());
     if data.path.is_none() {
         data.path = Some("".to_string());
@@ -49,8 +49,8 @@ pub async fn add(arg: axum_valid::Valid<Json<MenuAddDTO>>) -> impl IntoResponse 
 
 //#[put("/menu")]
 #[pre_authorize("system:menu:edit")]
-pub async fn update(arg: axum_valid::Valid<Json<MenuUpdateDTO>>) -> impl IntoResponse {
-    let mut menu = SysMenu::from(arg.0.0);
+pub async fn update(arg: crate::ValidatedForm<MenuUpdateDTO>) -> impl IntoResponse {
+    let mut menu = SysMenu::from(arg.0);
     menu.update_by = Some(crate::web_data::get_user_name());
     let cnt = CONTEXT.sys_menu_service.update(&menu).await;
     RespVO::from_result(&cnt).into_response()

@@ -83,21 +83,7 @@ pub(crate) async fn log_write(
     Ok(res)
 }
 
-//todo 尝试更加直接的方便，直接错误处理。
-pub async fn error_handler (
-    req: Request,
-    next: Next,
-) -> Result<impl IntoResponse, (StatusCode, String)> {
-    let response = next.run(req).await;
-    if response.status()==StatusCode::BAD_REQUEST  {
-        let (_, body) = response.into_parts();
-        let bytes=get_body_bytes(body).await?;
-        let s=std::str::from_utf8(&bytes).ok().map(|x| x.to_string());
-        let res=RespVO::<u64>::from_error_info(500, &s.unwrap_or_default());
-        return Ok(res.into_response());
-    }
-    Ok(response)
-}
+
 
 async fn get_body_bytes<B>(body: B) -> Result<Bytes, (StatusCode, String)>
 where

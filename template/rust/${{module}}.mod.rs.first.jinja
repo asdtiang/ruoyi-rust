@@ -6,7 +6,7 @@ pub mod controller;
 pub mod domain;
 pub mod service;
 use crate::router_with_handler;
-use crate::token_auth::middleware::{error_handler, log_write};
+use crate::token_auth::middleware::{log_write};
 use axum::middleware;
 use service::*;
 use controller::*;

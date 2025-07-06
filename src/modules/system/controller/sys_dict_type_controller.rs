@@ -33,8 +33,8 @@ pub async fn detail(dict_type_id: Path<String>) -> impl IntoResponse {
 
 //#[post("/dict/type")]
 #[pre_authorize("system:dict:add")]
-pub async fn add(arg: axum_valid::Valid<Json<DictTypeAddDTO>>) -> impl IntoResponse {
-    let mut data = SysDictType::from(arg.0.0);
+pub async fn add(arg: crate::ValidatedForm<DictTypeAddDTO>) -> impl IntoResponse {
+    let mut data = SysDictType::from(arg.0);
     data.create_by = Some(crate::web_data::get_user_name());
     if data.dict_name.is_none() {
         return RespVO::<u64>::from_error_info(500, "字典名字不能为空!").into_response();
@@ -48,8 +48,8 @@ pub async fn add(arg: axum_valid::Valid<Json<DictTypeAddDTO>>) -> impl IntoRespo
 
 //#[put("/dict/type")]
 #[pre_authorize("system:dict:edit")]
-pub async fn update(arg: axum_valid::Valid<Json<DictTypeUpdateDTO>>) -> impl IntoResponse {
-    let mut data = SysDictType::from(arg.0.0);
+pub async fn update(arg: crate::ValidatedForm<DictTypeUpdateDTO>) -> impl IntoResponse {
+    let mut data = SysDictType::from(arg.0);
     data.update_by = Some(crate::web_data::get_user_name());
     let data = CONTEXT.sys_dict_type_service.update(data).await;
     RespVO::from_result(&data).into_response()

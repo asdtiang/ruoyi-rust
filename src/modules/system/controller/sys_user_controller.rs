@@ -18,8 +18,8 @@ pub async fn list(dto: Json<UserPageDTO>) -> impl IntoResponse {
 
 //#[post("/user")]
 #[pre_authorize("system:user:add")]
-pub async fn add(arg: axum_valid::Valid<Json<UserAddDTO>>) -> impl IntoResponse {
-    let rows_affected = CONTEXT.sys_user_service.add(&arg.0 .0).await;
+pub async fn add(arg: crate::ValidatedForm<UserAddDTO>) -> impl IntoResponse {
+    let rows_affected = CONTEXT.sys_user_service.add(&arg.0).await;
 
     RespVO::from_result(&rows_affected).into_response()
 }
@@ -74,8 +74,8 @@ pub async fn detail(user_id: Option<Path<String>>) -> impl IntoResponse {
 
 //#[put("/user")]
 #[pre_authorize("system:user:edit")]
-pub async fn update(arg: axum_valid::Valid<Json<UserUpdateDTO>>) -> impl IntoResponse {
-    let res = CONTEXT.sys_user_service.update(arg.0 .0).await;
+pub async fn update(arg: crate::ValidatedForm<UserUpdateDTO>) -> impl IntoResponse {
+    let res = CONTEXT.sys_user_service.update(arg.0).await;
     RespVO::from_result(&res).into_response()
 }
 

@@ -558,16 +558,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "axum-valid"
-version = "0.24.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "3881b4b05ede123ff3c82f41c63e47425443556365b47b2ba4d05098a5bd2645"
-dependencies = [
- "axum",
- "validator",
-]
-
-[[package]]
 name = "backtrace"
 version = "0.3.74"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -2391,7 +2381,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "8b7cafe60d6cf8e62e1b9b2ea516a089c008945bb5a275416789e7db0bc199dc"
 dependencies = [
  "memchr",
- "thiserror 2.0.8",
+ "thiserror 2.0.12",
  "ucd-trie",
 ]
 
@@ -2943,7 +2933,6 @@ dependencies = [
  "aws-config",
  "aws-sdk-s3",
  "axum",
- "axum-valid",
  "bcrypt",
  "bytesize",
  "captcha",
@@ -2955,6 +2944,7 @@ dependencies = [
  "log",
  "macros",
  "merge-yaml-hash",
+ "mime",
  "minijinja",
  "parking_lot",
  "rbatis",
@@ -2969,6 +2959,7 @@ dependencies = [
  "serde_yaml",
  "sqlparser",
  "sysinfo",
+ "thiserror 2.0.12",
  "tokio",
  "tower-http",
  "unicode-segmentation",
@@ -3542,11 +3533,11 @@ dependencies = [
 
 [[package]]
 name = "thiserror"
-version = "2.0.8"
+version = "2.0.12"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "08f5383f3e0071702bf93ab5ee99b52d26936be9dedd9413067cbdcddcb6141a"
+checksum = "567b8a2dae586314f7be2a752ec7474332959c6460e02bde30d702a66d488708"
 dependencies = [
- "thiserror-impl 2.0.8",
+ "thiserror-impl 2.0.12",
 ]
 
 [[package]]
@@ -3562,9 +3553,9 @@ dependencies = [
 
 [[package]]
 name = "thiserror-impl"
-version = "2.0.8"
+version = "2.0.12"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "f2f357fcec90b3caef6623a099691be676d033b40a058ac95d2a6ade6fa0c943"
+checksum = "7f7cf42b4507d8ea322120659672cf1b9dbb93f8f2d4ecfd6e51350ff5b17a1d"
 dependencies = [
  "proc-macro2",
  "quote",

@@ -63,17 +63,17 @@ pub async fn detail(dept_id: Path<String>) -> impl IntoResponse {
 
 //#[post("/dept")]
 #[pre_authorize("system:dept:add")]
-pub async fn add(dto: axum_valid::Valid<Json<DeptAddDTO>>) -> impl IntoResponse {
+pub async fn add(dto: crate::ValidatedForm<DeptAddDTO>) -> impl IntoResponse {
 
-    let res = CONTEXT.sys_dept_service.add(dto.0.0).await;
+    let res = CONTEXT.sys_dept_service.add(dto.0).await;
     RespVO::<u64>::judge_result(res, "", "添加失败！")
         .into_response()
 }
 
 //#[put("/dept")]
 #[pre_authorize("system:dept:edit")]
-pub async fn update(arg: axum_valid::Valid<Json<DeptUpdateDTO>>) -> impl IntoResponse {
-    let res = CONTEXT.sys_dept_service.update(arg.0.0).await;
+pub async fn update(arg: crate::utils::validator::ValidatedForm<DeptUpdateDTO>) -> impl IntoResponse {
+    let res = CONTEXT.sys_dept_service.update(arg.0).await;
     RespVO::<u64>::judge_result(res, "", "更新失败！")
         .into_response()
 }

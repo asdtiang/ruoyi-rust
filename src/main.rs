@@ -1,16 +1,13 @@
 use axum::error_handling::HandleErrorLayer;
 use axum::extract::DefaultBodyLimit;
-use axum::http::{Request, StatusCode};
 use ruoyi_rust::build_api;
 use ruoyi_rust::context::CONTEXT;
-use std::fmt::format;
 use std::net::SocketAddr;
 use std::path::PathBuf;
 use axum::{middleware,  Router};
 use tower_http::compression::predicate::SizeAbove;
 use tower_http::compression::CompressionLayer;
 use tower_http::services::{ServeDir, ServeFile};
-use ruoyi_rust::token_auth::middleware::error_handler;
 
 #[tokio::main]
 async fn main() -> std::io::Result<()> {
@@ -49,7 +46,6 @@ async fn main() -> std::io::Result<()> {
         .layer(tower_http::limit::RequestBodyLimitLayer::new(
             CONTEXT.config.upload_max_size * 1024 * 1024,
         ))
-        .layer(middleware::from_fn(error_handler))
         .fallback_service(
             ServeDir::new("./dist/").not_found_service(ServeFile::new("./dist/index.html")),
         )

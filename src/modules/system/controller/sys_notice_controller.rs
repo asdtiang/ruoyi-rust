@@ -27,15 +27,15 @@ pub async fn detail(notice_id: Path<String>) -> impl IntoResponse {
 
 //#[post("/notice")]
 #[pre_authorize("system:notice:add")]
-pub async fn add(dto: axum_valid::Valid<Json<NoticeAddDTO>>) -> impl IntoResponse {
-    let res = CONTEXT.sys_notice_service.add(dto.0.0).await;
+pub async fn add(dto: crate::ValidatedForm<NoticeAddDTO>) -> impl IntoResponse {
+    let res = CONTEXT.sys_notice_service.add(dto.0).await;
     RespVO::from_result(&res).into_response()
 }
 
 //#[put("/notice")]
 #[pre_authorize("system:notice:edit")]
-pub async fn update(dto: axum_valid::Valid<Json<NoticeUpdateDTO>>) -> impl IntoResponse {
-    let res = CONTEXT.sys_notice_service.update(dto.0.0).await;
+pub async fn update(dto: crate::ValidatedForm<NoticeUpdateDTO>) -> impl IntoResponse {
+    let res = CONTEXT.sys_notice_service.update(dto.0).await;
     RespVO::from_result(&res).into_response()
 }
 

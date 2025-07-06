@@ -33,10 +33,10 @@ pub async fn detail(role_id: Path<String>) -> impl IntoResponse {
 
 //#[post("/role")]
 #[pre_authorize("system:role:add")]
-pub async fn add(arg: axum_valid::Valid<Json<RoleAddDTO>>) -> impl IntoResponse {
+pub async fn add(arg: crate::ValidatedForm<RoleAddDTO>) -> impl IntoResponse {
     let arg = arg.0;
-    let menu_ids = arg.0.menu_ids.clone().unwrap();
-    let mut data = SysRole::from(arg.0);
+    let menu_ids = arg.menu_ids.clone().unwrap();
+    let mut data = SysRole::from(arg);
 
     data.create_by = Some(crate::web_data::get_user_name());
     let vo = CONTEXT.sys_role_service.add(data, menu_ids).await;
@@ -45,10 +45,10 @@ pub async fn add(arg: axum_valid::Valid<Json<RoleAddDTO>>) -> impl IntoResponse 
 
 //#[put("/role")]
 #[pre_authorize("system:role:edit")]
-pub async fn update(arg: axum_valid::Valid<Json<RoleUpdateDTO>>) -> impl IntoResponse {
+pub async fn update(arg: crate::ValidatedForm<RoleUpdateDTO>) -> impl IntoResponse {
     let arg = arg.0;
-    let menu_ids = arg.0.menu_ids.clone().unwrap();
-    let mut data = SysRole::from(arg.0);
+    let menu_ids = arg.menu_ids.clone().unwrap();
+    let mut data = SysRole::from(arg);
     data.update_by = Some(crate::web_data::get_user_name());
     let vo = CONTEXT.sys_role_service.update(data, menu_ids).await;
     RespVO::from_result(&vo).into_response()

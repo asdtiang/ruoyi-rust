@@ -24,14 +24,14 @@ pub async fn detail(config_id: Path<String>) -> impl IntoResponse {
 }
 
 #[pre_authorize("system:config:add")]
-pub async fn add(dto: axum_valid::Valid<Json<ConfigAddDTO>>) -> impl IntoResponse {
-    let res = CONTEXT.sys_config_service.add(dto.0.0).await;
+pub async fn add(dto: crate::ValidatedForm<ConfigAddDTO>) -> impl IntoResponse {
+    let res = CONTEXT.sys_config_service.add(dto.0).await;
     RespVO::<u64>::judge_result(res, "添加成功！", "添加失败！").into_response()
 }
 
 #[pre_authorize("system:config:edit")]
-pub async fn update(dto: axum_valid::Valid<Json<ConfigUpdateDTO>>) -> impl IntoResponse {
-    let res = CONTEXT.sys_config_service.update(dto.0.0).await;
+pub async fn update(dto: crate::ValidatedForm<ConfigUpdateDTO>) -> impl IntoResponse {
+    let res = CONTEXT.sys_config_service.update(dto.0).await;
     RespVO::from_result(&res).into_response()
 }
 

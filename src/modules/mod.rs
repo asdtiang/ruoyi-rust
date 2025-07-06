@@ -197,7 +197,7 @@ pub struct PageVO<T> {
     pub code: u64,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub rows: Option<Vec<T>>,
-    pub total: Option<u64>,
+    pub total: Option<u64>,  
     pub msg: Option<String>,
 }
 

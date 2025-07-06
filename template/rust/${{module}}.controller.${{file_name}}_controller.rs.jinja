@@ -24,15 +24,15 @@ pub async fn detail(${{pkColumn.columnName}}: Path<String>) -> impl IntoResponse
 }
 //新增${{functionName}}
 #[pre_authorize("${{permissionPrefix}}:add")]
-pub async fn add(dto: axum_valid::Valid<Json<${{className}}AddDTO>>) -> impl IntoResponse {
-    let res = ${{moduleName|upper}}_CONTEXT.${{moduleName}}_${{businessName}}_service.add(dto.0.0).await;
+pub async fn add(dto: crate::ValidatedForm<${{className}}AddDTO>) -> impl IntoResponse {
+    let res = ${{moduleName|upper}}_CONTEXT.${{moduleName}}_${{businessName}}_service.add(dto.0).await;
     RespVO::from_result(&res).into_response()
 }
 
 //更新${{functionName}}
 #[pre_authorize("${{permissionPrefix}}:edit")]
-pub async fn update(dto: axum_valid::Valid<Json<${{className}}UpdateDTO>>) -> impl IntoResponse {
-    let res = ${{moduleName|upper}}_CONTEXT.${{moduleName}}_${{businessName}}_service.update(dto.0.0).await;
+pub async fn update(dto: crate::ValidatedForm<${{className}}UpdateDTO>) -> impl IntoResponse {
+    let res = ${{moduleName|upper}}_CONTEXT.${{moduleName}}_${{businessName}}_service.update(dto.0).await;
     RespVO::from_result(&res).into_response()
 }
 

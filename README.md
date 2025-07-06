@@ -9,9 +9,7 @@
 - Rust 语言
 - rbatis ORM 框架
 - Axum Web 框架
-- rbatis-sql 用于 SQL 映射
 - JWT 用于身份验证
-- Redis/Memcached 用于缓存
 - Rust-xlsxwriter 用于 Excel 导出
 - MiniJinja 模板引擎
 
