@@ -21,7 +21,7 @@ fn gen_table_api() -> Router {
         .route("/{table_id}", delete(gen_table_controller::remove))
         .route("/importTable", post(gen_table_controller::import_table))
         .route("/genCode/{table_name}", get(gen_table_controller::batch_gen_code))
-        .route("/genCode/synchDb/{table_name}", get(gen_table_controller::synch_db))
+        .route("/synchDb/{table_name}", get(gen_table_controller::synch_db))
 }
 
 pub static GEN_CONTEXT: LazyLock<GenServiceContext> =

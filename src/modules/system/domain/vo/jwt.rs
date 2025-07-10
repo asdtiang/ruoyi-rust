@@ -17,14 +17,14 @@ impl JWTToken {
     /// create token_auth
     /// secret: your secret string
     pub fn create_token(&self, secret: &str) -> Result<String, Error> {
-        return match encode(
+        match encode(
             &Header::default(),
             self,
             &EncodingKey::from_secret(secret.as_ref()),
         ) {
             Ok(t) => Ok(t),
-            Err(_) => Err(Error::from("JWTToken encode fail!")), // in practice you would return the error
-        };
+            Err(_) => Err(Error::from("JWTToken encode fail!")), // in practice, you would return the error
+        }
     }
     /// verify token_auth invalid
     /// secret: your secret string
@@ -37,9 +37,9 @@ impl JWTToken {
         ) {
             Ok(c) => Ok(c.claims),
             Err(err) => match *err.kind() {
-                ErrorKind::InvalidToken => return Err(Error::from("InvalidToken")), // Example on how to handle a specific error
-                ErrorKind::InvalidIssuer => return Err(Error::from("InvalidIssuer")), // Example on how to handle a specific error
-                _ => return Err(Error::from("InvalidToken other errors")),
+                ErrorKind::InvalidToken => Err(Error::from("InvalidToken")), // Example on how to handle a specific error
+                ErrorKind::InvalidIssuer => Err(Error::from("InvalidIssuer")), // Example on how to handle a specific error
+                _ => Err(Error::from("InvalidToken other errors")),
             },
         }
     }

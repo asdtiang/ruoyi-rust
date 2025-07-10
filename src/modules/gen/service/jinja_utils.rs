@@ -332,7 +332,7 @@ pub fn get_use_list(columns: &Vec<GenTableColumnGenVO>) -> HashSet<String> {
             } else if gen_constants::TYPE_TIME.eq(java_type) {
                 use_list.insert("rbatis::rbdc::Time".to_string());
             } else if gen_constants::TYPE_BIGDECIMAL.eq(java_type) {
-                use_list.insert("java.math.BigDecimal".to_string());
+                //use_list.insert("java.math.BigDecimal".to_string());
             }
         }
 

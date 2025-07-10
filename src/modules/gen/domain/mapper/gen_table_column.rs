@@ -1,7 +1,7 @@
 use macros::page_request;
 use rbatis::executor::Executor;
 use rbatis::rbdc::DateTime;
-use rbatis::{crud, html_sql, impl_select_page, pysql_select_page};
+use rbatis::{crud, html_sql, impl_select, impl_select_page, pysql_select_page};
 use rbs::Error;
 use serde::{Deserialize, Serialize};
 
@@ -91,22 +91,10 @@ pub struct TablePageDTO {
     pub table_name: Option<String>,
     pub table_comment: Option<String>,
 }
-impl_select_page!(GenTableColumn{select_page(dto: &TablePageDTO) =>
-    "`where 1=1`
-    if dto.configName != '':
-        ` and config_name like #{'%'+dto.configName+'%'}`
-    if dto.configKey != '':
-        ` and config_key like #{'%'+dto.configKey+'%'}`
-    if dto.configType != '':
-        ` and config_type = #{dto.configType}`
-    if dto.status != '':
-        ` and status = #{dto.status}`
-    if dto.params.beginTime != '':
-        ` and date_format(create_time,'%y%m%d') >= date_format(#{dto.params.beginTime},'%y%m%d')`
-    if dto.params.endTime != '':
-        ` and date_format(create_time,'%y%m%d') <= date_format(#{dto.params.endTime},'%y%m%d')`
-    if do_count == false:
-     ` order by create_time`"});
+impl_select!(GenTableColumn{select_columns_by_table_id(table_id: &str) =>
+    "`where table_id= #{table_id}`
+     ` order by sort`"});
+
 pysql_select_page!(select_db_table_list(dto:&TablePageDTO) -> GenTableColumn =>
     r#"select TABLE_NAME table_name, TABLE_COMMENT table_comment, CREATE_TIME create_time, UPDATE_TIME update_time from information_schema.tables
         ` where table_schema = (select database())`

@@ -59,7 +59,7 @@
                   <div class="d-flex">
                     <el-form-item label="${{ column.comment }}" prop="begin${{ column.javaFieldCap }}">
                       <el-date-picker
-                          v-model="queryParams.params.begin${{ column.javaFieldCap }}" value-format="YYYY-MM-DD"
+                          v-model="queryParams.params.begin${{ column.javaFieldCap }}" value-format="YYYY-MM-DD"f
                           type="date"
                           title="请选择${{ column.comment }}开始日期"
                           clearable
@@ -480,15 +480,16 @@ const isEdit=computed(()=>{
     function reset() {
         form.value = {
             {% for column in columns %}
-                {% if column.javaField=="createBy" or column.javaField=="createTime" or column.javaField== "updateBy" or column.javaField=="updateTime" %}
+
+                {% if (tableOptions.softDelete and tableOptions.softDeleteColumn==column.columnName) or column.javaField=="createBy" or column.javaField=="createTime" or column.javaField== "updateBy" or column.javaField=="updateTime" %}
                 {% elif column.defVal is not none %}
-                    {% if column.javaType == "String" or column.javaType == "Character" %}
+                    {% if column.javaType == "String" or column.javaType == "char" %}
                         ${{ column.javaField }}: "${{ column.defVal}}",
                     {% else %}
                         ${{ column.javaField }}: ${{ column.defVal}},
                     {% endif %}
                 {% elif column.htmlType == "radio" %}
-                    ${{ column.javaField }}: {% if column.javaType == "Boolean" %} 0 {% else %} "0" {% endif %}
+                    ${{ column.javaField }}: {% if column.javaType == "Boolean" %} 0, {% else %} "0", {% endif %}
                 {% elif column.htmlType == "checkbox" %}
                     ${{ column.javaField }}: [],
                 {% else %}

@@ -1,8 +1,7 @@
-use rbatis::field_name;
 use crate::context::CONTEXT;
 use crate::error::Result;
-use crate::{pool, remove_batch};
 use crate::gen::domain::mapper::gen_table_column::GenTableColumn;
+use crate::{pool, remove_batch};
 
 /// table service
 pub struct GenTableColumnService {}
@@ -25,16 +24,8 @@ impl GenTableColumnService {
     }
     remove_batch!(table_ids);
 
-    pub async fn select_gen_table_column_list_by_table_id(
-        &self,
-        table_id: &str,
-    ) -> Result<Vec<GenTableColumn>> {
-        let list = GenTableColumn::select_by_column(
-            pool!(),
-            field_name!(GenTableColumn.table_id),
-            table_id,
-        )
-            .await?;
+    pub async fn select_gen_table_column_list_by_table_id(&self, table_id: &str) -> Result<Vec<GenTableColumn>> {
+        let list = GenTableColumn::select_columns_by_table_id(pool!(), table_id).await?;
         Ok(list)
     }
 }

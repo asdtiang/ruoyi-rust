@@ -29,14 +29,14 @@ use serde::de::DeserializeOwned;
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
 
-pub const CODE_SUCCESS: u64 = 200;
-pub const CODE_FAIL: u64 = 500;
+pub const CODE_SUCCESS: u16 = 200;
+pub const CODE_FAIL: u16 = 500;
 
 /// The http interface returns the model structure, providing basic json data structures such as code, msg, and data
 #[derive(Debug, Serialize, Deserialize, Clone)]
 #[serde(rename_all = "camelCase")]
 pub struct RespVO<T> {
-    pub code: u64,
+    pub code: u16,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub msg: Option<String>,
     #[serde(skip_serializing_if = "Option::is_none")]
@@ -86,7 +86,7 @@ where
             data: None,
         }
     }
-    pub fn from_error_result(code: u64, arg: &Result<T, Error>) -> Self {
+    pub fn from_error_result(code: u16, arg: &Result<T, Error>) -> Self {
         Self {
             code,
             msg: Some(arg.clone().err().unwrap().to_string()),
@@ -94,7 +94,7 @@ where
         }
     }
 
-    pub fn from_error_info(code: u64, info: &str) -> Self {
+    pub fn from_error_info(code: u16, info: &str) -> Self {
         Self {
             code,
             msg: Some(info.to_string()),
@@ -194,7 +194,7 @@ impl IntoResponse for RespJson {
 #[derive(Debug, Serialize, Deserialize, Clone)]
 #[serde(rename_all = "camelCase")]
 pub struct PageVO<T> {
-    pub code: u64,
+    pub code: u16,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub rows: Option<Vec<T>>,
     pub total: Option<u64>,  

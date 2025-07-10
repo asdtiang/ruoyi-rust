@@ -107,6 +107,6 @@ impl IntoResponse for ValidationError {
             },
         };
 
-        RespVO::<u64>::from_error_info(status.as_u16() as u64, &error_message).into_response()
+        RespVO::<u64>::from_error_info(status.as_u16(), &error_message).into_response()
     }
 }

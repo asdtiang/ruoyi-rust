@@ -54,8 +54,8 @@ impl From<${{className}}AddDTO> for ${{className}} {
         ${{className}} {
            {% if pkColumn.isIncrement %}
            ${{pkColumn.columnName}}: None,
-           {% elif column.javaType=="String" %}
-           ${{pkColumn.columnName}}: ObjectId::new().to_string().into()
+           {% elif pkColumn.javaType=="String" %}
+           ${{pkColumn.columnName}}: ObjectId::new().to_string().into(),
            {% endif %}
             {% for column in columns %} {% if not column.isPk %} {% if column.isInsert%} ${{column.columnName}}: arg.${{column.columnName}},  {% else %}${{column.columnName}}: None,{% endif %} {% endif %} {% endfor %}
         }

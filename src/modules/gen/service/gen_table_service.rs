@@ -124,8 +124,7 @@ impl GenTableService {
                 // .block_delimiters("{%", "%}")
                 .variable_delimiters("${{", "}}")
                 .comment_delimiters("{#", "#}")
-                .build()
-                .unwrap(),
+                .build().map_err(|e|Error::from(e.to_string()))?
         );
         let tpl_path_list = find_files_with_extension(tlt_path.as_path(), "jinja")?;
         let mut tpl_name_list = vec![];
@@ -184,6 +183,8 @@ impl GenTableService {
             if ext.eq("rs") {
                 code = self.format_rust_code(&code)?;
             } else if ext.eq("vue") {
+                code = self.format_vue_code(&code)?;
+            }else if ext.eq("js") {
                 code = self.format_vue_code(&code)?;
             }
             loop {
@@ -361,13 +362,13 @@ impl GenTableService {
                 .into_iter()
                 .next()
                 .ok_or_else(|| Error::from(format!("不存在:{:?} ", table_name)))?;
-        let table_columns = GEN_CONTEXT
+        let old_table_columns = GEN_CONTEXT
             .gen_table_column_service
             .select_gen_table_column_list_by_table_id(&table.table_id.clone().unwrap_or_default())
             .await?;
-        let mut table_column_map = HashMap::with_capacity(table_columns.len());
+        let mut table_column_map = HashMap::with_capacity(old_table_columns.len());
 
-        table_columns.iter().for_each(|c| {
+        old_table_columns.iter().for_each(|c| {
             table_column_map.insert(c.column_name.clone().unwrap_or_default(), c);
         });
 
@@ -384,8 +385,7 @@ impl GenTableService {
         for mut column in db_table_columns {
             gen_utils::init_column_field(&mut column, &table);
             let column_name = column.column_name.clone().unwrap_or_default();
-            if table_column_map.contains_key(&column_name) {
-                let prev_column = table_column_map.get(&column_name).unwrap();
+            if let Some(prev_column)= table_column_map.get(&column_name){
                 column.column_id = prev_column.column_id.clone();
                 //todo more
                 if column.is_list.is_some_and(|c| c == gen_constants::REQUIRE) {
@@ -402,15 +402,15 @@ impl GenTableService {
                 //     column.setHtmlType(prev_column.getHtmlType());
                 // }
                 column.more = prev_column.more.clone();
-
                 GenTableColumn::update_by_column(pool!(), &column, "column_id").await?;
-            } else {
+            }else{
+                column.column_id = Some(ObjectId::new().to_string());
                 GenTableColumn::insert(pool!(), &column).await?;
             }
         }
-        for column in table_columns {
-            if db_table_column_names.contains(&column.column_name.clone().unwrap_or_default()) {
-                GenTableColumn::delete_by_column(pool!(), "column_id", &column).await?;
+        for column in old_table_columns {
+            if !db_table_column_names.contains(&column.column_name.clone().unwrap_or_default()) {
+                GenTableColumn::delete_by_column(pool!(), "column_id", &column.column_id).await?;
             }
         }
         Ok(())
