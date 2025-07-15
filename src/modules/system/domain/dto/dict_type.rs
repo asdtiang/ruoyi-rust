@@ -1,7 +1,6 @@
 use crate::system::domain::mapper::sys_dict_type::SysDictType;
 use macros::page_request;
 use rbatis::object_id::ObjectId;
-use rbatis::rbdc::datetime::DateTime;
 
 use serde::{Deserialize, Serialize};
 
@@ -24,7 +23,7 @@ pub struct DictTypeAddDTO {
     /** 字典类型 */
     #[validate(custom(function = "crate::string_required", message = "字典类型不能为空"))]
     #[validate(length(max = 100, message = "字典类型类型长度不能超过100个字符"))]
-    //todo @Pattern(regexp = "^[a-z][a-z0-9_]*$", message = "字典类型必须以字母开头，且只能为（小写字母，数字，下滑线）")))]
+    #[validate(regex(path =* crate::NORMAL_NAME_REG, message = "字典类型必须以字母开头，且只能为（小写字母，数字，下滑线）"))]
     pub dict_type: Option<String>,
     /** 状态（0正常 1停用） */
     pub status: Option<char>,
@@ -59,13 +58,12 @@ pub struct DictTypeUpdateDTO {
     /** 字典类型 */
     #[validate(custom(function = "crate::string_required", message = "字典类型不能为空"))]
     #[validate(length(max = 100, message = "字典类型类型长度不能超过100个字符"))]
-    //todo @Pattern(regexp = "^[a-z][a-z0-9_]*$", message = "字典类型必须以字母开头，且只能为（小写字母，数字，下滑线）")))]
+    #[validate(regex(path =* crate::NORMAL_NAME_REG, message = "字典类型必须以字母开头，且只能为（小写字母，数字，下滑线）"))]
     pub dict_type: Option<String>,
     /** 状态（0正常 1停用） */
     pub status: Option<char>,
     pub remark: Option<String>,
 }
-
 impl From<DictTypeUpdateDTO> for SysDictType {
     fn from(arg: DictTypeUpdateDTO) -> Self {
         SysDictType {

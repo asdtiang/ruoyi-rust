@@ -13,15 +13,15 @@ use validator::Validate;
 pub struct UserAddDTO {
     /** 部门ID */
     pub dept_id: Option<String>,
-    // @Xss(message = "用户账号不能包含脚本字符")
+     #[validate(custom(function = "crate::xss_validator", message = "用户账号不能包含脚本字符"))]
     /** 用户账号 */
-    //todo @Xss(message = "用户账号不能包含脚本字符")))]
+     #[validate(custom(function = "crate::xss_validator", message = "用户账号不能包含脚本字符"))]
     #[validate(custom(function = "crate::string_required", message = "用户账号不能为空"))]
     #[validate(length(max = 30, message = "用户账号长度不能超过30个字符"))]
     pub user_name: Option<String>,
-    // @Xss(message = "用户昵称不能包含脚本字符")
+     #[validate(custom(function = "crate::xss_validator", message = "用户昵称不能包含脚本字符"))]
     /** 用户昵称 */
-    //todo @Xss(message = "用户昵称不能包含脚本字符")))]
+     #[validate(custom(function = "crate::xss_validator", message = "用户昵称不能包含脚本字符"))]
     #[validate(length(max = 30, message = "用户昵称长度不能超过30个字符"))]
     pub nick_name: Option<String>,
     /** 用户邮箱 */
@@ -76,7 +76,7 @@ pub struct UserUpdateDTO {
     /** 部门ID */
     pub dept_id: Option<String>,
     /** 用户昵称 */
-    //todo @Xss(message = "用户昵称不能包含脚本字符")))]
+     #[validate(custom(function = "crate::xss_validator", message = "用户昵称不能包含脚本字符"))]
     #[validate(length(max = 30, message = "用户昵称长度不能超过30个字符"))]
     pub nick_name: Option<String>,
     /** 用户邮箱 */

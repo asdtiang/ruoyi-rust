@@ -20,8 +20,6 @@ impl SysDictDataService {
     }
 
     pub async fn get_by_dict_type(&self, dict_type: &String) -> Result<Vec<SysDictDataSimpleVO>> {
-
-        //todo 从缓存中获取
         let data = SysDictData::select_by_dict_type(pool!(), &dict_type).await?;
         let res=   data.into_iter().map(|d| SysDictDataSimpleVO::from(d)).collect();
         Ok(res)

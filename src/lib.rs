@@ -11,8 +11,8 @@ pub use modules::*;
 pub use utils::excel_utils::AttrType;
 pub use utils::excel_utils::ExcelGenAttr;
 pub use utils::excel_utils::ExcelGenAttrTrait;
-pub use utils::validate_utils::string_required;
-pub use utils::validator::ValidatedForm;
+pub use utils::validate_utils::*;
+pub use web::validator::ValidatedForm;
 
 pub trait DataScopeTrait {
     fn clear_data_scope_params(&mut self) ;

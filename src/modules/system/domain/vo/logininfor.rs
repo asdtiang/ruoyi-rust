@@ -30,7 +30,7 @@ pub struct SysLogininforVO {
     #[excel( "提示消息")]
     pub msg: Option<String>,
     /** 访问时间 */
-    //, dateFormat = "yyyy-MM-dd HH:mm:ss"
+    #[serde(with = "crate::utils::date_time_format")]
     #[excel( "访问时间", width = 30.0)]
     pub login_time: Option<DateTime>,
 }

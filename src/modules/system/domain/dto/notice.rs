@@ -18,7 +18,7 @@ pub struct NoticePageDTO {
 #[serde(rename_all = "camelCase")]
 pub struct NoticeAddDTO {
     /** 公告标题 */
-    //todo @Xss(message = "公告标题不能包含脚本字符")))]
+    #[validate(custom(function = "crate::xss_validator", message = "公告标题不能包含脚本字符"))]
     #[validate(custom(function = "crate::string_required", message = "公告标题不能为空"))]
     #[validate(length(max = 50, message = "公告标题不能超过50个字符"))]
     pub notice_title: Option<String>,
@@ -54,7 +54,7 @@ pub struct NoticeUpdateDTO {
     /** 公告ID */
     pub notice_id: Option<String>,
     /** 公告标题 */
-    //todo @Xss(message = "公告标题不能包含脚本字符")))]
+     #[validate(custom(function = "crate::xss_validator", message = "公告标题不能包含脚本字符"))]
     #[validate(custom(function = "crate::string_required", message = "公告标题不能为空"))]
     #[validate(length(max = 50, message = "公告标题不能超过50个字符"))]
     pub notice_title: Option<String>,

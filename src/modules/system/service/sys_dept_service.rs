@@ -224,45 +224,7 @@ impl SysDeptService {
         }
         Ok(())
     }
-    /*
-    todo
-    <update id="update_dept_children" parameterType="java.utils.List">
-            update sys_dept set ancestors =
-            <foreach collection="depts" item="item" index="index"
-                separator=" " open="case dept_id" close="end">
-                when #{item.deptId} then #{item.ancestors}
-            </foreach>
-            where dept_id in
-            <foreach collection="depts" item="item" index="index"
-                separator="," open="(" close=")">
-                #{item.deptId}
-            </foreach>
-        </update>
-
-     */
-
-    /*
-    <update id="update_dept_children" parameterType="java.utils.List">
-         update sys_dept set ancestors =
-         <foreach collection="depts" item="item" index="index"
-             separator=" " open="case dept_id" close="end">
-             when #{item.deptId} then #{item.ancestors}
-         </foreach>
-         where dept_id in
-         <foreach collection="depts" item="item" index="index"
-             separator="," open="(" close=")">
-             #{item.deptId}
-         </foreach>
-     </update>
-
-     <update id="updateDeptStatusNormal" parameterType="Long">
-          update sys_dept set status = '0' where dept_id in
-          <foreach collection="array" item="deptId" open="(" separator="," close=")">
-             #{deptId}
-         </foreach>
-     </update>
-     */
-
+    
     /**
      * 校验部门是否有数据权限
      *

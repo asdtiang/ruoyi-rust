@@ -71,7 +71,7 @@ pub async fn add(dto: crate::ValidatedForm<DeptAddDTO>) -> impl IntoResponse {
 }
 
 #[pre_authorize("system:dept:edit", user)]
-pub async fn update(dto: crate::utils::validator::ValidatedForm<DeptUpdateDTO>) -> impl IntoResponse {
+pub async fn update(dto: crate::web::validator::ValidatedForm<DeptUpdateDTO>) -> impl IntoResponse {
     add_marco!(data, dto, user, SysDept);
     let res = CONTEXT.sys_dept_service.update(data).await;
     RespVO::<u64>::judge_result(res, "", "更新失败！").into_response()
