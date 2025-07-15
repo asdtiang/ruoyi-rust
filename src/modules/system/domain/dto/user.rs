@@ -1,6 +1,6 @@
 use crate::config::global_constants::{DEL_FLAG_NORMAL, STATUS_NORMAL};
-use  crate::system::domain::mapper::sys_user::SysUser;
-use  crate::system::domain::mapper::sys_user_role::SysUserRole;
+use crate::system::domain::mapper::sys_user::SysUser;
+use crate::system::domain::mapper::sys_user_role::SysUserRole;
 use crate::utils::password_encoder::PasswordEncoder;
 use macros::page_request;
 use rbatis::object_id::ObjectId;
@@ -60,7 +60,7 @@ impl From<UserAddDTO> for SysUser {
             login_ip: None,
             login_date: None,
             create_by: None,
-            create_time: DateTime::now().set_nano(0).into(),
+            create_time: None,
             update_by: None,
             update_time: None,
             remark: arg.remark,
@@ -118,7 +118,7 @@ impl From<UserUpdateDTO> for SysUser {
             create_by: None,
             create_time: None,
             update_by: None,
-            update_time: DateTime::now().set_nano(0).into(),
+            update_time: None,
             remark: arg.remark,
         }
     }

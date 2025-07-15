@@ -1,10 +1,10 @@
 use std::time::Duration;
 
 use crate::error::{Error, Result};
+use crate::system::service::cache_service::ICacheService;
 use futures_util::future::BoxFuture;
 use redis::aio::MultiplexedConnection;
 use redis::RedisResult;
-use crate::system::service::cache_service::ICacheService;
 
 ///Redis Cache service
 #[derive(Debug, Clone)]

@@ -1,4 +1,4 @@
-use  crate::system::domain::mapper::sys_logininfor::SysLogininfor;
+use crate::system::domain::mapper::sys_logininfor::SysLogininfor;
 use rbatis::rbdc::types::datetime::DateTime;
 
 #[derive(Clone, Debug, serde::Serialize, serde::Deserialize)]

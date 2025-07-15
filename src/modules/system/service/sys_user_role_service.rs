@@ -1,11 +1,11 @@
 use crate::context::CONTEXT;
-use  crate::system::domain::dto::{UserPageDTO, UserRoleDTO, UserRolePageDTO};
-use  crate::system::domain::mapper::sys_role::SysRole;
-use  crate::system::domain::mapper::sys_user_role::SysUserRole;
-use  crate::system::domain::vo::user::SysUserVO;
 use crate::error::Error;
 use crate::error::Result;
 use crate::pool;
+use crate::system::domain::dto::{UserPageDTO, UserRoleDTO, UserRolePageDTO};
+use crate::system::domain::mapper::sys_role::SysRole;
+use crate::system::domain::mapper::sys_user_role::SysUserRole;
+use crate::system::domain::vo::user::SysUserVO;
 use rbatis::{field_name, Page};
 use rbs::to_value;
 
@@ -135,46 +135,4 @@ impl SysUserRoleService {
         let roles = CONTEXT.sys_role_service.finds(role_ids).await?;
         Ok(Some(roles))
     }
-
-    //TODO delete
-    // pub async fn find_user_role(
-    //     &self,
-    //     user_id: &str,
-    //     all_menus: &BTreeMap<String, SysMenuVO>,
-    // ) -> Result<Option<SysRoleVO>> {
-    //     if user_id.is_empty() {
-    //         return Ok(None);
-    //     }
-    //     let user_roles =
-    //         SysUserRole::select_by_column(pool!(), field_name!(SysUserRole.user_id), user_id)
-    //             .await?;
-    //
-    //     let role_ids = &rbatis::table_field_vec!(&user_roles, role_id);
-    //     let roles = CONTEXT.sys_role_service.finds(role_ids).await?;
-    //     let role_menu_vec = CONTEXT
-    //         .sys_role_service
-    //         .find_role_menu(&rbatis::table_field_vec!(&user_roles, role_id))
-    //         .await?;
-    //     let mut role_vos = vec![];
-    //     for role in roles {
-    //         //load res
-    //         let mut menus = vec![];
-    //         for role_menu in &role_menu_vec {
-    //             if role.id.is_some() && role.id.eq(&role_menu.role_id) {
-    //                 if let Some(res) = all_menus.get(role_menu.menu_id.as_ref().unwrap_or_def()) {
-    //                     menus.push(res.clone());
-    //                 }
-    //             }
-    //         }
-    //         let mut vo = SysRoleVO::from(role);
-    //         vo.menu_ids = CONTEXT.sys_menu_service.make_menu_ids(&menus);
-    //         vo.menus = menus;
-    //         role_vos.push(vo);
-    //     }
-    //     if role_vos.is_empty() {
-    //         return Ok(None);
-    //     } else {
-    //         return Ok(Some(role_vos[0].clone()));
-    //     }
-    // }
 }

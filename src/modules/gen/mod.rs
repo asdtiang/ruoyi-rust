@@ -1,12 +1,12 @@
-use std::sync::LazyLock;
-use axum::Router;
 use axum::routing::{delete, get, post, put};
+use axum::Router;
+use std::sync::LazyLock;
 pub mod controller;
 pub mod domain;
 pub mod service;
 
-pub use controller::*;
 use crate::gen::service::{GenTableColumnService, GenTableService};
+pub use controller::*;
 
 pub(crate) fn build_gen_api() -> Router {
     Router::new()

@@ -1,14 +1,14 @@
 use crate::config::global_constants::STATUS_NORMAL;
 use crate::context::CONTEXT;
-use  crate::system::domain::dto::{PostAddDTO, PostPageDTO, PostUpdateDTO};
-use  crate::system::domain::mapper::sys_post::SysPost;
-use crate::{export_excel_controller, PageVO, RespVO};
+use crate::system::domain::dto::{PostAddDTO, PostPageDTO, PostUpdateDTO};
+use crate::system::domain::mapper::sys_post::SysPost;
+use crate::{add_marco, export_excel_controller, update_marco, PageVO, RespVO};
 use axum::extract::Path;
 use axum::response::IntoResponse;
 use axum::Json;
 use macros::pre_authorize;
 
-//#[get("/post/list")]
+
 #[pre_authorize("system:post:list")]
 pub async fn list(dto: Json<PostPageDTO>) -> impl IntoResponse {
     let data = CONTEXT.sys_post_service.page(&dto).await;
@@ -16,7 +16,7 @@ pub async fn list(dto: Json<PostPageDTO>) -> impl IntoResponse {
 }
 
 
-//#[get("/post/{dict_id}")]
+
 #[pre_authorize("system:post:query")]
 pub async fn detail(dict_id: Path<String>) -> impl IntoResponse {
     let dict_id = dict_id.0;
@@ -25,11 +25,10 @@ pub async fn detail(dict_id: Path<String>) -> impl IntoResponse {
 }
 
 
-//#[post("/post")]
-#[pre_authorize("system:post:add")]
-pub async fn add(arg: crate::ValidatedForm<PostAddDTO>) -> impl IntoResponse {
-    let mut data = SysPost::from(arg.0);
-    data.create_by = Some(crate::web_data::get_user_name());
+
+#[pre_authorize("system:post:add",user)]
+pub async fn add(dto: crate::ValidatedForm<PostAddDTO>) -> impl IntoResponse {
+    add_marco!(data, dto, user, SysPost);
     if data.status.is_none() {
         data.status = Some(STATUS_NORMAL);
     }
@@ -37,16 +36,15 @@ pub async fn add(arg: crate::ValidatedForm<PostAddDTO>) -> impl IntoResponse {
     RespVO::<u64>::judge_result(rows_affected, "", "添加失败！").into_response()
 }
 
-//#[put("/post")]
-#[pre_authorize("system:post:edit")]
-pub async fn update(arg: crate::ValidatedForm<PostUpdateDTO>) -> impl IntoResponse {
-    let mut data = SysPost::from(arg.0);
-    data.update_by = Some(crate::web_data::get_user_name());
+
+#[pre_authorize("system:post:edit",user)]
+pub async fn update(dto: crate::ValidatedForm<PostUpdateDTO>) -> impl IntoResponse {
+    update_marco!(data, dto, user, SysPost);
     let rows_affected = CONTEXT.sys_post_service.update(data).await;
     RespVO::<u64>::judge_result(rows_affected, "", "更新失败！").into_response()
 }
 
-//#[delete("/post/{post_id}")]
+
 #[pre_authorize("system:post:remove")]
 pub async fn remove(dict_id: Path<String>) -> impl IntoResponse {
     let dict_id = dict_id.0;

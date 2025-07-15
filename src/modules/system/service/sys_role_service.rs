@@ -1,17 +1,17 @@
 use crate::config::global_constants::ADMIN_NAME;
 use crate::context::CONTEXT;
-use  crate::system::domain::dto::{RoleAuthUserPageDTO, RolePageDTO};
-use  crate::system::domain::mapper::sys_role::SysRole;
-use  crate::system::domain::mapper::sys_role_menu::SysRoleMenu;
-use  crate::system::domain::mapper::sys_user;
-use  crate::system::domain::mapper::sys_user::SysUser;
-use  crate::system::domain::mapper::sys_user_role::SysUserRole;
-use  crate::system::domain::vo::{SysRoleVO, SysUserVO};
 use crate::error::{Error, Result};
+use crate::system::domain::dto::{RoleAuthUserPageDTO, RolePageDTO};
+use crate::system::domain::mapper::sys_role::SysRole;
+use crate::system::domain::mapper::sys_role_menu::SysRoleMenu;
+use crate::system::domain::mapper::sys_user;
+use crate::system::domain::mapper::sys_user::SysUser;
+use crate::system::domain::mapper::sys_user_role::SysUserRole;
+use crate::system::domain::vo::{SysRoleVO, SysUserVO};
 use crate::{export_excel_service, pool, remove_batch};
-use crate::web_data::get_user_name;
 use macros::data_scope;
 use rbatis::{field_name, Page, PageRequest};
+use rbs::to_value;
 
 const RES_KEY: &'static str = "sys_role:all";
 
@@ -19,7 +19,7 @@ const RES_KEY: &'static str = "sys_role:all";
 pub struct SysRoleService {}
 
 impl SysRoleService {
-    #[data_scope(deptAlias="d",userAlias="u")]
+    #[data_scope(deptAlias = "d", userAlias = "u")]
     pub async fn page(&self, dto: &RolePageDTO) -> Result<Page<SysRoleVO>> {
         let data = SysRole::select_page(pool!(), &PageRequest::from(&dto), &dto).await?;
         let page = Page::<SysRoleVO>::from(data);
@@ -47,7 +47,8 @@ impl SysRoleService {
         if result > 0 && !menu_ids.is_empty() {
             CONTEXT
                 .sys_role_menu_service
-                .add_role_menus(role.role_id.unwrap(), menu_ids).await?;
+                .add_role_menus(role.role_id.unwrap(), menu_ids)
+                .await?;
         }
         self.update_cache().await?;
         Ok(result)
@@ -61,21 +62,29 @@ impl SysRoleService {
             .rows_affected;
         if result > 0 {
             let role_id = role.role_id.clone().unwrap();
-            CONTEXT
-                .sys_role_menu_service
-                .remove_by_role_id(&role_id)
-                .await?;
+            CONTEXT.sys_role_menu_service.remove_by_role_id(&role_id).await?;
             if !menu_ids.is_empty() {
-                CONTEXT
-                    .sys_role_menu_service
-                    .add_role_menus(role_id, menu_ids)
-                    .await?;
+                CONTEXT.sys_role_menu_service.add_role_menus(role_id, menu_ids).await?;
             }
         }
         self.update_cache().await?;
         Ok(result)
     }
 
+    pub async fn update_status(&self, role: SysRole,oper_user_name:&str) -> Result<u64> {
+        let role_id = role.role_id.clone().unwrap_or_default();
+        let status = role.status.unwrap_or_default();
+        self.check_role_allowed(&role).await?;
+        self.check_role_data_scope(&role_id,oper_user_name).await?;
+        let res = pool!()
+            .exec(
+                "update sys_role set status = ? where role_id = ?",
+                vec![to_value!(status), to_value!(role_id)],
+            )
+            .await?;
+        self.update_cache().await?;
+        Ok(res.rows_affected)
+    }
     pub async fn remove(&self, id: &str) -> Result<u64> {
         let trash = SysRole::select_by_column(pool!(), field_name!(SysRole.role_id), id).await?;
         let result = SysRole::delete_by_column(pool!(), field_name!(SysRole.role_id), id)
@@ -136,10 +145,12 @@ impl SysRoleService {
     //查找所有roles，如果用户包含此权限，则flag=true
     pub async fn finds_role_ids_by_user_id(&self, user_id: &str) -> Result<Vec<String>> {
         let user_roles = SysUserRole::select_by_column(pool!(), "user_id", user_id).await?;
-        let res=user_roles.into_iter().map(|ur|ur.role_id.unwrap_or_default()).collect::<Vec<_>>();
+        let res = user_roles
+            .into_iter()
+            .map(|ur| ur.role_id.unwrap_or_default())
+            .collect::<Vec<_>>();
         Ok(res)
     }
-
 
     pub async fn find_role_menu(&self, role_ids: &Vec<&String>) -> Result<Vec<SysRoleMenu>> {
         if role_ids.is_empty() {
@@ -148,58 +159,18 @@ impl SysRoleService {
         Ok(SysRoleMenu::select_in_column(pool!(), "role_id", role_ids).await?)
     }
 
-    // pub async fn find_user_permission(
-    //     &self,
-    //     user_id: &str,
-    //     all_menus: &BTreeMap<String, SysMenuVO>,
-    // ) -> Result<Vec<String>> {
-    //     let user_roles =
-    //         SysUserRole::select_by_column(pool!(), field_name!(SysUserRole.user_id), user_id)
-    //             .await?;
-    //     let role_menu = self
-    //         .find_role_menu(&rbatis::table_field_vec!(&user_roles, role_id))
-    //         .await?;
-    //     let menus =  CONTEXT
-    //         .sys_menu_service.finds_menu(&rbatis::table_field_vec!(&role_menu, menu_id), &all_menus);
-    //     //
-    //     // let menus = CONTEXT
-    //     //     .sys_menu_service
-    //     //     .finds_layer(&rbatis::table_field_vec!(&role_menu, menu_id), &all_menus)
-    //     //     .await?;
-    //     let permissions = rbatis::table_field_vec!(&menus, perms);
-    //     return Ok(permissions);
-    // }
-    //
-    // ///Loop to find the parent-child associative relation array
-    // pub fn loop_find_childs(&self, arg: &mut SysRoleVO, all: &HashMap<String, SysRole>) {
-    //     let mut childs = vec![];
-    //     for (key, x) in all {
-    //         if x.parent_id.is_some() && x.parent_id.eq(&arg.id) {
-    //             let mut item = SysRoleVO::from(x.clone());
-    //             self.loop_find_childs(&mut item, all);
-    //             childs.push(item);
-    //         }
-    //     }
-    //     if !childs.is_empty() {
-    //         arg.childs = Some(childs);
-    //     }
-    // }
-
-    #[data_scope(deptAlias="d",userAlias="u")]
-    pub async fn allocated_user_list_page(&self, dto: &RoleAuthUserPageDTO) -> Result<Page<SysUserVO>>{
+    #[data_scope(deptAlias = "d", userAlias = "u")]
+    pub async fn allocated_user_list_page(&self, dto: &RoleAuthUserPageDTO) -> Result<Page<SysUserVO>> {
         let sys_user_page: Page<SysUser> =
             sys_user::allocated_user_list(pool!(), &PageRequest::from(&dto), &dto).await?;
-        let  page = Page::<SysUserVO>::from(sys_user_page);
+        let page = Page::<SysUserVO>::from(sys_user_page);
         Ok(page)
     }
-    #[data_scope(deptAlias="d",userAlias="u")]
-    pub async fn unallocated_user_list_page(
-        &self,
-        dto: &RoleAuthUserPageDTO,
-    )  -> Result<Page<SysUserVO>>{
+    #[data_scope(deptAlias = "d", userAlias = "u")]
+    pub async fn unallocated_user_list_page(&self, dto: &RoleAuthUserPageDTO) -> Result<Page<SysUserVO>> {
         let sys_user_page: Page<SysUser> =
             sys_user::unallocated_user_list(pool!(), &PageRequest::from(&dto), &dto).await?;
-        let  page = Page::<SysUserVO>::from(sys_user_page);
+        let page = Page::<SysUserVO>::from(sys_user_page);
         Ok(page)
     }
 
@@ -210,33 +181,38 @@ impl SysRoleService {
             Ok(true)
         }
     }
-    pub async fn check_role_data_scope(&self, role_id: &str) -> Result<bool> {
-        let is_admin = get_user_name().eq(ADMIN_NAME);
-        if !is_admin {
-            // SysRole role = new SysRole();
-            // role.setRoleId(role_id);
-            // List<SysRole> roles = SpringUtils.getAopProxy(this).selectRoleList(role);
-            // if (StringUtils.isEmpty(roles))
-            // {
-            //     throw new ServiceException("没有权限访问角色数据！");
-            // }
-            Err(Error::from("没有权限访问角色数据！"))
-        } else {
-            Ok(true)
+    pub async fn check_role_data_scope(&self, role_id: &str, user_name: &str) -> Result<bool> {
+        if !user_name.eq(ADMIN_NAME) {
+            let dto = RolePageDTO {
+                page_no: None,
+                page_size: None,
+                role_id: Some(role_id.to_string()),
+                role_name: None,
+                role_key: None,
+                status: None,
+                params: None,
+            };
+            let roles = self.page(&dto).await?;
+            if roles.records.is_empty() {
+                return Err(Error::from("没有权限访问角色数据！"));
+            }
         }
+        Ok(true)
     }
-    pub async fn auth_data_scope(&self, role: &SysRole,dept_ids:&Vec<String>) -> Result<bool> {
+    pub async fn auth_data_scope(&self, role: &SysRole, dept_ids: &Vec<String>, user_name: &str) -> Result<bool> {
         self.check_role_allowed(role).await?;
-        let role_id=role.role_id.clone().unwrap_or_default();
-        self.check_role_data_scope(&role_id).await?;
+        let role_id = role.role_id.clone().unwrap_or_default();
+        self.check_role_data_scope(&role_id, user_name).await?;
         let result = SysRole::update_by_column(pool!(), &role, field_name!(SysRole.role_id))
             .await?
             .rows_affected;
         CONTEXT.sys_role_dept_service.remove_by_role_id(&role_id).await?;
-        if !dept_ids.is_empty() { CONTEXT.sys_role_dept_service.add_role_depts(&role_id, dept_ids).await?;}
+        if !dept_ids.is_empty() {
+            CONTEXT.sys_role_dept_service.add_role_depts(&role_id, dept_ids).await?;
+        }
 
         Ok(true)
     }
     remove_batch!(role_ids);
-    export_excel_service!(RolePageDTO, SysRoleVO,SysRole::select_page);
+    export_excel_service!(RolePageDTO, SysRoleVO, SysRole::select_page);
 }

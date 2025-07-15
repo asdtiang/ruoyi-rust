@@ -1,4 +1,4 @@
-use  crate::system::domain::mapper::sys_config::SysConfig;
+use crate::system::domain::mapper::sys_config::SysConfig;
 
 #[derive(Clone, Debug, serde::Serialize, serde::Deserialize)]
 #[serde(rename_all = "camelCase")]

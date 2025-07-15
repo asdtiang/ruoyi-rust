@@ -1,45 +1,46 @@
 use crate::context::CONTEXT;
 use crate::system::domain::dto::{NoticeAddDTO, NoticePageDTO, NoticeUpdateDTO};
+use crate::system::domain::mapper::sys_notice::SysNotice;
 use crate::system::domain::vo::SysNoticeVO;
-use crate::{export_excel_controller, PageVO, RespVO};
-use axum::body::Bytes;
+use crate::{add_marco, export_excel_controller, update_marco, PageVO, RespVO};
 use axum::extract::Path;
-use axum::http::{header, HeaderMap, HeaderValue};
 use axum::response::IntoResponse;
 use axum::Json;
 use macros::pre_authorize;
 use rbatis::Page;
 
-//#[get("/notice/list")]
-#[pre_authorize("system:notice:list")]
+
+#[pre_authorize("system*:notice:list")]
 pub async fn list(dto: Json<NoticePageDTO>) -> impl IntoResponse {
     let data = CONTEXT.sys_notice_service.page(&dto.0).await;
     let data = data.map(|d| Page::<SysNoticeVO>::from(d));
     PageVO::from_result(&data).into_response()
 }
 
-//#[get("/notice/{notice_id}")]
-#[pre_authorize("system:notice:query")]
+
+#[pre_authorize("system*:notice:query")]
 pub async fn detail(notice_id: Path<String>) -> impl IntoResponse {
     let notice = CONTEXT.sys_notice_service.detail(&notice_id.0).await;
     RespVO::from_result(&notice).into_response()
 }
 
-//#[post("/notice")]
-#[pre_authorize("system:notice:add")]
+
+#[pre_authorize("system:notice:add",user)]
 pub async fn add(dto: crate::ValidatedForm<NoticeAddDTO>) -> impl IntoResponse {
-    let res = CONTEXT.sys_notice_service.add(dto.0).await;
+    add_marco!(data, dto, user, SysNotice);
+    let res = CONTEXT.sys_notice_service.add(data).await;
     RespVO::from_result(&res).into_response()
 }
 
-//#[put("/notice")]
-#[pre_authorize("system:notice:edit")]
+
+#[pre_authorize("system:notice:edit",user)]
 pub async fn update(dto: crate::ValidatedForm<NoticeUpdateDTO>) -> impl IntoResponse {
-    let res = CONTEXT.sys_notice_service.update(dto.0).await;
+    update_marco!(data, dto, user, SysNotice);
+    let res = CONTEXT.sys_notice_service.update(data).await;
     RespVO::from_result(&res).into_response()
 }
 
-//#[delete("/notice/{notice_id}")]
+
 #[pre_authorize("system:notice:remove")]
 pub async fn remove(notice_id: Path<String>) -> impl IntoResponse {
     let rows_affected = CONTEXT.sys_notice_service.remove_batch(&notice_id.0).await;
@@ -53,6 +54,3 @@ export_excel_controller!(
     sys_notice_service,
     export_as_excel_bytes
 );
-
-
-

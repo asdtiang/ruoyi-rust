@@ -1,11 +1,11 @@
 use crate::config::config::ApplicationConfig;
 use crate::error::{Error, Result};
+use crate::system::service::cache::{MemService, RedisService};
 use futures_util::future::BoxFuture;
 use serde::de::DeserializeOwned;
 use serde::Serialize;
 use std::format;
 use std::time::Duration;
-use crate::system::service::cache::{MemService, RedisService};
 
 pub trait ICacheService: Sync + Send {
     fn set_string(&self, k: &str, v: &str) -> BoxFuture<Result<String>>;

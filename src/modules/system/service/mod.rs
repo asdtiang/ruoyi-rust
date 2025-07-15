@@ -1,5 +1,4 @@
 pub mod cache_service;
-pub mod data_scope;
 pub mod hardware;
 mod sys_auth_service;
 mod sys_config_service;

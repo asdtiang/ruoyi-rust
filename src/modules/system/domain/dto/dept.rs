@@ -57,7 +57,7 @@ impl From<DeptAddDTO> for SysDept {
             status: Some(STATUS_NORMAL),
             del_flag: Some(DEL_FLAG_NORMAL),
             create_by: None,
-            create_time: DateTime::now().set_nano(0).into(),
+            create_time: None,
             update_by: None,
             update_time: None,
         }
@@ -111,7 +111,7 @@ impl From<DeptUpdateDTO> for SysDept {
             create_by: None,
             create_time: None,
             update_by: None,
-            update_time: DateTime::now().set_nano(0).into(),
+            update_time: None,
         }
     }
 }

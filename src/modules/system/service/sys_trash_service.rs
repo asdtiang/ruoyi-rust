@@ -1,6 +1,6 @@
 use crate::context::CONTEXT;
-use  crate::system::domain::mapper::sys_trash::SysTrash;
 use crate::pool;
+use crate::system::domain::mapper::sys_trash::SysTrash;
 use parking_lot::Mutex;
 use rbatis::async_trait;
 use rbatis::executor::Executor;

@@ -1,9 +1,9 @@
+use crate::system::domain::mapper::sys_logininfor::SysLogininfor;
 use axum::http::header::USER_AGENT;
 use axum::http::HeaderMap;
 use rbatis::object_id::ObjectId;
 use rbatis::rbdc::datetime::DateTime;
 use user_agent_parser::UserAgentParser;
-use crate::system::domain::mapper::sys_logininfor::SysLogininfor;
 
 
 pub fn build_logininfor(header_map: &HeaderMap,username:String,status:char,msg:String) ->SysLogininfor{

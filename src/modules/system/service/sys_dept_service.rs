@@ -1,18 +1,17 @@
-use crate::config::global_constants::{ADMIN_NAME, STATUS_NORMAL};
 use crate::context::CONTEXT;
-use crate::system::domain::dto::{DeptAddDTO, DeptQueryDTO, DeptUpdateDTO};
+use crate::error::Error;
+use crate::error::Result;
+use crate::modules::system::constants::{DEPT_DISABLE, DEPT_NORMAL};
+use crate::system::domain::dto::DeptQueryDTO;
 use crate::system::domain::mapper;
 use crate::system::domain::mapper::sys_dept;
 use crate::system::domain::mapper::sys_dept::SysDept;
 use crate::system::domain::vo::{DeptTreeVO, SysDeptVO};
-use crate::error::Error;
-use crate::error::Result;
-use crate::web_data::get_user_name;
-use crate::{check_unique_sql, export_excel_service, pool};
+use crate::{check_unique_sql, pool};
 use macros::data_scope;
 use rbatis::field_name;
 use rbs::to_value;
-use crate::modules::system::constants::{DEPT_DISABLE, DEPT_NORMAL};
+use crate::config::global_constants::ADMIN_NAME;
 
 pub struct SysDeptService {}
 
@@ -23,18 +22,14 @@ impl SysDeptService {
         Ok(data)
     }
 
-    pub async fn detail(&self, dept_id: &str) -> Result<SysDeptVO> {
-        self.check_dept_data_scope(dept_id).await?;
+    pub async fn detail(&self, dept_id: &str,oper_user_name:&str) -> Result<SysDeptVO> {
+        self.check_dept_data_scope(dept_id,oper_user_name).await?;
         let dept = self.get_dept_by_id(dept_id).await?;
         Ok(SysDeptVO::from(dept))
     }
 
-    pub async fn add(&self, dto: DeptAddDTO) -> Result<u64> {
-        let mut dept = SysDept::from(dto);
-        dept.create_by = Some(get_user_name());
-        if dept.status.is_none() {
-            dept.status = Some(STATUS_NORMAL);
-        }
+    pub async fn add(&self, dept: SysDept) -> Result<u64> {
+
         self.check_dept_name_unique(
             &dept.dept_id,
             &dept.dept_name.clone().unwrap_or_default(),
@@ -49,9 +44,8 @@ impl SysDeptService {
         Ok(SysDept::insert(pool!(), &dept).await?.rows_affected)
     }
 
-    pub async fn update(&self, dto: DeptUpdateDTO) -> Result<u64> {
+    pub async fn update(&self, dto: SysDept) -> Result<u64> {
         let mut dept = SysDept::from(dto);
-        dept.update_by = Some(crate::web_data::get_user_name());
         let dept_name = dept.dept_name.clone().unwrap_or_default();
         let parent_id = dept.parent_id.clone().unwrap_or_default();
         let dept_id = dept.dept_id.clone().unwrap_or_default();
@@ -274,8 +268,8 @@ impl SysDeptService {
      *
      * @param dept_id 部门id
      */
-    pub async fn check_dept_data_scope(&self, dept_id: &str) -> Result<()> {
-        if !get_user_name().eq(ADMIN_NAME) {
+    pub async fn check_dept_data_scope(&self, dept_id: &str,oper_user_name:&str) -> Result<()> {
+        if !oper_user_name.eq(ADMIN_NAME) {
             let mut dto = DeptQueryDTO::default();
             dto.dept_id = Some(dept_id.to_string());
             let res = self.list(&dto).await?;

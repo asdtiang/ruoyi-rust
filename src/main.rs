@@ -1,10 +1,11 @@
 use axum::error_handling::HandleErrorLayer;
 use axum::extract::DefaultBodyLimit;
+use axum::{middleware, Router};
 use ruoyi_rust::build_api;
 use ruoyi_rust::context::CONTEXT;
+use ruoyi_rust::web::jwt_auth_middleware;
 use std::net::SocketAddr;
 use std::path::PathBuf;
-use axum::{middleware,  Router};
 use tower_http::compression::predicate::SizeAbove;
 use tower_http::compression::CompressionLayer;
 use tower_http::services::{ServeDir, ServeFile};
@@ -39,7 +40,7 @@ async fn main() -> std::io::Result<()> {
             build_api().nest_service(
                 "/profile",
                 ServeDir::new(PathBuf::from(&CONTEXT.config.upload_path).join("profile")),
-            ),
+            ).route_layer(middleware::from_fn(jwt_auth_middleware)),
         )
         .layer(CompressionLayer::new().compress_when(SizeAbove::new(2048))) //启动压缩
         .layer(DefaultBodyLimit::disable())

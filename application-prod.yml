@@ -6,10 +6,3 @@ server_url: "0.0.0.0:8080"
 
 #相对应若依平台的VITE_APP_BASE_API
 base_api: "/prod-api"
-
-#接口白名单（免登陆直接访问）
-white_list_api:
-  - "/"
-  - "/prod-api/login"
-  - "/prod-api/logout"
-  - "/prod-api/captchaImage"

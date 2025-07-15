@@ -1,20 +1,17 @@
 use crate::error::Error;
 use crate::error::Result;
-use crate::gen::domain::dto::GenTableUpdateDTO;
 use crate::gen::domain::mapper::gen_table;
 use crate::gen::domain::mapper::gen_table::{select_db_table_list, GenTable, TablePageDTO};
-use crate::gen::domain::mapper::gen_table_column::{
-    select_db_table_columns_by_name, GenTableColumn,
-};
+use crate::gen::domain::mapper::gen_table_column::{select_db_table_columns_by_name, GenTableColumn};
 use crate::gen::service::{gen_constants, gen_utils, jinja_utils};
 use crate::gen::GEN_CONTEXT;
 use crate::utils::file_utils::find_files_with_extension;
 use crate::utils::string::substring_unicode;
-use crate::web_data::get_user_name;
 use crate::{pool, remove_batch};
 use macros::transactional;
 use minijinja::syntax::SyntaxConfig;
 use rbatis::object_id::ObjectId;
+use rbatis::rbdc::DateTime;
 use rbatis::{field_name, Page, PageRequest};
 use serde_json::Value;
 use std::collections::HashMap;
@@ -50,25 +47,13 @@ impl GenTableService {
         Ok(table)
     }
 
-    // pub async fn add(&self, dto: GenTableAddDTO) -> Result<u64> {
-    //     let mut data = GenTable::from(dto);
-    //     data.create_by = Some(crate::web_data::get_user_name());
-    //     let result = Ok(GenTable::insert(pool!(), &data).await?.rows_affected);
-    //     result
-    // }
-
     #[transactional(tx)]
-    pub async fn update(&self, dto: GenTableUpdateDTO) -> Result<u64> {
-        let columns = dto.columns.clone();
-        let mut data = GenTable::from(dto);
-
-        data.update_by = Some(crate::web_data::get_user_name());
+    pub async fn update(&self, data: GenTable, columns: Option<Vec<GenTableColumn>>) -> Result<u64> {
         let result = GenTable::update_by_column(&tx, &data, "table_id").await?;
         match columns {
             None => {}
             Some(list) => {
                 for column in list {
-                    let column = GenTableColumn::from(column);
                     GenTableColumn::update_by_column(&tx, &column, "column_id").await?;
                 }
             }
@@ -89,33 +74,28 @@ impl GenTableService {
     remove_batch!(table_ids);
 
     #[transactional(tx)]
-    pub async fn import_gen_table(&self, table_name_list: Vec<&str>) -> Result<u64> {
+    pub async fn import_gen_table(&self, table_name_list: Vec<&str>, oper_user_name: &str) -> Result<u64> {
         let tables = gen_table::select_db_table_list_by_names(&tx, &table_name_list).await?;
-        let oper_name = get_user_name();
         for mut table in tables {
             let table_name = table.table_name.clone().unwrap_or_default();
             table.table_id = Some(ObjectId::new().to_string());
-            gen_utils::init_table(&mut table, &oper_name);
+            gen_utils::init_table(&mut table, &oper_user_name);
             let r = GenTable::insert(&tx, &table).await?;
             if r.rows_affected > 0 {
                 // 保存列信息
                 let gen_table_columns = select_db_table_columns_by_name(&tx, &table_name).await?;
                 for mut column in gen_table_columns {
                     column.column_id = Some(ObjectId::new().to_string());
+                    column.create_by = oper_user_name.to_string().into();
+                    column.create_time = DateTime::now().set_nano(0).into();
                     gen_utils::init_column_field(&mut column, &table);
                     GenTableColumn::insert(&tx, &column).await?;
                 }
             }
         }
-
         Ok(table_name_list.len() as u64)
     }
-    async fn generator_code_type(
-        &self,
-        gen_table: &GenTable,
-        language: &str,
-        gen_path: &str,
-    ) -> Result<()> {
+    async fn generator_code_type(&self, gen_table: &GenTable, language: &str, gen_path: &str) -> Result<()> {
         let tlt_path = std::env::current_dir()?.join("template").join(language);
         use minijinja::Environment;
         let mut env = Environment::new();
@@ -124,16 +104,13 @@ impl GenTableService {
                 // .block_delimiters("{%", "%}")
                 .variable_delimiters("${{", "}}")
                 .comment_delimiters("{#", "#}")
-                .build().map_err(|e|Error::from(e.to_string()))?
+                .build()
+                .map_err(|e| Error::from(e.to_string()))?,
         );
         let tpl_path_list = find_files_with_extension(tlt_path.as_path(), "jinja")?;
         let mut tpl_name_list = vec![];
         tpl_path_list.into_iter().for_each(|path| {
-            let file_name = path
-                .file_name()
-                .unwrap_or_default()
-                .to_str()
-                .unwrap_or_default();
+            let file_name = path.file_name().unwrap_or_default().to_str().unwrap_or_default();
             if !file_name.ends_with(".snap.jinja") {
                 tpl_name_list.push(file_name.to_string());
                 let contents = fs::read(&path)
@@ -146,18 +123,14 @@ impl GenTableService {
 
         let columns = GEN_CONTEXT
             .gen_table_column_service
-            .select_gen_table_column_list_by_table_id(
-                &gen_table.table_id.clone().unwrap_or_default(),
-            )
+            .select_gen_table_column_list_by_table_id(&gen_table.table_id.clone().unwrap_or_default())
             .await?;
 
         let table_name = gen_table.table_name.clone().unwrap_or_default();
         let module_name = gen_table.module_name.clone().unwrap_or_default();
         let ctx = jinja_utils::prepare_context(gen_table.clone(), columns);
         for tpl_name in &tpl_name_list {
-            let file_name_render = env
-                .render_str(tpl_name, &ctx)
-                .map_err(|e| Error::from(e.to_string()))?;
+            let file_name_render = env.render_str(tpl_name, &ctx).map_err(|e| Error::from(e.to_string()))?;
             let code = env
                 .get_template(&tpl_name)
                 .map_err(|e| Error::from(e.to_string()))?
@@ -183,9 +156,9 @@ impl GenTableService {
             if ext.eq("rs") {
                 code = self.format_rust_code(&code)?;
             } else if ext.eq("vue") {
-                code = self.format_vue_code(&code)?;
-            }else if ext.eq("js") {
-                code = self.format_vue_code(&code)?;
+                code = self.format_html_code(&code,"vue")?;
+            } else if ext.eq("js") {
+                code = self.format_html_code(&code,"typescript")?;
             }
             loop {
                 let t_code = code.replace("\n  \n", "\n").replace("\n\n", "\n");
@@ -216,13 +189,13 @@ impl GenTableService {
                 &t.tpl_back_type.clone().unwrap_or_default(),
                 &t.gen_path_back.clone().unwrap_or_default(),
             )
-                .await?;
+            .await?;
             self.generator_code_type(
                 &t,
                 &t.tpl_web_type.clone().unwrap_or_default(),
                 &t.gen_path_front.clone().unwrap_or_default(),
             )
-                .await?;
+            .await?;
         }
         Ok(())
     }
@@ -283,8 +256,7 @@ impl GenTableService {
 
         let json = fs::read_to_string(json_file.as_path())?;
         fs::remove_file(json_file.as_path())?;
-        let value: serde_json::Value =
-            serde_json::from_str(&json).map_err(|e| Error::from(e.to_string()))?;
+        let value: serde_json::Value = serde_json::from_str(&json).map_err(|e| Error::from(e.to_string()))?;
         if let Value::Object(map) = value {
             for (k, v) in map {
                 if let Value::String(s) = v {
@@ -296,11 +268,8 @@ impl GenTableService {
                     let idx_end = mod_rs.find(&end_key);
                     let mut is_have = false;
                     if idx.is_some() && idx_end.is_some() {
-                        let substring = substring_unicode(
-                            &mod_rs,
-                            idx.unwrap_or_default(),
-                            idx_end.unwrap_or_default(),
-                        );
+                        let substring =
+                            substring_unicode(&mod_rs, idx.unwrap_or_default(), idx_end.unwrap_or_default());
                         let lines = substring.split("\r\n").collect::<Vec<&str>>();
                         for line in lines {
                             if line.find(&auto_gen_key).is_some() {
@@ -310,8 +279,7 @@ impl GenTableService {
                         }
                     }
                     if !is_have {
-                        let mod_rs =
-                            mod_rs.replace(&end_key, &format!("//{auto_gen_key}\n{s}\n{end_key}"));
+                        let mod_rs = mod_rs.replace(&end_key, &format!("//{auto_gen_key}\n{s}\n{end_key}"));
                         fs::write(mod_rs_file, mod_rs)?;
                     }
                 }
@@ -339,10 +307,10 @@ impl GenTableService {
         Ok(String::from_utf8(output.stdout).unwrap_or(code.to_string()))
     }
 
-    pub fn format_vue_code(&self, code: &str) -> Result<String> {
+    pub fn format_html_code(&self, code: &str,language:&str) -> Result<String> {
         let mut child = Command::new("prettier.cmd")
             .arg("--print-width=160")
-            .arg("--parser=vue")
+            .arg(format!("--parser={}", language))
             .stdin(Stdio::piped())
             .stdout(Stdio::piped())
             .spawn()?;
@@ -356,12 +324,11 @@ impl GenTableService {
     }
 
     pub async fn synch_db(&self, table_name: &str) -> Result<()> {
-        let table =
-            GenTable::select_by_column(pool!(), field_name!(GenTable.table_name), table_name)
-                .await?
-                .into_iter()
-                .next()
-                .ok_or_else(|| Error::from(format!("不存在:{:?} ", table_name)))?;
+        let table = GenTable::select_by_column(pool!(), field_name!(GenTable.table_name), table_name)
+            .await?
+            .into_iter()
+            .next()
+            .ok_or_else(|| Error::from(format!("不存在:{:?} ", table_name)))?;
         let old_table_columns = GEN_CONTEXT
             .gen_table_column_service
             .select_gen_table_column_list_by_table_id(&table.table_id.clone().unwrap_or_default())
@@ -385,7 +352,7 @@ impl GenTableService {
         for mut column in db_table_columns {
             gen_utils::init_column_field(&mut column, &table);
             let column_name = column.column_name.clone().unwrap_or_default();
-            if let Some(prev_column)= table_column_map.get(&column_name){
+            if let Some(prev_column) = table_column_map.get(&column_name) {
                 column.column_id = prev_column.column_id.clone();
                 //todo more
                 if column.is_list.is_some_and(|c| c == gen_constants::REQUIRE) {
@@ -403,7 +370,7 @@ impl GenTableService {
                 // }
                 column.more = prev_column.more.clone();
                 GenTableColumn::update_by_column(pool!(), &column, "column_id").await?;
-            }else{
+            } else {
                 column.column_id = Some(ObjectId::new().to_string());
                 GenTableColumn::insert(pool!(), &column).await?;
             }

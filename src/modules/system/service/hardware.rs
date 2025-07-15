@@ -38,9 +38,9 @@ pub fn get_server_info() -> ServerVO {
     }
 
     let networks = sysinfo::Networks::new_with_refreshed_list();
-    for (interface_name, network) in &networks {
-        println!("[{interface_name}]: {network:?}");
-    }
+    // for (interface_name, network) in &networks {
+    //     println!("[{interface_name}]: {network:?}");
+    // }
     for (interface_name, data) in &sysinfo::Networks::new_with_refreshed_list() {
         println!(
             "{}: {}/{} B",

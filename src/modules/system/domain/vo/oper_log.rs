@@ -1,4 +1,4 @@
-use  crate::system::domain::mapper::sys_oper_log::SysOperLog;
+use crate::system::domain::mapper::sys_oper_log::SysOperLog;
 use rbatis::rbdc::types::datetime::DateTime;
 
 #[derive(Clone, Debug, serde::Serialize, serde::Deserialize)]

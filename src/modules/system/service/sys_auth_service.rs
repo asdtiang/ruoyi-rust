@@ -1,26 +1,26 @@
 use crate::config::global_constants::{ADMIN_NAME, LOGIN_FAIL, LOGIN_SUC, LOGIN_TOKEN_KEY, STATUS_FORBIDDEN};
 use crate::context::CONTEXT;
+use crate::modules::system::constants::{ALL_PERMISSIONS, REDIS_UUID_CAPTCHA};
+use crate::{error_info, pool};
 use crate::system::domain::dto::SignInDTO;
 use crate::system::domain::mapper::sys_user::SysUser;
 use crate::system::domain::mapper::sys_user_role::SysUserRole;
-use crate::system::domain::vo::{JWTToken, SysUserVO, UserCache};
-use crate::error::Error;
-use crate::pool;
+use crate::system::domain::vo::{JwtClaims, SysUserVO, UserCache};
 use crate::utils::password_encoder::PasswordEncoder;
 use axum::http::HeaderMap;
 use rbatis::field_name;
 use rbatis::rbdc::DateTime;
 use std::time::Duration;
 use uuid::Uuid;
-use crate::modules::system::constants::{ALL_PERMISSIONS, REDIS_UUID_CAPTCHA};
+use crate::error::{Error, Result};
 
 const REDIS_KEY_RETRY: &'static str = "login:login_retry";
 pub struct SysAuthService {}
 
 impl SysAuthService {
     //返回token
-    pub async fn login(&self, arg: &SignInDTO, header_map: &HeaderMap) -> crate::error::Result<String> {
-        self.is_need_wait_login_ex().await?;
+    pub async fn login(&self, arg: &SignInDTO, header_map: &HeaderMap) -> Result<String> {
+        self.is_need_wait_login_ex(&arg.username).await?;
         let captcha_enabled =CONTEXT.sys_config_service.select_captcha_enabled().await.unwrap_or(false);
         if captcha_enabled {
             if arg.code.is_none() {
@@ -76,12 +76,12 @@ impl SysAuthService {
                     error.clone().unwrap().to_string(),
                 ))
                 .await;
-            self.add_retry_login_limit_num().await?;
+            self.add_retry_login_limit_num(&arg.username).await?;
             return Err(error.unwrap());
         }
         //   println!("密码验证后{}",Local::now().timestamp_millis()-start);
 
-        let token = self.get_user_info(&user).await;
+        let token = self.add_to_cache_and_build_token(&user).await;
         //  println!("Token{}",Local::now().timestamp_millis()-start);
         let _ = CONTEXT
             .sys_logininfor_service
@@ -97,26 +97,34 @@ impl SysAuthService {
         token
     }
     ///is need to wait
-    pub async fn is_need_wait_login_ex(&self) -> crate::error::Result<()> {
+    pub async fn is_need_wait_login_ex(&self, account: &str) -> Result<()> {
         if CONTEXT.config.login_fail_retry > 0 {
-            let num: Option<u64> = CONTEXT.cache_service.get_json(REDIS_KEY_RETRY).await?;
+            let num: Option<u64> = CONTEXT
+                .cache_service
+                .get_json(&format!("{}{}", REDIS_KEY_RETRY, account))
+                .await?;
             if num.unwrap_or(0) >= CONTEXT.config.login_fail_retry {
-                let wait_sec: i64 = CONTEXT.cache_service.ttl(REDIS_KEY_RETRY).await?;
+                let wait_sec: i64 = CONTEXT
+                    .cache_service
+                    .ttl(&format!("{}{}", REDIS_KEY_RETRY, account))
+                    .await?;
                 if wait_sec > 0 {
-                    return Err(Error::from(format!(
-                        "操作过于频繁，请等待{}秒后重试!",
-                        wait_sec
-                    )));
+                    let mut e = error_info!("req_frequently");
+                    e = e.replace("{}", &format!("{}", wait_sec));
+                    return Err(Error::from(e));
                 }
             }
         }
-        return Ok(());
+        Ok(())
     }
 
     ///Add redis retry record
-    pub async fn add_retry_login_limit_num(&self) -> crate::error::Result<()> {
+    pub async fn add_retry_login_limit_num(&self, account: &str) -> Result<()> {
         if CONTEXT.config.login_fail_retry > 0 {
-            let num: Option<u64> = CONTEXT.cache_service.get_json(REDIS_KEY_RETRY).await?;
+            let num: Option<u64> = CONTEXT
+                .cache_service
+                .get_json(&format!("{}{}", REDIS_KEY_RETRY, account))
+                .await?;
             let mut num = num.unwrap_or(0);
             if num > CONTEXT.config.login_fail_retry {
                 num = CONTEXT.config.login_fail_retry;
@@ -125,28 +133,28 @@ impl SysAuthService {
             CONTEXT
                 .cache_service
                 .set_string_ex(
-                    REDIS_KEY_RETRY,
+                    &format!("{}{}", REDIS_KEY_RETRY, account),
                     &num.to_string(),
                     Some(Duration::from_secs(
-                        CONTEXT.config.login_fail_retry_wait_sec as u64,
+                        CONTEXT.config.login_fail_retry_wait_sec,
                     )),
                 )
                 .await?;
         }
         Ok(())
     }
-    //fixme 没有用到
-     async fn get_user_info_by_token(&self, user_cache: &UserCache) -> crate::error::Result<String> {
-        let user = SysUser::select_by_column(pool!(), field_name!(SysUser.user_id), &user_cache.id)
-            .await?
-            .into_iter()
-            .next();
-        let user =
-            user.ok_or_else(|| Error::from(format!("账号:{} 不存在!", user_cache.user_name)))?;
-        self.get_user_info(&user).await
-    }
+    // //fixme 没有用到
+    //  async fn get_user_info_by_token(&self, user_cache: &UserCache) -> Result<String> {
+    //     let user = SysUser::select_by_column(pool!(), field_name!(SysUser.user_id), &user_cache.id)
+    //         .await?
+    //         .into_iter()
+    //         .next();
+    //     let user =
+    //         user.ok_or_else(|| Error::from(format!("账号:{} 不存在!", user_cache.user_name)))?;
+    //     self.get_user_info(&user).await
+    // }
     //返回token
-    pub async fn get_user_info(&self, user: &SysUser) -> crate::error::Result<String> {
+    async fn add_to_cache_and_build_token(&self, user: &SysUser) -> Result<String> {
         //去除密码，增加安全性
         let mut user = user.clone();
         user.password = None;
@@ -172,7 +180,7 @@ impl SysAuthService {
             .into_iter()
             .map(|s| s.to_string())
             .collect();
-        let dept=CONTEXT.sys_dept_service.detail(user.dept_id.clone().unwrap_or_default().as_str()).await.ok();
+        let dept=CONTEXT.sys_dept_service.detail(user.dept_id.clone().unwrap_or_default().as_str(),&user_name).await.ok();
 
         let menus = CONTEXT.sys_menu_service.finds_menu(&menu_ids, &all_menus);
         let permissions: Vec<String> = if ADMIN_NAME.eq(&user_name)
@@ -189,7 +197,7 @@ impl SysAuthService {
         user.dept=dept;
         let user_cache = UserCache {
             id: user_id.clone(),
-            user_name,
+            user_name:user_name.clone(),
             user: Some(user),
             permissions,
             menu_ids,
@@ -202,8 +210,9 @@ impl SysAuthService {
 
             token_key: format!("{}{}", LOGIN_TOKEN_KEY, &uuid.to_string()),
         };
-        let jwt_token = JWTToken {
+        let jwt_token = JwtClaims {
             login_user_key: uuid.to_string(),
+            user_name: user_name.clone(),
             exp: DateTime::now().set_nano(0).unix_timestamp_millis() as usize,
         };
         let access_token = jwt_token.create_token(&CONTEXT.config.jwt_secret)?;

@@ -1,6 +1,7 @@
 use crate::context::CONTEXT;
 use crate::error::Result;
 use crate::DataScopeTrait;
+use crate::web::web_data::get_login_user_key;
 
 /**
  * 全部数据权限
@@ -38,10 +39,7 @@ where
 {
     //拼接权限sql前先清空params.dataScope参数防止注入
     dto.clear_data_scope_params();
-    let user_cache = CONTEXT
-        .sys_user_service
-        .get_user_cache_by_token(&crate::web_data::get_token())
-        .await?;
+    let user_cache = CONTEXT.sys_user_service.get_user_cache_by_token(&get_login_user_key()).await?;
     let user = user_cache.user.unwrap();
     if user.admin {
         dto.set_data_scope_params("");
@@ -109,6 +107,6 @@ where
     if sql_string.len() > 0 {
         dto.set_data_scope_params(&format!(" AND ({})", sql_string[4..].to_string()));
     }
-println!("sql_string:{}", sql_string);
+    println!("sql_string:{}", sql_string);
     Ok(true)
 }

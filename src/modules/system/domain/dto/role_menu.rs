@@ -1,4 +1,4 @@
-use  crate::system::domain::dto::{RoleAddDTO, RoleUpdateDTO};
+use crate::system::domain::dto::{RoleAddDTO, RoleUpdateDTO};
 use rbatis::PageRequest;
 use serde::{Deserialize, Serialize};
 

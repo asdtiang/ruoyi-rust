@@ -1,3 +1,4 @@
+use crate::RespVO;
 //see https://github.com/soybeanjs/soybean-admin-rust/blob/main/server/core/src/web/validator.rs
 use axum::{
     extract::{rejection::JsonRejection, FromRequest, Request},
@@ -6,10 +7,8 @@ use axum::{
     Form, Json,
 };
 use serde::de::DeserializeOwned;
-use serde_json::Value as JsonValue;
 use thiserror::Error;
 use validator::{Validate, ValidationErrors};
-use crate::RespVO;
 
 #[derive(Debug, Error)]
 pub enum ValidationError {

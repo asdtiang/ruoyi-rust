@@ -23,7 +23,7 @@ pub struct ${{className}}PageDTO {
 #[serde(rename_all = "camelCase")]
 pub struct ${{className}}AddDTO {
 {% for column in columns %}
-  {% if column.isInsert and not column.isPk %}
+  {% if column.isInsert and not column.isPk and not column.special%}
       // ${{column.columnComment}}
     {% if column.isRequired %}
       {% if column.javaType=="String" %}
@@ -57,7 +57,7 @@ impl From<${{className}}AddDTO> for ${{className}} {
            {% elif pkColumn.javaType=="String" %}
            ${{pkColumn.columnName}}: ObjectId::new().to_string().into(),
            {% endif %}
-            {% for column in columns %} {% if not column.isPk %} {% if column.isInsert%} ${{column.columnName}}: arg.${{column.columnName}},  {% else %}${{column.columnName}}: None,{% endif %} {% endif %} {% endfor %}
+            {% for column in columns %} {% if not column.isPk %} {% if column.isInsert and not column.special %} ${{column.columnName}}: arg.${{column.columnName}},  {% else %}${{column.columnName}}: None,{% endif %} {% endif %} {% endfor %}
         }
     }
 }
@@ -67,7 +67,7 @@ impl From<${{className}}AddDTO> for ${{className}} {
 pub struct ${{className}}UpdateDTO {
  pub ${{pkColumn.columnName}}:Option<${{pkColumn.javaType}}>,
 {% for column in columns %}
-  {% if column.isEdit %}
+  {% if column.isEdit and not column.special%}
       // ${{column.columnComment}}
     {% if column.isRequired %}
       {% if column.javaType=="String" %}
@@ -96,7 +96,7 @@ pub struct ${{className}}UpdateDTO {
 impl From<${{className}}UpdateDTO> for ${{className}} {
     fn from(arg: ${{className}}UpdateDTO) -> Self {
         ${{className}} {
-            {% for column in columns %} {% if column.isEdit or column.isPk %} ${{column.columnName}}: arg.${{column.columnName}}, {% else %} ${{column.columnName}}: None, {% endif %}{% endfor %}
+            {% for column in columns %} {% if (column.isEdit or column.isPk) and not column.special%} ${{column.columnName}}: arg.${{column.columnName}}, {% else %} ${{column.columnName}}: None, {% endif %}{% endfor %}
         }
     }
 }

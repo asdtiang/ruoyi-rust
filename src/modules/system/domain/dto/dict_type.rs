@@ -38,8 +38,8 @@ impl From<DictTypeAddDTO> for SysDictType {
             dict_name: arg.dict_name,
             dict_type: arg.dict_type,
             status: arg.status,
-            create_by: Some(crate::web_data::get_user_name()),
-            create_time: DateTime::now().set_nano(0).into(),
+            create_by: None,
+            create_time: None,
             update_by: None,
             update_time: None,
             remark: arg.remark,
@@ -76,7 +76,7 @@ impl From<DictTypeUpdateDTO> for SysDictType {
             create_by: None,
             create_time: None,
             update_by: None,
-            update_time: DateTime::now().set_nano(0).into(),
+            update_time: None,
             remark: arg.remark,
         }
     }

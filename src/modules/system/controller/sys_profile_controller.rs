@@ -1,8 +1,7 @@
 use crate::context::CONTEXT;
-use  crate::system::domain::dto::{PasswordUpdateDTO, UserUpdateDTO};
-use crate::{RespJson, RespVO};
+use crate::system::domain::dto::{PasswordUpdateDTO, UserUpdateDTO};
 use crate::utils::password_encoder::PasswordEncoder;
-use crate::web_data::get_user_name;
+use crate::{RespJson, RespVO};
 use axum::extract::Query;
 use axum::response::IntoResponse;
 use axum::Json;
@@ -13,11 +12,11 @@ use std::time::Duration;
 */
 
 //的用户信息
-#[pre_authorize("")]
+#[pre_authorize(user)]
 pub async fn profile() -> impl IntoResponse {
     let user_cache = CONTEXT
         .sys_user_service
-        .get_user_cache_by_token(&crate::web_data::get_token())
+        .get_user_cache_by_token(&user.login_user_key)
         .await
         .unwrap();
     let mut res = RespJson::success_info("操作成功");
@@ -26,13 +25,11 @@ pub async fn profile() -> impl IntoResponse {
         "data".to_string(),
         serde_json::json!(user_cache.user.unwrap()),
     );
-    //todo 职位
-    // res.insert("posts".to_string(), serde_json::json!(CONTEXT.sys_post_service.finds_all().await.unwrap()));
-    res.insert(
+      res.insert(
         "postGroup".to_string(),
         serde_json::json!(CONTEXT
             .sys_post_service
-            .select_post_names_by_user_name(&get_user_name())
+            .select_post_names_by_user_name(&&user.user_name)
             .await
             .unwrap_or_default()
             .join(",")),
@@ -51,17 +48,17 @@ pub async fn profile() -> impl IntoResponse {
 }
 
 //用户自行修改用户信息
-#[pre_authorize("")]
+#[pre_authorize(user)]
 pub async fn update_profile(mut arg: Json<UserUpdateDTO>) -> impl IntoResponse {
     let mut user_cache = CONTEXT
         .sys_user_service
-        .get_user_cache_by_token(&crate::web_data::get_token())
+        .get_user_cache_by_token(&user.login_user_key)
         .await
         .unwrap();
     let clone = arg.0.clone();
     arg.0.user_id = user_cache.id.clone().into();
-    let vo = CONTEXT.sys_user_service.update(arg.0).await.unwrap();
-    if vo > 0 {
+    let res = CONTEXT.sys_user_service.update(arg.0,user.user_name).await.unwrap();
+    if res > 0 {
         let mut user = user_cache.user.clone().unwrap();
         user.phonenumber = clone.phonenumber;
         user.email = clone.email;
@@ -75,15 +72,15 @@ pub async fn update_profile(mut arg: Json<UserUpdateDTO>) -> impl IntoResponse {
             )
             .await;
     }
-    RespVO::from_result(&Ok(vo)).into_response()
+    RespVO::from_result(&Ok(res)).into_response()
 }
 
 //用户自行修改密码
-#[pre_authorize("")]
+#[pre_authorize(user)]
 pub async fn update_pwd(arg: Query<PasswordUpdateDTO>) -> impl IntoResponse {
     let user_cache = CONTEXT
         .sys_user_service
-        .get_user_cache_by_token(&crate::web_data::get_token())
+        .get_user_cache_by_token(&user.login_user_key)
         .await
         .unwrap();
     let user_id = user_cache.id.clone();

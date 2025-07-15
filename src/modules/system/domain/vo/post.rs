@@ -1,4 +1,4 @@
-use  crate::system::domain::mapper::sys_post::SysPost;
+use crate::system::domain::mapper::sys_post::SysPost;
 use rbatis::rbdc::datetime::DateTime;
 
 #[derive(Clone, Debug, serde::Serialize, serde::Deserialize)]

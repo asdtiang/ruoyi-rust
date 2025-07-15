@@ -69,8 +69,8 @@ pub fn get_multistage_reverse_proxy_ip(ip: &str) -> String {
     "".to_string()
 }
 
-use std::net::{IpAddr, Ipv6Addr};
 use crate::utils::string;
+use std::net::{IpAddr, Ipv6Addr};
 
 pub fn is_local_ip(ip: &str) -> bool {
     let ip = ip.parse::<IpAddr>().unwrap();

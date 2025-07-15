@@ -1,6 +1,6 @@
-use  crate::system::domain::mapper::sys_user_post::SysUserPost;
 use crate::error::Result;
 use crate::pool;
+use crate::system::domain::mapper::sys_user_post::SysUserPost;
 use rbatis::field_name;
 use rbs::to_value;
 

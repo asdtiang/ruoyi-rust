@@ -1,5 +1,5 @@
+use crate::system::domain::mapper::sys_role::SysRole;
 use macros::Export;
-use  crate::system::domain::mapper::sys_role::SysRole;
 use rbatis::rbdc::datetime::DateTime;
 
 #[derive(Clone, Debug, serde::Serialize, serde::Deserialize)]

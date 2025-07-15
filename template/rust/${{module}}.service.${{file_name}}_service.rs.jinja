@@ -1,6 +1,6 @@
 use rbatis::{field_name, Page, PageRequest};
 use crate::${{moduleName}}::domain::vo::${{className}}VO;
-use crate::${{moduleName}}::domain::dto::{${{className}}AddDTO, ${{className}}PageDTO, ${{className}}UpdateDTO};
+use crate::${{moduleName}}::domain::dto::${{className}}PageDTO;
 use crate::${{moduleName}}::domain::mapper::${{moduleName}}_${{businessName}}::${{className}};
 use crate::error::Error;
 use crate::error::Result;
@@ -26,19 +26,13 @@ impl ${{className}}Service {
         Ok(notice)
     }
 
-    pub async fn add(&self, dto: ${{className}}AddDTO) -> Result<u64> {
-        let mut data = ${{className}}::from(dto);
-        data.create_by = Some(crate::web_data::get_user_name());
-        data.create_time=Some(rbatis::rbdc::DateTime::now().set_nano(0));
-        let result = Ok(${{className}}::insert(pool!(), &data).await?.rows_affected);
+    pub async fn add(&self, ${{businessName}}: ${{className}}) -> Result<u64> {
+        let result = Ok(${{className}}::insert(pool!(), &${{businessName}}).await?.rows_affected);
         result
     }
 
-    pub async fn update(&self, dto: ${{className}}UpdateDTO) -> Result<u64> {
-        let mut data = ${{className}}::from(dto);
-        data.update_by = Some(crate::web_data::get_user_name());
-        data.update_time=Some(rbatis::rbdc::DateTime::now().set_nano(0));
-        let result = ${{className}}::update_by_column(pool!(), &data, "${{pkColumn.columnName}}").await;
+    pub async fn update(&self, ${{businessName}}: ${{className}}) -> Result<u64> {
+        let result = ${{className}}::update_by_column(pool!(), &${{businessName}}, "${{pkColumn.columnName}}").await;
         Ok(result?.rows_affected)
     }
 

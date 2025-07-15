@@ -2,10 +2,3 @@
 base_api: "/dev-api"
 #server 地址
 server_url: "0.0.0.0:8090"
-
-#接口白名单（免登陆直接访问）
-white_list_api:
-  - "/"
-  - "/dev-api/login"
-  - "/dev-api/logout"
-  - "/dev-api/captchaImage"

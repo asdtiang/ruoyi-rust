@@ -1,15 +1,15 @@
 use crate::config::global_constants::LOGIN_TOKEN_KEY;
 use crate::context::CONTEXT;
-use  crate::system::domain::vo::{SysUserOnlineVO, UserCache};
 use crate::error::Error;
+use crate::system::domain::vo::{SysUserOnlineVO, UserCache};
 
 use crate::{RespJson, RespVO};
 use axum::extract::Path;
 use axum::response::IntoResponse;
 use macros::pre_authorize;
 
-//#[get("/online/list")]
-#[pre_authorize("monitor:online:list")]
+
+#[pre_authorize("monitor:online:list",user)]
 pub async fn list() -> impl IntoResponse {
     let keys = CONTEXT.cache_service.keys(&format!("{}*", LOGIN_TOKEN_KEY)).await.unwrap();
 
@@ -41,8 +41,8 @@ pub async fn list() -> impl IntoResponse {
     res.into_response()
 }
 
-//#[delete("/online/{token_id}")]
-#[pre_authorize("system:online:force_logout")]
+
+#[pre_authorize("system:online:force_logout",user)]
 pub async fn force_logout(token_id: Path<String>) -> impl IntoResponse {
     let res = CONTEXT.cache_service.del(&format!("{}{}", LOGIN_TOKEN_KEY, token_id.0)).await.unwrap();
     if res {

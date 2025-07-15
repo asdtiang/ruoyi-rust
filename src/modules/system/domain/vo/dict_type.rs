@@ -1,5 +1,5 @@
+use crate::system::domain::mapper::sys_dict_type::SysDictType;
 use macros::Export;
-use  crate::system::domain::mapper::sys_dict_type::SysDictType;
 use rbatis::rbdc::types::datetime::DateTime;
 
 #[derive(Clone, Debug, serde::Serialize, serde::Deserialize)]

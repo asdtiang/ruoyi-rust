@@ -1,8 +1,9 @@
-use axum::extract::Path;
 use crate::context::CONTEXT;
-use  crate::system::domain::dto::{ConfigAddDTO, ConfigPageDTO, ConfigUpdateDTO};
-use  crate::system::domain::vo::SysConfigVO;
-use crate::{export_excel_controller, PageVO, RespVO};
+use crate::system::domain::dto::{ConfigAddDTO, ConfigPageDTO, ConfigUpdateDTO};
+use crate::system::domain::mapper::sys_config::SysConfig;
+use crate::system::domain::vo::SysConfigVO;
+use crate::{add_marco, export_excel_controller, update_marco, PageVO, RespVO};
+use axum::extract::Path;
 use axum::response::IntoResponse;
 use axum::Json;
 use macros::pre_authorize;
@@ -23,15 +24,17 @@ pub async fn detail(config_id: Path<String>) -> impl IntoResponse {
     RespVO::from_result(&config).into_response()
 }
 
-#[pre_authorize("system:config:add")]
+#[pre_authorize("system:config:add", user)]
 pub async fn add(dto: crate::ValidatedForm<ConfigAddDTO>) -> impl IntoResponse {
-    let res = CONTEXT.sys_config_service.add(dto.0).await;
+    add_marco!(data, dto, user, SysConfig);
+    let res = CONTEXT.sys_config_service.add(data).await;
     RespVO::<u64>::judge_result(res, "添加成功！", "添加失败！").into_response()
 }
 
-#[pre_authorize("system:config:edit")]
+#[pre_authorize("system:config:edit", user)]
 pub async fn update(dto: crate::ValidatedForm<ConfigUpdateDTO>) -> impl IntoResponse {
-    let res = CONTEXT.sys_config_service.update(dto.0).await;
+    update_marco!(data, dto, user, SysConfig);
+    let res = CONTEXT.sys_config_service.update(data).await;
     RespVO::from_result(&res).into_response()
 }
 

@@ -1,4 +1,4 @@
-use  crate::system::domain::mapper::sys_notice::SysNotice;
+use crate::system::domain::mapper::sys_notice::SysNotice;
 use macros::page_request;
 use rbatis::object_id::ObjectId;
 use rbatis::rbdc::datetime::DateTime;
@@ -40,7 +40,7 @@ impl From<NoticeAddDTO> for SysNotice {
             notice_type: arg.notice_type,
             status: arg.status,
             create_by: None,
-            create_time: DateTime::now().set_nano(0).into(),
+            create_time: None,
             update_by: None,
             update_time: None,
             remark: arg.remark,
@@ -78,7 +78,7 @@ impl From<NoticeUpdateDTO> for SysNotice {
             create_by: None,
             create_time: None,
             update_by: None,
-            update_time: DateTime::now().set_nano(0).into(),
+            update_time: None,
             remark: arg.remark,
         }
     }

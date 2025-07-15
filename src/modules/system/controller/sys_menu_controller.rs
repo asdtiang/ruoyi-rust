@@ -1,15 +1,15 @@
 use crate::config::global_constants::ADMIN_NAME;
 use crate::context::CONTEXT;
-use  crate::system::domain::dto::{MenuAddDTO, MenuPageDTO, MenuUpdateDTO};
-use  crate::system::domain::mapper::sys_menu::SysMenu;
+use crate::system::domain::dto::{MenuAddDTO, MenuPageDTO, MenuUpdateDTO};
+use crate::system::domain::mapper::sys_menu::SysMenu;
+use crate::system::domain::vo::SysMenuVO;
+use crate::{add_marco, RespJson, RespVO};
 use axum::extract::Path;
 use axum::response::IntoResponse;
 use axum::Json;
 use macros::pre_authorize;
-use crate::{RespJson, RespVO};
-use crate::system::domain::vo::SysMenuVO;
 
-//#[get("/menu/list")]
+
 #[pre_authorize("system:menu:list")]
 pub async fn list_all(dto: Option<Json<MenuPageDTO>>) -> impl IntoResponse {
     let dto=if dto.is_some() {dto.unwrap().0} else{ MenuPageDTO::default()};
@@ -19,45 +19,43 @@ pub async fn list_all(dto: Option<Json<MenuPageDTO>>) -> impl IntoResponse {
 
 
 //菜单栏生成
-#[pre_authorize("")]
+#[pre_authorize(user)]
 pub async fn routers() -> impl IntoResponse {
-    let user_cache = CONTEXT.sys_user_service.get_user_cache_by_token(&crate::web_data::get_token()).await;
+    let user_cache = CONTEXT.sys_user_service.get_user_cache_by_token(&user.login_user_key).await;
     let data = CONTEXT.sys_menu_service.get_routers(&user_cache.unwrap()).await;
     RespVO::from_result(&data).into_response()
 }
 
-//#[get("/menu/{menu_id}")]
-#[pre_authorize("system:menu:query")]
+
+#[pre_authorize("system:menu:query",user)]
 pub async fn detail(menu_id: Path<String>) -> impl IntoResponse {
     let menu_id = menu_id.0;
     let menu_vo = CONTEXT.sys_menu_service.detail(&menu_id).await.map(|m|SysMenuVO::from(m));
     RespVO::from_result(&menu_vo).into_response()
 }
 
-//#[post("/menu")]
-#[pre_authorize("system:menu:add")]
-pub async fn add(arg: crate::ValidatedForm<MenuAddDTO>) -> impl IntoResponse {
-    let mut data = SysMenu::from(arg.0);
-    data.create_by = Some(crate::web_data::get_user_name());
+
+#[pre_authorize("system:menu:add",user)]
+pub async fn add(dto: crate::ValidatedForm<MenuAddDTO>) -> impl IntoResponse {
+    add_marco!(data, dto, user, SysMenu);
     if data.path.is_none() {
         data.path = Some("".to_string());
     }
-    let data = CONTEXT.sys_menu_service.add(&data).await;
+    let data = CONTEXT.sys_menu_service.add(data).await;
     let _=   CONTEXT.sys_menu_service.update_cache().await;
     RespVO::from_result(&data).into_response()
 }
 
-//#[put("/menu")]
-#[pre_authorize("system:menu:edit")]
-pub async fn update(arg: crate::ValidatedForm<MenuUpdateDTO>) -> impl IntoResponse {
-    let mut menu = SysMenu::from(arg.0);
-    menu.update_by = Some(crate::web_data::get_user_name());
-    let cnt = CONTEXT.sys_menu_service.update(&menu).await;
+
+#[pre_authorize("system:menu:edit",user)]
+pub async fn update(dto: crate::ValidatedForm<MenuUpdateDTO>) -> impl IntoResponse {
+    add_marco!(data, dto, user, SysMenu);
+    let cnt = CONTEXT.sys_menu_service.update(data).await;
     RespVO::from_result(&cnt).into_response()
 }
 
-//#[delete("/menu/{menu_id}")]
-#[pre_authorize("system:menu:remove")]
+
+#[pre_authorize("system:menu:remove",user)]
 pub async fn remove(menu_id: Path<String>) -> impl IntoResponse {
     let menu_id = menu_id.0;
     let data = CONTEXT.sys_menu_service
@@ -65,18 +63,18 @@ pub async fn remove(menu_id: Path<String>) -> impl IntoResponse {
     RespVO::from_result(&data).into_response()
 }
 
-//#[get("/menu/treeselect")]
-#[pre_authorize("system:menu:query")]
+
+#[pre_authorize("system:menu:query",user)]
 pub async fn treeselect() -> impl IntoResponse {
-    let menu_select = CONTEXT.sys_menu_service.tree_select().await;
+    let menu_select = CONTEXT.sys_menu_service.tree_select(&user.login_user_key).await;
     RespVO::from_result(&menu_select).into_response()
 }
 
-//#[get("/menu/roleMenuTreeselect/{role_id}")]
-#[pre_authorize("system:menu:query")]
+
+#[pre_authorize("system:menu:query",user)]
 pub async fn role_menu_treeselect( role_id: Path<String>) -> impl IntoResponse {
     let role_id = role_id.0;
-    let user_cache = CONTEXT.sys_user_service.get_user_cache_by_token(&crate::web_data::get_token()).await;
+    let user_cache = CONTEXT.sys_user_service.get_user_cache_by_token(&user.login_user_key).await;
 
     let user_cache = if user_cache.is_ok(){
         user_cache.unwrap()

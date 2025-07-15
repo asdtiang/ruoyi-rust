@@ -1,12 +1,12 @@
 use crate::config::config::ApplicationConfig;
+use crate::system::service::cache_service::CacheService;
+use crate::system::service::*;
 use log::LevelFilter;
 use rbatis::intercept_log::LogInterceptor;
 use rbatis::RBatis;
 use rbdc_mysql::MysqlDriver;
 use std::sync::{Arc, LazyLock};
 use std::time::Duration;
-use crate::system::service::*;
-use crate::system::service::cache_service::CacheService;
 
 /// Service CONTEXT
 pub static CONTEXT: LazyLock<ServiceContext> = LazyLock::new(|| ServiceContext::default());

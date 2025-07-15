@@ -1,12 +1,13 @@
 use crate::gen::domain::mapper::gen_table::GenTable;
 use crate::gen::domain::mapper::gen_table_column::GenTableColumn;
+use crate::gen::service::gen_constants;
+use crate::gen::GEN_CONTEXT;
 use crate::utils::string;
 use crate::utils::string::substring_unicode;
 use convert_case::{Case, Casing};
 use serde_json::json;
 use std::collections::HashMap;
-use crate::gen::GEN_CONTEXT;
-use crate::gen::service::{gen_constants};
+use rbatis::rbdc::DateTime;
 
 /**
  * 代码生成器 工具类
@@ -28,6 +29,7 @@ pub fn init_table(gen_table: &mut GenTable, oper_name: &str) {
         replace_text(&gen_table.table_comment.clone().unwrap_or_default()).into();
     gen_table.function_author = GEN_CONTEXT.config.author.clone().into();
     gen_table.create_by = oper_name.to_string().into();
+    gen_table.create_time= DateTime::now().set_nano(0).into();
 }
 
 /**
@@ -108,23 +110,20 @@ pub fn init_column_field(column: &mut GenTableColumn, table: &GenTable) {
         column.java_type = Some(gen_constants::TYPE_OBJECT_JSON.to_string());
     }
 
-    //update_time update_by 不插入
-    if column_name.eq("update_time") || column_name.eq("update_by") || column_name.eq("del_flag") {
-    } else {
-        // 插入字段
-        column.is_insert = Some(gen_constants::REQUIRE);
-    }
+
     let is_pk = column.is_pk.clone().unwrap_or_default() == '1';
-    // 编辑字段
-    if !gen_constants::COLUMNNAME_NOT_EDIT.contains(&column_name) && !is_pk {
+    if !gen_constants::COLUMNNAME_NOT_EDIT.contains(&column_name){
         column.is_edit = Some(gen_constants::REQUIRE);
-    }
-    // 列表字段
-    if !gen_constants::COLUMNNAME_NOT_LIST.contains(&column_name) && !is_pk {
         column.is_list = Some(gen_constants::REQUIRE);
         column.is_detail = Some(gen_constants::REQUIRE);
         column.is_export = Some(gen_constants::REQUIRE);
     }
+    if is_pk{
+        column.is_list = Some(gen_constants::REQUIRE);
+        column.is_detail = Some(gen_constants::REQUIRE);
+    }
+
+
     // 查询字段
     if column.is_query.is_none()
         && !gen_constants::COLUMNNAME_NOT_QUERY.contains(&column_name)

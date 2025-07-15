@@ -1,4 +1,5 @@
 use crate::context::CONTEXT;
+use crate::system::domain::mapper::sys_oper_log::SysOperLog;
 use crate::utils::address_util;
 use crate::utils::ip_util::get_ip_addr;
 use axum::extract::{ConnectInfo, OriginalUri};
@@ -14,9 +15,8 @@ use http_body_util::BodyExt;
 use rbatis::object_id::ObjectId;
 use rbatis::rbdc::DateTime;
 use std::net::SocketAddr;
-use crate::system::domain::mapper::sys_oper_log::SysOperLog;
 
-pub(crate) async fn log_write(
+pub async fn log_write(
     ori_uri: OriginalUri,
     socket_addr: ConnectInfo<SocketAddr>,
     header_map: HeaderMap,

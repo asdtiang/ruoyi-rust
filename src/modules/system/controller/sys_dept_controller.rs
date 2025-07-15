@@ -1,13 +1,14 @@
+use crate::config::global_constants::STATUS_NORMAL;
 use crate::context::CONTEXT;
-use  crate::system::domain::dto::{DeptAddDTO, DeptQueryDTO, DeptUpdateDTO};
-use  crate::system::domain::vo::SysDeptVO;
-use crate::RespVO;
+use crate::system::domain::dto::{DeptAddDTO, DeptQueryDTO, DeptUpdateDTO};
+use crate::system::domain::mapper::sys_dept::SysDept;
+use crate::system::domain::vo::SysDeptVO;
+use crate::{add_marco, RespVO};
 use axum::extract::Path;
 use axum::response::IntoResponse;
 use axum::Json;
 use macros::pre_authorize;
 
-//#[get("/dept/list")]
 #[pre_authorize("system:dept:list")]
 pub async fn list(dto: Option<Json<DeptQueryDTO>>) -> impl IntoResponse {
     let dto = match dto {
@@ -24,7 +25,6 @@ pub async fn list(dto: Option<Json<DeptQueryDTO>>) -> impl IntoResponse {
     RespVO::from_result(&rows).into_response()
 }
 
-//#[get("/dept/{dept_id}")]
 #[pre_authorize("system:dept:list")]
 pub async fn exclude_child(dept_id: Path<String>) -> impl IntoResponse {
     let dept_id = dept_id.0;
@@ -54,34 +54,31 @@ pub async fn exclude_child(dept_id: Path<String>) -> impl IntoResponse {
     }
 }
 
-//#[get("/dept/{dept_id}")]
-#[pre_authorize("system:dept:query")]
+#[pre_authorize("system:dept:query", user)]
 pub async fn detail(dept_id: Path<String>) -> impl IntoResponse {
-    let dept_vo = CONTEXT.sys_dept_service.detail(&dept_id.0).await;
+    let dept_vo = CONTEXT.sys_dept_service.detail(&dept_id.0, &user.user_name).await;
     RespVO::from_result(&dept_vo).into_response()
 }
 
-//#[post("/dept")]
-#[pre_authorize("system:dept:add")]
+#[pre_authorize("system:dept:add", user)]
 pub async fn add(dto: crate::ValidatedForm<DeptAddDTO>) -> impl IntoResponse {
-
-    let res = CONTEXT.sys_dept_service.add(dto.0).await;
-    RespVO::<u64>::judge_result(res, "", "添加失败！")
-        .into_response()
+    add_marco!(data, dto, user, SysDept);
+    if data.status.is_none() {
+        data.status = Some(STATUS_NORMAL);
+    }
+    let res = CONTEXT.sys_dept_service.add(data).await;
+    RespVO::<u64>::judge_result(res, "", "添加失败！").into_response()
 }
 
-//#[put("/dept")]
-#[pre_authorize("system:dept:edit")]
-pub async fn update(arg: crate::utils::validator::ValidatedForm<DeptUpdateDTO>) -> impl IntoResponse {
-    let res = CONTEXT.sys_dept_service.update(arg.0).await;
-    RespVO::<u64>::judge_result(res, "", "更新失败！")
-        .into_response()
+#[pre_authorize("system:dept:edit", user)]
+pub async fn update(dto: crate::utils::validator::ValidatedForm<DeptUpdateDTO>) -> impl IntoResponse {
+    add_marco!(data, dto, user, SysDept);
+    let res = CONTEXT.sys_dept_service.update(data).await;
+    RespVO::<u64>::judge_result(res, "", "更新失败！").into_response()
 }
 
-//#[delete("/dept/{dept_id}")]
 #[pre_authorize("system:dept:remove")]
 pub async fn remove(dept_id: Path<String>) -> impl IntoResponse {
     let res = CONTEXT.sys_dept_service.remove(&dept_id.0).await;
-    RespVO::<u64>::judge_result(res, "", "删除失败！")
-        .into_response()
+    RespVO::<u64>::judge_result(res, "", "删除失败！").into_response()
 }

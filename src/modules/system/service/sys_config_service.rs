@@ -1,13 +1,13 @@
-use crate::modules::system::constants::SYS_YES;
 use crate::context::CONTEXT;
-use  crate::system::domain::dto::{ConfigAddDTO, ConfigPageDTO, ConfigUpdateDTO};
-use  crate::system::domain::mapper::sys_config::SysConfig;
 use crate::error::Error;
 use crate::error::Result;
+use crate::modules::system::constants::SYS_YES;
+use crate::system::domain::dto::ConfigPageDTO;
+use crate::system::domain::mapper::sys_config::SysConfig;
+use crate::system::domain::vo::SysConfigVO;
 use crate::{check_unique, export_excel_service, pool, remove_batch};
 use rbatis::{field_name, Page, PageRequest};
 use rbs::to_value;
-use crate::system::domain::vo::SysConfigVO;
 
 const SYS_CONFIG_KEY: &'static str = "sys_config:";
 
@@ -30,11 +30,9 @@ impl SysConfigService {
     }
 
 
-    pub async fn add(&self, dto: ConfigAddDTO) -> Result<u64> {
-        let mut config = SysConfig::from(dto);
+    pub async fn add(&self, config: SysConfig) -> Result<u64> {
         self.check_config_key_unique(&None, config.config_key.clone().unwrap().as_str())
             .await?;
-        config.create_by = Some(crate::web_data::get_user_name());
         let result = SysConfig::insert(pool!(), &config).await?.rows_affected;
         if result == 1 {
             self.set_to_cache(&config).await?;
@@ -42,11 +40,9 @@ impl SysConfigService {
         Ok(result)
     }
 
-    pub async fn update(&self, config: ConfigUpdateDTO) -> Result<u64> {
-        let mut config = SysConfig::from(config);
+    pub async fn update(&self, config: SysConfig) -> Result<u64> {
         self.check_config_key_unique(&None, config.config_key.clone().unwrap().as_str())
             .await?;
-        config.update_by = Some(crate::web_data::get_user_name());
         let result = SysConfig::update_by_column(pool!(), &config, "config_id")
             .await?
             .rows_affected;

@@ -1,5 +1,5 @@
-use  crate::system::domain::mapper::sys_role::SysRole;
-use  crate::system::domain::vo::user::SysUserVO;
+use crate::system::domain::mapper::sys_role::SysRole;
+use crate::system::domain::vo::user::SysUserVO;
 use rbatis::rbdc::datetime::DateTime;
 use serde::{Deserialize, Serialize};
 

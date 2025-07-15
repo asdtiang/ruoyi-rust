@@ -1,11 +1,11 @@
 use crate::config::global_constants::{LOGIN_SUC, LOGIN_TOKEN_KEY};
 use crate::context::CONTEXT;
+use crate::modules::system::constants::REDIS_UUID_CAPTCHA;
 use crate::system::domain::dto::SignInDTO;
-use crate::system::domain::vo::JWTToken;
-use crate::{RespJson, RespVO};
-use crate::token_auth::get_token;
+use crate::system::domain::vo::JwtClaims;
 use crate::utils::base64::encode;
-use crate::web_data::get_user_name;
+use crate::web::User;
+use crate::{RespJson, RespVO};
 use axum::http::HeaderMap;
 use axum::response::IntoResponse;
 use axum::Json;
@@ -14,7 +14,6 @@ use captcha::Captcha;
 use macros::pre_authorize;
 use std::time::Duration;
 use uuid::Uuid;
-use crate::modules::system::constants::REDIS_UUID_CAPTCHA;
 
 pub async fn login(header_map: HeaderMap, arg: Json<SignInDTO>) -> impl IntoResponse {
     let token = CONTEXT.sys_auth_service.login(&arg.0, &header_map).await;
@@ -27,45 +26,38 @@ pub async fn login(header_map: HeaderMap, arg: Json<SignInDTO>) -> impl IntoResp
     res.into_response()
 }
 
-pub async fn logout(header_map: HeaderMap) -> impl IntoResponse {
-    let token = get_token(&header_map);
-    if !token.is_empty() {
-        let claims = JWTToken::verify(&CONTEXT.config.jwt_secret, &token);
-        if claims.is_ok() {
-            let login_user_key = claims.unwrap().login_user_key;
-            let _ = CONTEXT
-                .sys_logininfor_service
-                .add_async(&crate::utils::web_utils::build_logininfor(
-                    &header_map,
-                    get_user_name(),
-                    LOGIN_SUC,
-                    "退出成功".to_string(),
-                ))
-                .await;
-            let _ = CONTEXT
-                .cache_service
-                .del(&format!("{}{}", LOGIN_TOKEN_KEY, login_user_key))
-                .await;
-        }
+pub async fn logout(user: Option<axum::Extension<User>>, header_map: HeaderMap) -> impl IntoResponse {
+    if let Some(user) = user {
+        let user = user.0;
+        let _ = CONTEXT
+            .sys_logininfor_service
+            .add_async(&crate::utils::web_utils::build_logininfor(
+                &header_map,
+                user.user_name,
+                LOGIN_SUC,
+                "退出成功".to_string(),
+            ))
+            .await;
+        let _ = CONTEXT
+            .cache_service
+            .del(&format!("{}{}", LOGIN_TOKEN_KEY, user.login_user_key))
+            .await;
     }
     RespVO::<String>::from_success_info("退出成功!").into_response()
 }
 
-#[pre_authorize("")]
+#[pre_authorize(user)]
 pub async fn info() -> impl IntoResponse {
     let user_cache = CONTEXT
         .sys_user_service
-        .get_user_cache_by_token(&crate::web_data::get_token())
+        .get_user_cache_by_token(&user.login_user_key)
         .await;
     if user_cache.is_err() {
         return RespVO::from_result(&user_cache).into_response();
     }
     let user_cache = user_cache.unwrap();
     let mut res = RespJson::success();
-    res.insert(
-        "permissions".to_string(),
-        serde_json::json!(&user_cache.permissions),
-    );
+    res.insert("permissions".to_string(), serde_json::json!(&user_cache.permissions));
     res.insert("user".to_string(), serde_json::json!(&user_cache.user));
     res.insert(
         "roles".to_string(),
@@ -83,7 +75,6 @@ pub async fn captcha() -> impl IntoResponse {
         .unwrap_or(false);
     json.insert(
         "captchaEnabled".to_string(),
-        //todo 从sysconfig获得
         captcha_enabled.into(),
     );
 

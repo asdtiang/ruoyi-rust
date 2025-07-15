@@ -12,10 +12,10 @@ pub mod sys_user_controller;
 pub mod monitor;
 pub mod common_controller;
 
+use crate::router_with_handler;
+use crate::web::log_write;
 use axum::routing::{delete, get, post, put};
 use axum::{middleware, Router};
-use crate::router_with_handler;
-use crate::token_auth::middleware::{log_write};
 
 pub(crate) fn build_auth_api() -> Router {
     Router::new()

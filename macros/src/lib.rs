@@ -1,9 +1,9 @@
-use proc_macro::TokenStream;
+use proc_macro::{Span, TokenStream};
 use proc_macro2::Ident;
 use quote::{quote, ToTokens};
-use syn::parse::Parse;
+use syn::parse::{Parse, Parser};
 use syn::Data::Struct;
-use syn::{parse_macro_input, DataStruct, DeriveInput, Field, FnArg, ItemFn, LitFloat, LitInt, LitStr, Meta};
+use syn::{parse_macro_input, parse_quote, DataStruct, DeriveInput, Field, FnArg, ItemFn, LitFloat, LitStr, Meta};
 
 #[proc_macro_attribute]
 pub fn pre_authorize(attr: TokenStream, item: TokenStream) -> TokenStream {
@@ -21,44 +21,53 @@ pub fn pre_authorize(attr: TokenStream, item: TokenStream) -> TokenStream {
     let func_inputs = &func_decl.inputs; // 函数输入参数
     let func_output = &func_decl.output; // 函数返回
 
-    // // 查看是否有HeaderMap
-    // let mut header_map_ident = None;
-    // func_inputs.iter().for_each(|i| {
-    //     match i {
-    //         // 提取形参的pattern
-    //         // https://docs.rs/syn/1.0.1/syn/struct.PatType.html
-    //         FnArg::Typed(ref val) => {
-    //             let ty = (&val).ty.to_token_stream().to_string();
-    //             if ty.ends_with("HeaderMap") {
-    //                 header_map_ident = Some((&val).pat.to_token_stream());
-    //             }
-    //         } // pat没有办法移出val，只能借用，或者val.pat.clone()
-    //         _ => unreachable!("it's not gonna happen."),
-    //     }
-    // });
-    let permit_str = parse_macro_input!(attr as LitStr);
-    let expanded = quote! { // 重新构建函数执行
-        #(#func_attrs)*
-        #func_vis #func_asyncness fn #func_name #func_generics(header_map_in_permit: axum::http::HeaderMap,#func_inputs) #func_output{
-            match crate::token_auth::check_permit(header_map_in_permit, #permit_str).await {//fixme 判断参数中是否存在HeaderMap.302
-                // ，以后再说
-                None =>  #func_block
-                Some(res) => { res.into_response() }
+    let parser = |input: syn::parse::ParseStream| {
+        let mut permit_str = None;
+        let mut user_ident = None;
+
+        while !input.is_empty() {
+            if input.peek(syn::LitStr) {// 解析权限字符串
+                permit_str = Some(input.parse::<syn::LitStr>()?);
+            } else if input.peek(syn::Ident) {
+                user_ident = Some(input.parse::<syn::Ident>()?);
+            }else if input.peek(syn::Token![,]) {
+                input.parse::<syn::Token![,]>()?;
+            }
+        }
+        Ok((permit_str, user_ident))
+    };
+    let (permit_str, mut user_ident) = match parser.parse(attr) {
+        Ok(attr) => attr,
+        Err(e) => return e.to_compile_error().into(),
+    };
+
+    let expanded = if permit_str.is_some() {
+        if user_ident.is_none(){
+            user_ident = Some(parse_quote!(user));
+        }
+        quote! { // 重新构建函数执行
+            #(#func_attrs)*
+            #func_vis #func_asyncness fn #func_name #func_generics(axum::Extension(#user_ident): axum::Extension<crate::web::User>,#func_inputs) #func_output{
+                match crate::web::check_permit(&user, #permit_str).await {
+                    None =>  #func_block
+                    Some(res) => { res.into_response() }
+                }
+            }
+        }
+    } else {
+        let user_param_expanded=   if user_ident.is_some(){
+            quote! {axum::Extension(#user_ident): axum::Extension<crate::web::User>,}
+        }else{
+            quote! {}
+        };
+        quote! { // 重新构建函数执行
+            #(#func_attrs)*
+            #func_vis #func_asyncness fn #func_name #func_generics(#user_param_expanded #func_inputs) #func_output{
+              #func_block
             }
         }
     };
-    // } else {
-    //     let header_map_ident=header_map_ident.unwrap();
-    //     quote! { // 重新构建函数执行
-    //         #(#func_attrs)*
-    //         #func_vis #func_asyncness fn #func_name #func_generics(#func_inputs) #func_output{
-    //             match crate::token_auth::check_permit(#header_map_ident, #permit_str).await {//fixme 判断参数中是否存在Request，以后再说
-    //                 None =>  #func_block
-    //                 Some(res) => { return res.into_response(); }
-    //             }
-    //         }
-    //     }
-    // };
+
     expanded.into()
 }
 
@@ -561,7 +570,7 @@ pub fn data_scope(attr: TokenStream, item: TokenStream) -> TokenStream {
         #(#func_attrs)*
         #func_vis #func_asyncness fn #func_name #func_generics(#func_inputs) #func_output{
             let mut #dto_ident = #dto_ident.clone();
-            crate::system::service::data_scope::build_data_scope(&mut #dto_ident, #dept_alias, #user_alias).await?;
+            crate::web::data_scope::build_data_scope(&mut #dto_ident, #dept_alias, #user_alias,).await?;
             #stmts_expanded
 
         }
@@ -601,10 +610,10 @@ struct ExcelAttribute {
     name: Option<LitStr>,
     dict_type: Option<LitStr>,
     default_value: Option<LitStr>,
-    read_converter_exp:Option<LitStr>,
+    read_converter_exp: Option<LitStr>,
     num_format: Option<LitStr>,
-    width:Option<LitFloat>,
-    attr_type:Option<syn::Path>
+    width: Option<LitFloat>,
+    attr_type: Option<syn::Path>,
 }
 macro_rules! to_token_string {
     ($self_:ident,$name:ident,$tokens:ident) => {
@@ -640,12 +649,12 @@ impl ToTokens for ExcelAttribute {
                 name:#t.to_string(),
             }),
         }
-        to_token_string! (self,dict_type,tokens);
-        to_token_string! (self,default_value,tokens);
-        to_token_string! (self,read_converter_exp,tokens);
-        to_token_string! (self,num_format,tokens);
-        to_token_int! (self,width,tokens);
-        to_token_int! (self,attr_type,tokens);
+        to_token_string!(self, dict_type, tokens);
+        to_token_string!(self, default_value, tokens);
+        to_token_string!(self, read_converter_exp, tokens);
+        to_token_string!(self, num_format, tokens);
+        to_token_int!(self, width, tokens);
+        to_token_int!(self, attr_type, tokens);
     }
 }
 #[proc_macro_derive(Export, attributes(excel))]
@@ -665,9 +674,9 @@ pub fn export(item: TokenStream) -> TokenStream {
             name: None,
             dict_type: None,
             default_value: None,
-            read_converter_exp:None,
+            read_converter_exp: None,
             num_format: None,
-            width:None,
+            width: None,
             attr_type: None,
         };
         // 解析位置参数（字符串字面量）
@@ -716,9 +725,14 @@ pub fn export(item: TokenStream) -> TokenStream {
                         }
                     }
                     "attrType" => {
-                            excel_attr.attr_type = Some(input.parse::<syn::Path>()?);
+                        excel_attr.attr_type = Some(input.parse::<syn::Path>()?);
                     }
-                    _ => return Err(input.error(format!("Unknown parameter {}, expected `path`",ident.to_string().as_str()))),
+                    _ => {
+                        return Err(input.error(format!(
+                            "Unknown parameter {}, expected `path`",
+                            ident.to_string().as_str()
+                        )))
+                    }
                 }
             } else if excel_attr.name.is_none() && input.peek(syn::LitStr) {
                 // 处理没有前置逗号的位置参数
@@ -752,8 +766,7 @@ pub fn export(item: TokenStream) -> TokenStream {
             for attr in attrs {
                 if attr.path().is_ident("excel") {
                     let dto_attr = attr.parse_args_with(parser).unwrap();
-                    let ident_camel_case =
-                        to_camel_case(&(ident.clone().map(|s| s.to_string()).unwrap_or_default()));
+                    let ident_camel_case = to_camel_case(&(ident.clone().map(|s| s.to_string()).unwrap_or_default()));
                     expand.extend(quote! {
                         excel_gen_attr.push(crate::ExcelGenAttr{
                                 camel_case_indent: #ident_camel_case.to_string(),

@@ -1,15 +1,14 @@
-use crate::config::global_constants::LOGIN_TOKEN_KEY;
 use crate::config::global_constants::{ADMIN_NAME, ADMIN_USERID};
+use crate::config::global_constants::LOGIN_TOKEN_KEY;
 use crate::context::CONTEXT;
 use crate::error::Error;
 use crate::error::Result;
 use crate::system::domain::dto::{DeptQueryDTO, UserAddDTO, UserPageDTO, UserUpdateDTO};
 use crate::system::domain::mapper::sys_user;
 use crate::system::domain::mapper::sys_user::SysUser;
-use crate::system::domain::vo::{JWTToken, SysDeptVO, SysUserVO, UserCache};
+use crate::system::domain::vo::{SysDeptVO, SysUserVO, UserCache};
 use crate::utils::password_encoder::PasswordEncoder;
-use crate::web_data::{get_token, get_user_name};
-use crate::{check_unique, export_excel_service, pool, remove_batch};
+use crate::{check_unique, export_excel_service, pool};
 use macros::data_scope;
 use rbatis::page::{Page, PageRequest};
 use rbatis::{field_name, IPage};
@@ -21,14 +20,10 @@ pub struct SysUserService {}
 impl SysUserService {
     #[data_scope(deptAlias = "d", userAlias = "u")]
     pub async fn page(&self, dto: &UserPageDTO) -> Result<Page<SysUserVO>> {
-        let sys_user_page: Page<SysUser> =
-            sys_user::select_page(pool!(), &PageRequest::from(&dto), &dto).await?;
+        let sys_user_page: Page<SysUser> = sys_user::select_page(pool!(), &PageRequest::from(&dto), &dto).await?;
         let mut page = Page::<SysUserVO>::from(sys_user_page);
 
-        let all_depts = CONTEXT
-            .sys_dept_service
-            .list(&DeptQueryDTO::default())
-            .await?;
+        let all_depts = CONTEXT.sys_dept_service.list(&DeptQueryDTO::default()).await?;
         let mut dept_map = HashMap::new();
         all_depts.iter().for_each(|dept| {
             dept_map.insert(dept.dept_id.clone().unwrap_or_default(), dept.clone());
@@ -61,7 +56,7 @@ impl SysUserService {
             .ok_or_else(|| Error::from("找不到此用户"))
     }
 
-    pub async fn add(&self, dto: &UserAddDTO) -> Result<u64> {
+    pub async fn add(&self, dto: &UserAddDTO, create_by: String) -> Result<u64> {
         self.check_user_name_unique(&None, &dto.user_name.clone().unwrap_or_default())
             .await?;
         self.check_phonenumber_unique(&None, &dto.phonenumber.clone().unwrap_or_default())
@@ -81,7 +76,8 @@ impl SysUserService {
         }
 
         user.password = Some(PasswordEncoder::encode(&password));
-        user.create_by = Some(get_user_name());
+        user.create_by = Some(create_by);
+        user.update_time = Some(rbatis::rbdc::datetime::DateTime::now().set_nano(0).into());
         let user_id = user.user_id.clone().unwrap_or_default();
         let res = SysUser::insert(pool!(), &user).await?;
         if res.rows_affected > 0 {
@@ -101,18 +97,19 @@ impl SysUserService {
         Ok(res.rows_affected)
     }
 
-    pub async fn update(&self, dto: UserUpdateDTO) -> Result<u64> {
+    pub async fn update(&self, dto: UserUpdateDTO, update_by: String) -> Result<u64> {
         let user_id = dto.user_id.clone();
         self.check_phonenumber_unique(&user_id, &dto.phonenumber.clone().unwrap_or_default())
             .await?;
         let user_id = user_id.unwrap_or_default();
         self.check_user_allowed(&user_id).await?;
-        self.check_user_data_scope(&user_id).await?;
+        self.check_user_data_scope(&user_id,&update_by).await?;
 
         let role_ids = dto.role_ids.clone();
         let post_ids = dto.post_ids.clone();
         let mut user = SysUser::from(dto);
-        user.update_by = Some(get_user_name());
+        user.update_by = Some(update_by);
+        user.update_time = Some(rbatis::rbdc::datetime::DateTime::now().set_nano(0).into());
         if role_ids.is_some() {
             CONTEXT
                 .sys_user_role_service
@@ -130,11 +127,8 @@ impl SysUserService {
             .rows_affected)
     }
 
-    pub async fn remove(&self, user_id: &str) -> Result<u64> {
-        let user_cache = CONTEXT
-            .sys_user_service
-            .get_user_cache_by_token(&get_token())
-            .await?;
+    pub async fn remove(&self, user_id: &str, login_user_key:&str) -> Result<u64> {
+        let user_cache = CONTEXT.sys_user_service.get_user_cache_by_token(login_user_key).await?;
         if user_cache.id.eq(user_id) {
             return Err(Error::from("不能删除自己！"));
         }
@@ -143,7 +137,7 @@ impl SysUserService {
             return Err(Error::from("id 不能为空！"));
         }
         self.check_user_allowed(user_id).await?;
-        self.check_user_data_scope(user_id).await?;
+        self.check_user_data_scope(user_id,&user_cache.user_name.clone()).await?;
         let r = pool!()
             .exec(
                 "update sys_user set del_flag = '2' where user_id = ?",
@@ -151,34 +145,24 @@ impl SysUserService {
             )
             .await?;
         if r.rows_affected > 0 {
-            CONTEXT
-                .sys_user_role_service
-                .remove_by_user_id(user_id)
-                .await?;
-            CONTEXT
-                .sys_user_post_service
-                .remove_by_user_id(user_id)
-                .await?;
+            CONTEXT.sys_user_role_service.remove_by_user_id(user_id).await?;
+            CONTEXT.sys_user_post_service.remove_by_user_id(user_id).await?;
         }
         Ok(r.rows_affected)
     }
 
-    pub async fn get_user_cache_by_token(&self, token: &str) -> Result<UserCache> {
-        let token = JWTToken::verify(&CONTEXT.config.jwt_secret, &token);
-        if token.is_err() {
-            return Err(Error::from("Token失效，请重新登录！"));
-        }
+    pub async fn get_user_cache_by_token(&self, login_user_key: &str) -> Result<UserCache> {
         CONTEXT
             .cache_service
-            .get_json::<UserCache>(&format!("{}{}", LOGIN_TOKEN_KEY, &token?.login_user_key))
+            .get_json::<UserCache>(&format!("{}{}", LOGIN_TOKEN_KEY, login_user_key))
             .await
     }
 
-    pub async fn update_password(&self, dto: UserUpdateDTO) -> Result<u64> {
+    pub async fn update_password(&self, dto: UserUpdateDTO,oper_user_name:&str) -> Result<u64> {
         let user_id = dto.user_id.clone().unwrap_or_default();
 
         self.check_user_allowed(&user_id).await?;
-        self.check_user_data_scope(&user_id).await?;
+        self.check_user_data_scope(&user_id,oper_user_name).await?;
 
         let new_password = Some(PasswordEncoder::encode(&dto.password.clone().unwrap()));
         self.update_password_plain(&new_password.unwrap_or_default(), &user_id)
@@ -235,20 +219,14 @@ impl SysUserService {
         phonenumber,
         "手机号码重复！"
     );
-    check_unique!(
-        check_email_unique,
-        "sys_user",
-        user_id,
-        email,
-        "邮箱账号已存在！"
-    );
+    check_unique!(check_email_unique, "sys_user", user_id, email, "邮箱账号已存在！");
     /**
      * 校验用户是否有数据权限
      *
      * @param userId 用户id
      */
-    pub async fn check_user_data_scope(&self, user_id: &str) -> Result<()> {
-        if !get_user_name().eq(ADMIN_NAME) {
+    pub async fn check_user_data_scope(&self, user_id: &str,oper_user_name:&str) -> Result<()> {
+        if oper_user_name.eq(ADMIN_NAME) {
             let mut dto = UserPageDTO::default();
             dto.user_id = Some(user_id.to_string());
             let res = self.page(&dto).await?;
@@ -265,6 +243,12 @@ impl SysUserService {
             .next()
             .ok_or_else(|| Error::from("找不到此用户"))
     }
-    remove_batch!(user_ids);
+    pub async fn remove_batch(&self, user_ids: &str, login_user_key: &str) -> Result<u64> {
+        let user_ids = user_ids.split(",").collect::<Vec<&str>>();
+        for id in user_ids {
+            self.remove(id, login_user_key).await?;
+        }
+        Ok(1)
+    }
     export_excel_service!(UserPageDTO, SysUserVO, sys_user::select_page);
 }

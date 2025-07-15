@@ -1,6 +1,6 @@
-use  crate::system::domain::mapper::sys_role_dept::SysRoleDept;
 use crate::error::Result;
 use crate::pool;
+use crate::system::domain::mapper::sys_role_dept::SysRoleDept;
 
 /// Role Dept Service
 pub struct SysRoleDeptService {}

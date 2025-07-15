@@ -1,13 +1,11 @@
 use crate::context::CONTEXT;
 use crate::error::Error;
 use crate::error::Result;
-use crate::system::domain::dto::{NoticeAddDTO, NoticePageDTO, NoticeUpdateDTO};
+use crate::system::domain::dto::NoticePageDTO;
 use crate::system::domain::mapper::sys_notice::SysNotice;
 use crate::system::domain::vo::SysNoticeVO;
-use crate::system::service::dict_utils::get_dict_label_default;
 use crate::{export_excel_service, pool, remove_batch};
 use rbatis::{field_name, Page, PageRequest};
-use rust_xlsxwriter::{ColNum, Format, Workbook};
 
 
 pub struct SysNoticeService {}
@@ -29,16 +27,12 @@ impl SysNoticeService {
         Ok(notice)
     }
 
-    pub async fn add(&self, dto: NoticeAddDTO) -> Result<u64> {
-        let mut data = SysNotice::from(dto);
-        data.create_by = Some(crate::web_data::get_user_name());
+    pub async fn add(&self, data: SysNotice) -> Result<u64> {
         let result = Ok(SysNotice::insert(pool!(), &data).await?.rows_affected);
         result
     }
 
-    pub async fn update(&self, dto: NoticeUpdateDTO) -> Result<u64> {
-        let mut data = SysNotice::from(dto);
-        data.update_by = Some(crate::web_data::get_user_name());
+    pub async fn update(&self, data: SysNotice) -> Result<u64> {
         let result = SysNotice::update_by_column(pool!(), &data, "notice_id").await;
         Ok(result?.rows_affected)
     }

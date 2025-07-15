@@ -1,5 +1,5 @@
 use crate::config::global_constants::DEL_FLAG_NORMAL;
-use  crate::system::domain::mapper::sys_role::SysRole;
+use crate::system::domain::mapper::sys_role::SysRole;
 use macros::page_request;
 use rbatis::object_id::ObjectId;
 use rbatis::rbdc::datetime::DateTime;
@@ -65,7 +65,7 @@ impl From<RoleAddDTO> for SysRole {
             status: arg.status,
             del_flag: Some(DEL_FLAG_NORMAL),
             create_by: None,
-            create_time: DateTime::now().set_nano(0).into(),
+            create_time: None,
             update_by: None,
             update_time: None,
             remark: arg.remark,
@@ -128,7 +128,7 @@ impl From<RoleUpdateDTO> for SysRole {
             create_by: None,
             create_time: None,
             update_by: None,
-            update_time: DateTime::now().set_nano(0).into(),
+            update_time: None,
             remark: arg.remark,
         }
     }

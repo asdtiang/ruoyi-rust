@@ -41,7 +41,7 @@ impl From<PostAddDTO> for SysPost {
             post_sort: arg.post_sort,
             status: arg.status,
             create_by: None,
-            create_time: DateTime::now().set_nano(0).into(),
+            create_time: None,
             update_by: None,
             update_time: None,
             remark: arg.remark,
@@ -81,7 +81,7 @@ impl From<PostUpdateDTO> for SysPost {
             create_by: None,
             create_time: None,
             update_by: None,
-            update_time: DateTime::now().set_nano(0).into(),
+            update_time: None,
             remark: arg.remark,
         }
     }

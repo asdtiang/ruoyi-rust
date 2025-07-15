@@ -7,12 +7,12 @@ use rbs::to_value;
 use std::collections::BTreeMap;
 
 use crate::context::CONTEXT;
-use crate::system::domain::mapper::sys_menu::SysMenu;
-use crate::system::domain::vo::{MenuTreeSelectVO, MetaVO, RouterVO, SysMenuVO, UserCache};
 use crate::error::Error;
 use crate::error::Result;
 use crate::modules::system::constants::{INNER_LINK, LAYOUT, PARENT_VIEW, TYPE_DIR, TYPE_MENU};
 use crate::pool;
+use crate::system::domain::mapper::sys_menu::SysMenu;
+use crate::system::domain::vo::{MenuTreeSelectVO, MetaVO, RouterVO, SysMenuVO, UserCache};
 use crate::utils::string::capitalize;
 
 const RES_MENU_KEY: &'static str = "sys_menu:all";
@@ -63,14 +63,14 @@ impl SysMenuService {
             .ok_or_else(|| Error::from(format!("不存在:{:?}！", menu_id)))?;
         Ok(menu)
     }
-    pub async fn add(&self, arg: &SysMenu) -> Result<u64> {
-        let result = Ok(SysMenu::insert(pool!(), &arg).await?.rows_affected);
+    pub async fn add(&self, menu: SysMenu) -> Result<u64> {
+        let result = Ok(SysMenu::insert(pool!(), &menu).await?.rows_affected);
         self.update_cache().await?;
         result
     }
 
-    pub async fn update(&self, arg: &SysMenu) -> Result<u64> {
-        let result = SysMenu::update_by_column(pool!(), &arg, "menu_id").await?;
+    pub async fn update(&self, menu: SysMenu) -> Result<u64> {
+        let result = SysMenu::update_by_column(pool!(), &menu, "menu_id").await?;
         self.update_cache().await?;
         Ok(result.rows_affected)
     }
@@ -176,10 +176,10 @@ impl SysMenuService {
     }
 
     //变成id 和label
-    pub async fn tree_select(&self) -> Result<Vec<MenuTreeSelectVO>> {
+    pub async fn tree_select(&self,login_user_key:&str) -> Result<Vec<MenuTreeSelectVO>> {
         let user_cache = CONTEXT
             .sys_user_service
-            .get_user_cache_by_token(&crate::web_data::get_token())
+            .get_user_cache_by_token(login_user_key)
             .await?;
         let menus = if user_cache.user_name == ADMIN_NAME {
             CONTEXT.sys_menu_service.all().await?

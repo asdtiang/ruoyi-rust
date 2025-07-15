@@ -1,5 +1,5 @@
-use rbatis::rbdc::DateTime;
 use super::super::mapper::gen_table::GenTable;
+use rbatis::rbdc::DateTime;
 
 #[derive(Clone, Debug, serde :: Serialize, serde :: Deserialize)]
 #[serde(rename_all = "camelCase")]

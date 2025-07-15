@@ -1,6 +1,6 @@
-use  crate::system::domain::mapper::sys_role_menu::SysRoleMenu;
 use crate::error::Result;
 use crate::pool;
+use crate::system::domain::mapper::sys_role_menu::SysRoleMenu;
 
 /// Role Menu Service
 pub struct SysRoleMenuService {}

@@ -43,7 +43,7 @@ impl From<ConfigAddDTO> for SysConfig {
             config_value: arg.config_value,
             config_type: arg.config_type,
             create_by: None,
-            create_time: DateTime::now().set_nano(0).into(),
+            create_time: None,
             update_by: None,
             update_time: None,
             remark: arg.remark,
@@ -85,7 +85,7 @@ impl From<ConfigUpdateDTO> for SysConfig {
             create_by: None,
             create_time: None,
             update_by: None,
-            update_time: DateTime::now().set_nano(0).into(),
+            update_time: None,
             remark: arg.remark,
         }
     }

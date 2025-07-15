@@ -1,4 +1,4 @@
-use  crate::system::domain::mapper::sys_menu::SysMenu;
+use crate::system::domain::mapper::sys_menu::SysMenu;
 use rbatis::object_id::ObjectId;
 use rbatis::rbdc::datetime::DateTime;
 use serde::{Deserialize, Serialize};
@@ -76,7 +76,7 @@ impl From<MenuAddDTO> for SysMenu {
             perms: arg.perms,
             icon: arg.icon,
             create_by: None,
-            create_time: DateTime::now().set_nano(0).into(),
+            create_time: None,
 
             update_by: None,
             update_time: None,
@@ -148,7 +148,7 @@ impl From<MenuUpdateDTO> for SysMenu {
             create_by: None,
             create_time: None,
             update_by: None,
-            update_time: DateTime::now().set_nano(0).into(),
+            update_time: None,
             remark: None,
         }
     }

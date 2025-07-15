@@ -1,4 +1,4 @@
-use  crate::system::domain::dto::RolePageDTO;
+use crate::system::domain::dto::RolePageDTO;
 use rbatis::rbdc::DateTime;
 use rbatis::{crud, impl_select_page};
 
@@ -6,7 +6,7 @@ crud!(SysRole {});
 impl_select_page!(SysRole{select_page(dto:&RolePageDTO)=>
     "`where del_flag = '0'`
     if dto.role_id != '':
-      ` and role_id = #{dto.role_i}`
+      ` and role_id = #{dto.role_id}`
     if dto.role_name != '':
       ` and role_name like #{'%'+dto.role_name+'%'}`
     if dto.role_name != '':

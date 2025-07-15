@@ -1,5 +1,5 @@
 use crate::${{moduleName}}::domain::vo::${{className}}VO;
-use crate::{export_excel_controller, PageVO, RespVO};
+use crate::{add_marco, export_excel_controller, update_marco, PageVO, RespVO};
 use axum::Json;
 use axum::extract::Path;
 use axum::response::IntoResponse;
@@ -7,6 +7,7 @@ use macros::pre_authorize;
 use rbatis::Page;
 use crate::${{moduleName}}::domain::dto::{${{className}}AddDTO, ${{className}}PageDTO, ${{className}}UpdateDTO};
 use crate::${{moduleName}}::${{moduleName|upper}}_CONTEXT;
+use crate::${{moduleName}}::domain::mapper::${{className}};
 
 //查询${{functionName}}列表
 #[pre_authorize("${{permissionPrefix}}:list")]
@@ -23,16 +24,18 @@ pub async fn detail(${{pkColumn.columnName}}: Path<String>) -> impl IntoResponse
     RespVO::from_result(&${{businessName}}).into_response()
 }
 //新增${{functionName}}
-#[pre_authorize("${{permissionPrefix}}:add")]
+#[pre_authorize("${{permissionPrefix}}:add", user)]
 pub async fn add(dto: crate::ValidatedForm<${{className}}AddDTO>) -> impl IntoResponse {
-    let res = ${{moduleName|upper}}_CONTEXT.${{moduleName}}_${{businessName}}_service.add(dto.0).await;
+    add_marco!(data, dto, user, ${{className}});
+    let res = ${{moduleName|upper}}_CONTEXT.${{moduleName}}_${{businessName}}_service.add(data).await;
     RespVO::from_result(&res).into_response()
 }
 
 //更新${{functionName}}
-#[pre_authorize("${{permissionPrefix}}:edit")]
+#[pre_authorize("${{permissionPrefix}}:edit", user)]
 pub async fn update(dto: crate::ValidatedForm<${{className}}UpdateDTO>) -> impl IntoResponse {
-    let res = ${{moduleName|upper}}_CONTEXT.${{moduleName}}_${{businessName}}_service.update(dto.0).await;
+    update_marco!(data, dto, user, ${{className}});
+    let res = ${{moduleName|upper}}_CONTEXT.${{moduleName}}_${{businessName}}_service.update(data).await;
     RespVO::from_result(&res).into_response()
 }
 

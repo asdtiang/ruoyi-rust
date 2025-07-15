@@ -1,6 +1,5 @@
 use crate::gen::domain::mapper::gen_table::GenTable;
 use crate::gen::domain::mapper::gen_table_column::GenTableColumn;
-use crate::web_data::get_user_name;
 use rbatis::rbdc::DateTime;
 
 #[derive(serde :: Serialize, serde :: Deserialize, Clone, Debug)]
@@ -63,7 +62,7 @@ impl From<GenTableUpdateDTO> for GenTable {
             create_by: None,
             create_time: None,
             update_by: None,
-            update_time: DateTime::now().set_nano(0).into(),
+            update_time: None,
             remark: arg.remark,
         }
     }
@@ -146,8 +145,8 @@ impl From<GenTableColumnUpdateDTO> for GenTableColumn {
             def_val,
             create_by: None,
             create_time: None,
-            update_by: get_user_name().into(),
-            update_time: DateTime::now().set_nano(0).into(),
+            update_by: None,
+            update_time: None,
             remark,
         }
     }
