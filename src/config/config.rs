@@ -24,7 +24,7 @@ pub struct ApplicationConfig {
 
     pub captcha_expired_min: u64,
     pub token_expired_min: u64,
-    pub address_enabled:bool,
+    pub address_enabled: bool,
     pub cache: String,
     pub storage: String,
     pub login_fail_retry: u64,
@@ -33,48 +33,43 @@ pub struct ApplicationConfig {
     pub datetime_format: String,
     pub errors: HashMap<String, String>,
     pub error_infos: Option<HashMap<String, String>>,
-    
-    pub upload_path:String,
+
+    pub upload_path: String,
     pub upload_max_size: usize,
 }
 
 impl Default for ApplicationConfig {
     fn default() -> Self {
-        let k = "profile=";
-        let profile = std::env::args_os()
-            .find(|v| v.to_str().unwrap_or_default().starts_with(k))
-            .map(|v| v.to_str().unwrap_or_default().trim_start_matches(k).to_string());
-        let profile = match profile {
-            Some(o) => Some(o),
-            None => {
-                std::env::var("profile").ok()
-            }
-        };
-        let profile = match profile {
-            Some(o) => Some(o),
-            None => {
-                std::env::var_os("profile").map(|x| x.into_string().unwrap_or_default())
-            }
-        };
-        let profile = profile.unwrap_or_else(|| "prod".to_string());
-        let profile = profile.trim().to_string();
-        println!("loading profile: {}", profile);
         let yml_data = include_str!("../../application.yml");
 
         let mut hash = MergeYamlHash::new();
 
         hash.merge(yml_data);
-        if profile.len() > 0 {
-            match fs::read_to_string(format!("application-{profile}.yml")) {
-                Ok(s) => { hash.merge(&s); }
-                Err(_) => { println!("Can't loading application-{profile}.yml"); }
+
+        //自动识别，加载不同配置
+
+        #[cfg(debug_assertions)]
+        match fs::read_to_string("application-dev.yml".to_string()) {
+            Ok(s) => {
+                hash.merge(&s);
+            }
+            Err(_) => {
+                println!("Can't load application-dev.yml");
             }
         }
+        #[cfg(not(debug_assertions))]
+        match fs::read_to_string("application-prod.yml".to_string()) {
+            Ok(s) => {
+                hash.merge(&s);
+            }
+            Err(_) => {
+                println!("Can't load application-prod.yml");
+            }
+        }
+
         //load config
-        let result: ApplicationConfig =
-            serde_yaml::from_str(&*hash.to_string()).expect("load config file fail");
+        let result: ApplicationConfig = serde_yaml::from_str(&*hash.to_string()).expect("load config file fail");
         if result.debug {
-            //println!("[ruoyi_rust] load config:{:?}", result);
             println!("[ruoyi_rust] ///////////////////// Start On Debug Mode ////////////////////////////");
         } else {
             println!("[ruoyi_rust] ///////////////////// Start On Release Mode ////////////////////////////");
@@ -101,10 +96,7 @@ impl ApplicationConfig {
             if error.contains(",") {
                 error = error[0..error.find(",").unwrap()].to_string();
             }
-            self.error_infos
-                .as_mut()
-                .unwrap()
-                .insert(error, k.to_string());
+            self.error_infos.as_mut().unwrap().insert(error, k.to_string());
         }
     }
 }
