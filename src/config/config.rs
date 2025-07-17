@@ -47,25 +47,21 @@ impl Default for ApplicationConfig {
         hash.merge(yml_data);
 
         //自动识别，加载不同配置
-
         #[cfg(debug_assertions)]
-        match fs::read_to_string("application-dev.yml".to_string()) {
-            Ok(s) => {
-                hash.merge(&s);
-            }
-            Err(_) => {
-                println!("Can't load application-dev.yml");
-            }
-        }
+        let dev_or_release_yml="application-dev.yml";
         #[cfg(not(debug_assertions))]
-        match fs::read_to_string("application-prod.yml".to_string()) {
+        let dev_or_release_yml="application-prod.yml";
+
+
+        match fs::read_to_string(dev_or_release_yml) {
             Ok(s) => {
                 hash.merge(&s);
             }
             Err(_) => {
-                println!("Can't load application-prod.yml");
+                println!("Can't load {}",dev_or_release_yml);
             }
         }
+
 
         //load config
         let result: ApplicationConfig = serde_yaml::from_str(&*hash.to_string()).expect("load config file fail");

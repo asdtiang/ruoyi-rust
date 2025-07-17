@@ -51,7 +51,7 @@ pub fn init_column_field(column: &mut GenTableColumn, table: &GenTable) {
     column.java_type = Some(gen_constants::TYPE_STRING.to_string());
     column.query_type = Some(gen_constants::QUERY_EQ.to_string());
     let mut more = HashMap::new();
-    
+
     if gen_constants::COLUMNTYPE_STR.contains(&data_type)
         || gen_constants::COLUMNTYPE_TEXT.contains(&data_type)
     {
@@ -152,7 +152,7 @@ pub fn init_column_field(column: &mut GenTableColumn, table: &GenTable) {
     {
         column.html_type = Some(gen_constants::HTML_IMAGE_UPLOAD.to_string());
         if data_type.eq("json") {
-            column.java_type = Some(gen_constants::TYPE_ARRAY_JSON.to_string());  
+            column.java_type = Some(gen_constants::TYPE_ARRAY_JSON.to_string());
         }
     }
     // 文件字段设置文件上传控件

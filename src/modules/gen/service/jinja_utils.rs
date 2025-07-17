@@ -413,16 +413,16 @@ pub fn set_validation_info(columns: &Vec<GenTableColumnGenVO>) -> Vec<GenTableCo
                 }
 
                 let str = string::substring_between(&column_type, "(", ")");
-                let str = str
+                let usize_vec = str
                     .split(",")
                     .map(|s| s.parse::<usize>())
                     .collect::<Vec<_>>();
                 if java_type.eq(gen_constants::TYPE_BIGDECIMAL) {
-                    if str.len() >= 2 {
-                        column.precision = str[1].clone().ok();
+                    if usize_vec.len() >= 2 {
+                        column.precision = usize_vec[1].clone().ok();
                     }
                     column.max_length = Some(
-                        str[1].clone().unwrap_or_default() - str[1].clone().unwrap_or_default(),
+                        usize_vec[0].clone().unwrap_or_default() - usize_vec[1].clone().unwrap_or_default(),
                     );
                     //todo
                     // BigDecimal bd = new BigDecimal("1E+" + column.getMaxLength());
@@ -431,8 +431,8 @@ pub fn set_validation_info(columns: &Vec<GenTableColumnGenVO>) -> Vec<GenTableCo
                 }
                 // 如果是整形
                 else if java_type.eq(gen_constants::TYPE_INTEGER) {
-                    if str.len() >= 1 {
-                        column.max_length = str[0].clone().ok();
+                    if usize_vec.len() >= 1 {
+                        column.max_length = usize_vec[0].clone().ok();
                     }
                     if column.max.is_none() {
                         //todo 采用更精确的算法
@@ -441,8 +441,8 @@ pub fn set_validation_info(columns: &Vec<GenTableColumnGenVO>) -> Vec<GenTableCo
                 }
                 // 长整形
                 else if java_type.eq(gen_constants::TYPE_LONG) {
-                    if str.len() >= 1 {
-                        column.max_length = str[0].clone().ok();
+                    if usize_vec.len() >= 1 {
+                        column.max_length = usize_vec[0].clone().ok();
                     }
                     if column.max.is_none() {
                         //todo 采用更精确的算法
