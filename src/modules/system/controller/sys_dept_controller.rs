@@ -9,13 +9,13 @@ use axum::response::IntoResponse;
 use axum::Json;
 use macros::pre_authorize;
 
-#[pre_authorize("system:dept:list")]
+#[pre_authorize("system:dept:list",user)]
 pub async fn list(dto: Option<Json<DeptQueryDTO>>) -> impl IntoResponse {
     let dto = match dto {
         None => DeptQueryDTO::default(),
         Some(d) => d.0,
     };
-    let rows = CONTEXT.sys_dept_service.list(&dto).await;
+    let rows = CONTEXT.sys_dept_service.list(&dto,&user.login_user_key).await;
     let rows = rows.map(|depts| {
         depts
             .iter()
@@ -25,11 +25,11 @@ pub async fn list(dto: Option<Json<DeptQueryDTO>>) -> impl IntoResponse {
     RespVO::from_result(&rows).into_response()
 }
 
-#[pre_authorize("system:dept:list")]
+#[pre_authorize("system:dept:list",user)]
 pub async fn exclude_child(dept_id: Path<String>) -> impl IntoResponse {
     let dept_id = dept_id.0;
     let query: DeptQueryDTO = DeptQueryDTO::default();
-    let rows = CONTEXT.sys_dept_service.list(&query).await;
+    let rows = CONTEXT.sys_dept_service.list(&query,&user.login_user_key).await;
 
     match rows {
         Ok(vo) => {
@@ -56,7 +56,7 @@ pub async fn exclude_child(dept_id: Path<String>) -> impl IntoResponse {
 
 #[pre_authorize("system:dept:query", user)]
 pub async fn detail(dept_id: Path<String>) -> impl IntoResponse {
-    let dept_vo = CONTEXT.sys_dept_service.detail(&dept_id.0, &user.user_name).await;
+    let dept_vo = CONTEXT.sys_dept_service.detail(&dept_id.0, &user).await;
     RespVO::from_result(&dept_vo).into_response()
 }
 

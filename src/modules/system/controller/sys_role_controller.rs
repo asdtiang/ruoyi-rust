@@ -14,7 +14,7 @@ use serde_json::json;
 
 #[pre_authorize("system:role:list", user)]
 pub async fn list(dto: Json<RolePageDTO>) -> impl IntoResponse {
-    let vo = CONTEXT.sys_role_service.page(&dto.0).await;
+    let vo = CONTEXT.sys_role_service.page(&dto.0,&user.login_user_key).await;
     PageVO::from_result(&vo).into_response()
 }
 
@@ -54,17 +54,17 @@ pub async fn remove(role_id: Path<String>) -> impl IntoResponse {
 
 //已分配此角色的用户
 
-#[pre_authorize("system:role:query")]
+#[pre_authorize("system:role:query",user)]
 pub async fn allocated_user_list(arg: Query<RoleAuthUserPageDTO>) -> impl IntoResponse {
-    let vo = CONTEXT.sys_role_service.allocated_user_list_page(&arg.0).await;
+    let vo = CONTEXT.sys_role_service.allocated_user_list_page(&arg.0,&user.login_user_key).await;
     PageVO::from_result(&vo).into_response()
 }
 
 //未分配此角色的用户
 
-#[pre_authorize("system:role:query")]
+#[pre_authorize("system:role:query",user)]
 pub async fn unallocated_user_list(arg: Query<RoleAuthUserPageDTO>) -> impl IntoResponse {
-    let vo = CONTEXT.sys_role_service.unallocated_user_list_page(&arg.0).await;
+    let vo = CONTEXT.sys_role_service.unallocated_user_list_page(&arg.0,&user.login_user_key).await;
     PageVO::from_result(&vo).into_response()
 }
 
@@ -102,7 +102,7 @@ pub async fn cancel_user_all(arg: Query<UsersRoleDTO>) -> impl IntoResponse {
 #[pre_authorize("system:role:edit", user)]
 pub async fn change_status(dto: Json<RoleUpdateDTO>) -> impl IntoResponse {
     update_marco!(data, dto, user, SysRole);
-    let res = CONTEXT.sys_role_service.update_status(data, &user.user_name()).await;
+    let res = CONTEXT.sys_role_service.update_status(data, &user).await;
     RespVO::from_result(&res).into_response()
 }
 
@@ -134,7 +134,7 @@ pub async fn data_scope(dto: Json<RoleUpdateDTO>) -> impl IntoResponse {
 
     let r = CONTEXT
         .sys_role_service
-        .auth_data_scope(&role, &dept_ids, &user.user_name)
+        .auth_data_scope(&role, &dept_ids, &user)
         .await;
     RespVO::from_result(&r).into_response()
 }

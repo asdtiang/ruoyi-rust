@@ -12,18 +12,19 @@ use crate::{check_unique_sql, pool};
 use macros::data_scope;
 use rbatis::field_name;
 use rbs::to_value;
+use crate::web::User;
 
 pub struct SysDeptService {}
 
 impl SysDeptService {
-    #[data_scope(deptAlias = "d", userAlias = "")]
+    #[data_scope(deptAlias = "d")]
     pub async fn list(&self, arg: &DeptQueryDTO) -> Result<Vec<SysDept>> {
         let data = mapper::sys_dept::select_all_(pool!(), &arg).await?;
         Ok(data)
     }
 
-    pub async fn detail(&self, dept_id: &str,oper_user_name:&str) -> Result<SysDeptVO> {
-        self.check_dept_data_scope(dept_id,oper_user_name).await?;
+    pub async fn detail(&self, dept_id: &str,user:&User) -> Result<SysDeptVO> {
+        self.check_dept_data_scope(dept_id,user).await?;
         let dept = self.get_dept_by_id(dept_id).await?;
         Ok(SysDeptVO::from(dept))
     }
@@ -102,8 +103,8 @@ impl SysDeptService {
         Ok(res.rows_affected)
     }
     //根据user id获得本单位及下属单位部门列表 todo
-    pub async fn get_dept_tree(&self, user_id: &str) -> Result<Vec<DeptTreeVO>> {
-        let depts = self.list(&DeptQueryDTO::default()).await?;
+    pub async fn get_dept_tree(&self, login_user_key: &str) -> Result<Vec<DeptTreeVO>> {
+        let depts = self.list(&DeptQueryDTO::default(),login_user_key).await?;
         let depts = depts
             .into_iter()
             .map(|d| DeptTreeVO::from(d))
@@ -230,11 +231,11 @@ impl SysDeptService {
      *
      * @param dept_id 部门id
      */
-    pub async fn check_dept_data_scope(&self, dept_id: &str,oper_user_name:&str) -> Result<()> {
-        if !oper_user_name.eq(ADMIN_NAME) {
+    pub async fn check_dept_data_scope(&self, dept_id: &str,user:&User) -> Result<()> {
+        if !user.user_name.eq(ADMIN_NAME) {
             let mut dto = DeptQueryDTO::default();
             dto.dept_id = Some(dept_id.to_string());
-            let res = self.list(&dto).await?;
+            let res = self.list(&dto,&user.login_user_key()).await?;
             if res.is_empty() {
                 return Err(Error::from("没有权限访问部门数据！"));
             }

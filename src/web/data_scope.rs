@@ -1,6 +1,5 @@
 use crate::context::CONTEXT;
 use crate::error::Result;
-use crate::web::web_data::get_login_user_key;
 use crate::DataScopeTrait;
 
 /**
@@ -33,13 +32,13 @@ pub const DATA_SCOPE_SELF: char = '5';
  */
 pub const DATA_SCOPE: &'static str = "dataScope";
 
-pub async fn build_data_scope<T>(dto: &mut T, dept_alias: &str, user_alias: &str) -> Result<bool>
+pub async fn build_data_scope<T>(dto: &mut T, dept_alias: &str, user_alias: &str,login_user_key:&str) -> Result<bool>
 where
     T: DataScopeTrait,
 {
     //拼接权限sql前先清空params.dataScope参数防止注入
     dto.clear_data_scope_params();
-    let user_cache = CONTEXT.sys_user_service.get_user_cache_by_token(&get_login_user_key()).await?;
+    let user_cache = CONTEXT.sys_user_service.get_user_cache_by_token(login_user_key).await?;
     let user = user_cache.user.unwrap();
     if user.admin {
         dto.set_data_scope_params("");

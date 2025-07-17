@@ -325,7 +325,7 @@ label="${{ column.comment }}" {% if column.sortable %} sortable="custom" {% endi
                                  :min="${{column.min}}"
                                  :max="{% if column.javaType== "BigDecimal" %}column.maxBigDecimal{% else %} ${{column.max}} {% endif %}"
                                  title="输入最大值为{% if column.javaType== "BigDecimal" %} column.maxBigDecimal{% else %}  ${{column.max}} {% endif %}"
-                                 {% if column.precision>0 %}:precision="column.precision"{% endif %}
+                                 {% if column.precision>0 %}:precision="${{column.precision}}"{% endif %}
                                  controls-position="right"/>
               {% endif %}
             </el-form-item>

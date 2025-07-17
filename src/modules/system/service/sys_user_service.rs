@@ -14,16 +14,17 @@ use rbatis::page::{Page, PageRequest};
 use rbatis::{field_name, IPage};
 use rbs::to_value;
 use std::collections::HashMap;
+use crate::web::User;
 
 pub struct SysUserService {}
 
 impl SysUserService {
-    #[data_scope(deptAlias = "d", userAlias = "u")]
+    #[data_scope(deptAlias = "d", userAlias = "u", login_user_key)]
     pub async fn page(&self, dto: &UserPageDTO) -> Result<Page<SysUserVO>> {
         let sys_user_page: Page<SysUser> = sys_user::select_page(pool!(), &PageRequest::from(&dto), &dto).await?;
         let mut page = Page::<SysUserVO>::from(sys_user_page);
 
-        let all_depts = CONTEXT.sys_dept_service.list(&DeptQueryDTO::default()).await?;
+        let all_depts = CONTEXT.sys_dept_service.list(&DeptQueryDTO::default(),login_user_key).await?;
         let mut dept_map = HashMap::new();
         all_depts.iter().for_each(|dept| {
             dept_map.insert(dept.dept_id.clone().unwrap_or_default(), dept.clone());
@@ -77,7 +78,7 @@ impl SysUserService {
 
         user.password = Some(PasswordEncoder::encode(&password));
         user.create_by = Some(create_by);
-        user.update_time = Some(rbatis::rbdc::datetime::DateTime::now().set_nano(0).into());
+        user.create_time = Some(rbatis::rbdc::datetime::DateTime::now().set_nano(0).into());
         let user_id = user.user_id.clone().unwrap_or_default();
         let res = SysUser::insert(pool!(), &user).await?;
         if res.rows_affected > 0 {
@@ -97,18 +98,18 @@ impl SysUserService {
         Ok(res.rows_affected)
     }
 
-    pub async fn update(&self, dto: UserUpdateDTO, update_by: String) -> Result<u64> {
+    pub async fn update(&self, dto: UserUpdateDTO, user_:&User) -> Result<u64> {
         let user_id = dto.user_id.clone();
         self.check_phonenumber_unique(&user_id, &dto.phonenumber.clone().unwrap_or_default())
             .await?;
         let user_id = user_id.unwrap_or_default();
         self.check_user_allowed(&user_id).await?;
-        self.check_user_data_scope(&user_id,&update_by).await?;
+        self.check_user_data_scope(&user_id,user_).await?;
 
         let role_ids = dto.role_ids.clone();
         let post_ids = dto.post_ids.clone();
         let mut user = SysUser::from(dto);
-        user.update_by = Some(update_by);
+        user.update_by = Some(user_.user_name());
         user.update_time = Some(rbatis::rbdc::datetime::DateTime::now().set_nano(0).into());
         if role_ids.is_some() {
             CONTEXT
@@ -127,8 +128,8 @@ impl SysUserService {
             .rows_affected)
     }
 
-    pub async fn remove(&self, user_id: &str, login_user_key:&str) -> Result<u64> {
-        let user_cache = CONTEXT.sys_user_service.get_user_cache_by_token(login_user_key).await?;
+    pub async fn remove(&self, user_id: &str,user:&User) -> Result<u64> {
+        let user_cache = CONTEXT.sys_user_service.get_user_cache_by_token(&user.login_user_key()).await?;
         if user_cache.id.eq(user_id) {
             return Err(Error::from("不能删除自己！"));
         }
@@ -137,7 +138,7 @@ impl SysUserService {
             return Err(Error::from("id 不能为空！"));
         }
         self.check_user_allowed(user_id).await?;
-        self.check_user_data_scope(user_id,&user_cache.user_name.clone()).await?;
+        self.check_user_data_scope(user_id,&user).await?;
         let r = pool!()
             .exec(
                 "update sys_user set del_flag = '2' where user_id = ?",
@@ -160,15 +161,12 @@ impl SysUserService {
 
     pub async fn update_password(&self, dto: UserUpdateDTO,oper_user_name:&str) -> Result<u64> {
         let user_id = dto.user_id.clone().unwrap_or_default();
-
         self.check_user_allowed(&user_id).await?;
-        self.check_user_data_scope(&user_id,oper_user_name).await?;
-
         let new_password = Some(PasswordEncoder::encode(&dto.password.clone().unwrap()));
-        self.update_password_plain(&new_password.unwrap_or_default(), &user_id)
+        self.update_password_raw(&new_password.unwrap_or_default(), &user_id)
             .await
     }
-    pub async fn update_password_plain(&self, new_password: &str, user_id: &str) -> Result<u64> {
+    pub(crate) async fn update_password_raw(&self, new_password: &str, user_id: &str) -> Result<u64> {
         let new_password = Some(PasswordEncoder::encode(&new_password));
         let res = pool!()
             .exec(
@@ -225,11 +223,13 @@ impl SysUserService {
      *
      * @param userId 用户id
      */
-    pub async fn check_user_data_scope(&self, user_id: &str,oper_user_name:&str) -> Result<()> {
-        if oper_user_name.eq(ADMIN_NAME) {
+    pub async fn check_user_data_scope(&self, user_id: &str,user:&User) -> Result<()> {
+        if user.user_name.eq(ADMIN_NAME) {
             let mut dto = UserPageDTO::default();
+            dto.page_no= Some(1);
+            dto.page_size= Some(10);
             dto.user_id = Some(user_id.to_string());
-            let res = self.page(&dto).await?;
+            let res = self.page(&dto,&user.login_user_key).await?;
             if res.records.is_empty() {
                 return Err(Error::from("没有权限访问用户数据！"));
             }
@@ -243,10 +243,10 @@ impl SysUserService {
             .next()
             .ok_or_else(|| Error::from("找不到此用户"))
     }
-    pub async fn remove_batch(&self, user_ids: &str, login_user_key: &str) -> Result<u64> {
+    pub async fn remove_batch(&self, user_ids: &str, user: &User) -> Result<u64> {
         let user_ids = user_ids.split(",").collect::<Vec<&str>>();
         for id in user_ids {
-            self.remove(id, login_user_key).await?;
+            self.remove(id, user).await?;
         }
         Ok(1)
     }

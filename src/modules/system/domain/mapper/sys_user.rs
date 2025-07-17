@@ -56,7 +56,7 @@ pysql_select_page!(select_page(dto:&UserPageDTO) -> SysUser =>
     if dto.params.endTime != '':
       ` and date_format(create_time,'%y%m%d') <= date_format(#{dto.params.endTime},'%y%m%d')`
     if dto.deptId != '':
-      ` and (dept_id = #{dto.deptId} OR dept_id IN ( SELECT t.dept_id FROM sys_dept t WHERE find_in_set(#{dto.deptId}, ancestors)))`
+      ` and (u.dept_id = #{dto.deptId} OR u.dept_id IN ( SELECT t.dept_id FROM sys_dept t WHERE find_in_set(#{dto.deptId}, ancestors)))`
     if dto.params.dataScope != '':
       `${dto.params.dataScope}`
     if do_count == false:

@@ -25,11 +25,12 @@ pub fn pre_authorize(attr: TokenStream, item: TokenStream) -> TokenStream {
         let mut user_ident = None;
 
         while !input.is_empty() {
-            if input.peek(syn::LitStr) {// 解析权限字符串
+            if input.peek(syn::LitStr) {
+                // 解析权限字符串
                 permit_str = Some(input.parse::<syn::LitStr>()?);
             } else if input.peek(syn::Ident) {
                 user_ident = Some(input.parse::<syn::Ident>()?);
-            }else if input.peek(syn::Token![,]) {
+            } else if input.peek(syn::Token![,]) {
                 input.parse::<syn::Token![,]>()?;
             }
         }
@@ -41,7 +42,7 @@ pub fn pre_authorize(attr: TokenStream, item: TokenStream) -> TokenStream {
     };
 
     let expanded = if permit_str.is_some() {
-        if user_ident.is_none(){
+        if user_ident.is_none() {
             user_ident = Some(parse_quote!(user));
         }
         quote! { // 重新构建函数执行
@@ -54,9 +55,9 @@ pub fn pre_authorize(attr: TokenStream, item: TokenStream) -> TokenStream {
             }
         }
     } else {
-        let user_param_expanded=   if user_ident.is_some(){
+        let user_param_expanded = if user_ident.is_some() {
             quote! {axum::Extension(#user_ident): axum::Extension<crate::web::User>,}
-        }else{
+        } else {
             quote! {}
         };
         quote! { // 重新构建函数执行
@@ -395,7 +396,7 @@ pub fn data_scope(attr: TokenStream, item: TokenStream) -> TokenStream {
     let func = parse_macro_input!(item as ItemFn); // 我们传入的是一个函数，所以要用到ItemFn
     let func_vis = &func.vis; // pub
 
-    //去年大括号
+    //去掉大括号
     let mut stmts_expanded = quote! {};
     func.block
         .stmts
@@ -410,22 +411,46 @@ pub fn data_scope(attr: TokenStream, item: TokenStream) -> TokenStream {
     let func_inputs = &func_decl.inputs; // 函数输入参数
     let func_output = &func_decl.output; // 函数返回
 
-    let mut dept_alias: Option<LitStr> = None;
-    let mut user_alias: Option<LitStr> = None;
+    let parser = |input: syn::parse::ParseStream| {
+        let mut dept_alias = Some(parse_quote!(""));
+        let mut user_alias = Some(parse_quote!(""));
+        let mut login_user_key_ident = Some(parse_quote!(login_user_key));
 
-    //https://docs.rs/syn/latest/syn/macro.parse_macro_input.html#usage-with-parser
-    let parser = syn::meta::parser(|meta| {
-        if meta.path.is_ident("deptAlias") {
-            dept_alias = Some(meta.value()?.parse()?);
-            Ok(())
-        } else if meta.path.is_ident("userAlias") {
-            user_alias = Some(meta.value()?.parse()?);
-            Ok(())
-        } else {
-            Err(meta.error("unsupported property"))
+
+        while !input.is_empty() {
+            println!("loop");
+            if input.peek(syn::Ident) {
+                let ident: syn::Ident = input.parse()?;
+                if input.peek(syn::Token![=]) {
+                    input.parse::<syn::Token![=]>()?;
+                    match ident.to_string().as_str() {
+                        "deptAlias" => {
+                            if input.peek(syn::LitStr) {
+                                dept_alias = Some(input.parse::<syn::LitStr>()?);
+                            }
+                        }
+                        "userAlias" => {
+                            if input.peek(syn::LitStr) {
+                                user_alias = Some(input.parse::<syn::LitStr>()?);
+                            }
+                        }
+                        _ => {}
+                    }
+                } else {
+                    login_user_key_ident = Some(ident);
+                }
+            } else if input.peek(syn::Token![,]) {
+                input.parse::<syn::Token![,]>()?;
+            } else {
+            }
         }
-    });
-    parse_macro_input!(attr with parser);
+        Ok((dept_alias, user_alias, login_user_key_ident))
+    };
+    let (dept_alias, user_alias, login_user_key_ident) = match parser.parse(attr) {
+        Ok(attr) => attr,
+        Err(e) => return e.to_compile_error().into(),
+    };
+
     let mut dto_ident = None;
     func_inputs.iter().for_each(|i| {
         match i {
@@ -443,13 +468,14 @@ pub fn data_scope(attr: TokenStream, item: TokenStream) -> TokenStream {
     let dept_alias = dept_alias.map(|a| a.to_token_stream()).unwrap_or_default();
     let expanded = quote! { // 重新构建函数执行
         #(#func_attrs)*
-        #func_vis #func_asyncness fn #func_name #func_generics(#func_inputs) #func_output{
+        #func_vis #func_asyncness fn #func_name #func_generics(#func_inputs,#login_user_key_ident:&str) #func_output{
             let mut #dto_ident = #dto_ident.clone();
-            crate::web::data_scope::build_data_scope(&mut #dto_ident, #dept_alias, #user_alias,).await?;
+            crate::web::data_scope::build_data_scope(&mut #dto_ident, #dept_alias, #user_alias,#login_user_key_ident).await?;
             #stmts_expanded
 
         }
     };
+    println!("expanded:{}",expanded.to_string());
     expanded.into()
 }
 
@@ -534,11 +560,7 @@ impl ToTokens for ExcelAttribute {
 pub fn export(item: TokenStream) -> TokenStream {
     // 将输入的 token 流解析为 `DeriveInput`
     let original_struct = syn::parse_macro_input!(item as syn::DeriveInput);
-    let DeriveInput {
-        data,
-        ident,
-        ..
-    } = original_struct.clone();
+    let DeriveInput { data, ident, .. } = original_struct.clone();
     let mut expand = quote! {};
 
     let parser = |input: syn::parse::ParseStream| {
@@ -564,7 +586,6 @@ pub fn export(item: TokenStream) -> TokenStream {
             if input.peek(syn::Ident) && input.peek2(syn::Token![=]) {
                 let ident: syn::Ident = input.parse()?;
                 input.parse::<syn::Token![=]>()?;
-
                 match ident.to_string().as_str() {
                     "name" => {
                         if input.peek(syn::LitStr) {

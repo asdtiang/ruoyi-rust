@@ -181,3 +181,14 @@ macro_rules! update_marco {
         $data.update_time = Some(rbatis::rbdc::datetime::DateTime::now().set_nano(0).into());
     };
 }
+
+///简化一下error
+#[macro_export]
+macro_rules! error_wrapper {
+    ($fun:expr,$res:ident) => {
+        let $res = $fun.await;
+        if let Err(e) = $res {
+            return RespVO::<u64>::from_error_info(500, &e.to_string()).into_response();
+        }
+    };
+}

@@ -18,6 +18,10 @@ impl User {
 
         self.user_name.clone()
     }
+    pub fn login_user_key(&self) -> String {
+
+        self.login_user_key.clone()
+    }
 }
 
 impl From<JwtClaims> for User {

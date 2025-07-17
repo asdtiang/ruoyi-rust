@@ -4,7 +4,7 @@ use crate::system::service::REDIS_UUID_CAPTCHA;
 use crate::system::domain::dto::SignInDTO;
 use crate::utils::base64::encode;
 use crate::web::User;
-use crate::{RespJson, RespVO};
+use crate::{error_wrapper, RespJson, RespVO};
 use axum::http::HeaderMap;
 use axum::response::IntoResponse;
 use axum::Json;
@@ -15,10 +15,8 @@ use std::time::Duration;
 use uuid::Uuid;
 
 pub async fn login(header_map: HeaderMap, arg: Json<SignInDTO>) -> impl IntoResponse {
-    let token = CONTEXT.sys_auth_service.login(&arg.0, &header_map).await;
-    if token.is_err() {
-        return RespVO::from_error_result(500, &token).into_response();
-    }
+
+    error_wrapper!(CONTEXT.sys_auth_service.login(&arg.0, &header_map),token);
     let token = token.unwrap();
     let mut res = RespJson::success();
     res.insert("token".to_string(), token.into());
@@ -47,13 +45,9 @@ pub async fn logout(user: Option<axum::Extension<User>>, header_map: HeaderMap) 
 
 #[pre_authorize(user)]
 pub async fn info() -> impl IntoResponse {
-    let user_cache = CONTEXT
+    error_wrapper!(CONTEXT
         .sys_user_service
-        .get_user_cache_by_token(&user.login_user_key)
-        .await;
-    if user_cache.is_err() {
-        return RespVO::from_result(&user_cache).into_response();
-    }
+        .get_user_cache_by_token(&user.login_user_key),user_cache);
     let user_cache = user_cache.unwrap();
     let mut res = RespJson::success();
     res.insert("permissions".to_string(), serde_json::json!(&user_cache.permissions));

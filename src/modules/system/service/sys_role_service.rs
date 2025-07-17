@@ -12,6 +12,7 @@ use crate::{export_excel_service, pool, remove_batch};
 use macros::data_scope;
 use rbatis::{field_name, Page, PageRequest};
 use rbs::to_value;
+use crate::web::User;
 
 const RES_KEY: &'static str = "sys_role:all";
 
@@ -71,11 +72,11 @@ impl SysRoleService {
         Ok(result)
     }
 
-    pub async fn update_status(&self, role: SysRole,oper_user_name:&str) -> Result<u64> {
+    pub async fn update_status(&self, role: SysRole,user: &User) -> Result<u64> {
         let role_id = role.role_id.clone().unwrap_or_default();
         let status = role.status.unwrap_or_default();
         self.check_role_allowed(&role).await?;
-        self.check_role_data_scope(&role_id,oper_user_name).await?;
+        self.check_role_data_scope(&role_id,user).await?;
         let res = pool!()
             .exec(
                 "update sys_role set status = ? where role_id = ?",
@@ -181,8 +182,8 @@ impl SysRoleService {
             Ok(true)
         }
     }
-    pub async fn check_role_data_scope(&self, role_id: &str, user_name: &str) -> Result<bool> {
-        if !user_name.eq(ADMIN_NAME) {
+    pub async fn check_role_data_scope(&self, role_id: &str,user:&User) -> Result<bool> {
+        if !user.user_name.eq(ADMIN_NAME) {
             let dto = RolePageDTO {
                 page_no: None,
                 page_size: None,
@@ -192,17 +193,17 @@ impl SysRoleService {
                 status: None,
                 params: None,
             };
-            let roles = self.page(&dto).await?;
+            let roles = self.page(&dto,&user.login_user_key).await?;
             if roles.records.is_empty() {
                 return Err(Error::from("没有权限访问角色数据！"));
             }
         }
         Ok(true)
     }
-    pub async fn auth_data_scope(&self, role: &SysRole, dept_ids: &Vec<String>, user_name: &str) -> Result<bool> {
+    pub async fn auth_data_scope(&self, role: &SysRole, dept_ids: &Vec<String>,user: &User) -> Result<bool> {
         self.check_role_allowed(role).await?;
         let role_id = role.role_id.clone().unwrap_or_default();
-        self.check_role_data_scope(&role_id, user_name).await?;
+        self.check_role_data_scope(&role_id, user).await?;
         SysRole::update_by_column(pool!(), &role, field_name!(SysRole.role_id))
             .await?;
         CONTEXT.sys_role_dept_service.remove_by_role_id(&role_id).await?;

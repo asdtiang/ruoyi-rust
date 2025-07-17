@@ -13,34 +13,12 @@ use rbs::to_value;
 pub struct SysUserRoleService {}
 
 impl SysUserRoleService {
-    pub async fn page(&self, arg: &UserRolePageDTO) -> Result<Page<SysUserVO>> {
+    pub async fn page(&self, arg: &UserRolePageDTO,login_user_key:&str) -> Result<Page<SysUserVO>> {
         let vo = CONTEXT
             .sys_user_service
-            .page(&UserPageDTO::from(arg))
+            .page(&UserPageDTO::from(arg),login_user_key)
             .await?;
-        // if arg.resp_set_role.unwrap_or(true) {
-        //     let all_role = CONTEXT.sys_role_service.finds_all_map().await?;
-        //     let user_ids = rbatis::table_field_vec!(&vo.records, id);
-        //     let user_roles = SysUserRole::select_in_column(pool!(), "id", &user_ids).await?;
-        //     let user_role_map = rbatis::make_table_field_map!(&user_roles, user_id);
-        //     let role_ids = rbatis::table_field_vec!(&user_roles, role_id);
-        //     let roles = CONTEXT.sys_role_service.finds(&role_ids).await?;
-        //     let roles_map = rbatis::make_table_field_map!(&roles, id);
-        //     for mut x in &mut vo.records {
-        //         if let Some(user_role) = user_role_map.get(x.id.as_deref().unwrap_or_default()) {
-        //             if let Some(role_id) = &user_role.role_id {
-        //                 let role = roles_map.get(role_id).cloned();
-        //                 x.role = SysRoleVO::from_option(role);
-        //                 //查找子集角色
-        //                 if let Some(role_vo) = &mut x.role {
-        //                     CONTEXT
-        //                         .sys_role_service
-        //                         .loop_find_childs(role_vo, &all_role);
-        //                 }
-        //             }
-        //         }
-        //     }
-        // }
+
         Ok(vo)
     }
 

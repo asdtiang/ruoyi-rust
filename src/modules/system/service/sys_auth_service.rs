@@ -177,7 +177,11 @@ impl SysAuthService {
             .into_iter()
             .map(|s| s.to_string())
             .collect();
-        let dept=CONTEXT.sys_dept_service.detail(user.dept_id.clone().unwrap_or_default().as_str(),&user_name).await.ok();
+        let u=crate::web::User{//todo
+            login_user_key:"".to_string(),
+            user_name:user_name.clone()
+        };
+        let dept=CONTEXT.sys_dept_service.detail(user.dept_id.clone().unwrap_or_default().as_str(),  &u).await.ok();
 
         let menus = CONTEXT.sys_menu_service.finds_menu(&menu_ids, &all_menus);
         let permissions: Vec<String> = if ADMIN_NAME.eq(&user_name)

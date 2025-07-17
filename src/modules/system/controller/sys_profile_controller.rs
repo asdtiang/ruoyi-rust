@@ -1,12 +1,13 @@
 use crate::context::CONTEXT;
 use crate::system::domain::dto::{PasswordUpdateDTO, UserUpdateDTO};
 use crate::utils::password_encoder::PasswordEncoder;
-use crate::{RespJson, RespVO};
+use crate::{error_wrapper, RespJson, RespVO};
 use axum::extract::Query;
 use axum::response::IntoResponse;
 use axum::Json;
 use macros::pre_authorize;
 use std::time::Duration;
+use log::error;
 /*
 * 用户自身的操作
 */
@@ -57,7 +58,8 @@ pub async fn update_profile(mut arg: Json<UserUpdateDTO>) -> impl IntoResponse {
         .unwrap();
     let clone = arg.0.clone();
     arg.0.user_id = user_cache.id.clone().into();
-    let res = CONTEXT.sys_user_service.update(arg.0,user.user_name).await.unwrap();
+    error_wrapper!(CONTEXT.sys_user_service.update(arg.0,&user),res);
+    let res = res.unwrap();
     if res > 0 {
         let mut user = user_cache.user.clone().unwrap();
         user.phonenumber = clone.phonenumber;
@@ -84,10 +86,7 @@ pub async fn update_pwd(arg: Query<PasswordUpdateDTO>) -> impl IntoResponse {
         .await
         .unwrap();
     let user_id = user_cache.id.clone();
-    let user = CONTEXT.sys_user_service.find_by_user_id(&user_id).await;
-    if user.is_err() {
-        return RespVO::from_result(&user).into_response();
-    }
+    error_wrapper!(CONTEXT.sys_user_service.find_by_user_id(&user_id),user);
     let user = user.unwrap();
     let new_password = &arg.new_password;
     let old_password = &arg.old_password;
@@ -103,7 +102,7 @@ pub async fn update_pwd(arg: Query<PasswordUpdateDTO>) -> impl IntoResponse {
     }
     let res = CONTEXT
         .sys_user_service
-        .update_password_plain(
+        .update_password_raw(
             &PasswordEncoder::encode(&new_password.clone().unwrap_or_default()),
             &user_id,
         )
