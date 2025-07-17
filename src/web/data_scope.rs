@@ -1,7 +1,7 @@
 use crate::context::CONTEXT;
 use crate::error::Result;
-use crate::DataScopeTrait;
 use crate::web::web_data::get_login_user_key;
+use crate::DataScopeTrait;
 
 /**
  * 全部数据权限

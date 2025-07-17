@@ -5,9 +5,9 @@ use crate::gen::GEN_CONTEXT;
 use crate::utils::string;
 use crate::utils::string::substring_unicode;
 use convert_case::{Case, Casing};
+use rbatis::rbdc::DateTime;
 use serde_json::json;
 use std::collections::HashMap;
-use rbatis::rbdc::DateTime;
 
 /**
  * 代码生成器 工具类
@@ -42,7 +42,6 @@ pub fn init_column_field(column: &mut GenTableColumn, table: &GenTable) {
     let column_name = binding2.as_str();
     let binding3 = get_db_type(&column.column_type.clone().unwrap_or_default());
     let data_type = binding3.as_str();
-    println!("data_type:{data_type}");
 
     column.table_id = table.table_id.clone();
     column.create_by = table.create_by.clone();
@@ -213,7 +212,6 @@ pub fn convert_class_name(table_name: &str) -> String {
     if auto_remove_pre && !table_prefixes.is_empty() {
         new_table_name = replace_first(table_name, table_prefixes);
     }
-    println!("new_table_name:{new_table_name}");
     new_table_name.to_case(Case::UpperCamel)
 }
 

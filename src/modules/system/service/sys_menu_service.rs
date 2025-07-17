@@ -113,34 +113,6 @@ impl SysMenuService {
             .await?;
         Ok(res.unwrap_or_default())
     }
-    // pub async fn get_menu_ids_by_role_id(&self, role_id: &String) -> Result<Vec<u64>> {
-    //     let res:Option<Vec<SysMenu>>= pool!().query_decode("
-    //     select m.menu_id,m.menu_name
-    // 	from sys_menu m
-    //     left join sys_role_menu rm on m.menu_id = rm.menu_id
-    //     where rm.role_id = ?
-    //     and m.menu_id not in (select m.parent_id from sys_menu m inner join sys_role_menu rm on m.menu_id = rm.menu_id and rm.role_id = ?)
-    //     order by m.parent_id, m.order_num
-    //    ", vec![to_value!(&role_id), to_value!(&role_id)])
-    //         .await?;
-    //     println!("{:?}",res);
-    //     let res = rbatis::table_field_vec!(&res.unwrap(), menu_id);
-    //     Ok(res)
-    // }
-
-    // pub fn make_menu_ids(&self, args: &Vec<SysMenuVO>) -> Vec<u64> {
-    //     let mut ids = vec![];
-    //     for x in args {
-    //         ids.push(x.menu_id.unwrap_or_default());
-    //         if let Some(childs) = &x.children {
-    //             let child_ids = rbatis::table_field_vec!(childs, menu_id);
-    //             for child_id in child_ids {
-    //                 ids.push(child_id);
-    //             }
-    //         }
-    //     }
-    //     ids
-    // }
 
     pub async fn update_cache(&self) -> Result<Vec<SysMenu>> {
         let all = SysMenu::select_all_order_num(pool!()).await?;

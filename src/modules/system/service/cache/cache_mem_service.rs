@@ -69,9 +69,7 @@ impl ICacheService for MemService {
             if inserted.is_some() {
                 return Ok(v.to_string());
             }
-            return Err(crate::error::Error::E(format!(
-                "[ruoyi_rust][mem_service]insert fail!"
-            )));
+            return Err(crate::error::Error::E("[ruoyi_rust][mem_service]insert fail!".to_string()));
         })
     }
 

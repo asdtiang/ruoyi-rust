@@ -1,3 +1,4 @@
+use crate::config::global_constants::ADMIN_NAME;
 use crate::context::CONTEXT;
 use crate::error::Error;
 use crate::error::Result;
@@ -11,7 +12,6 @@ use crate::{check_unique_sql, pool};
 use macros::data_scope;
 use rbatis::field_name;
 use rbs::to_value;
-use crate::config::global_constants::ADMIN_NAME;
 
 pub struct SysDeptService {}
 
@@ -31,7 +31,7 @@ impl SysDeptService {
     pub async fn add(&self, dept: SysDept) -> Result<u64> {
 
         self.check_dept_name_unique(
-            &dept.dept_id,
+            &&None,
             &dept.dept_name.clone().unwrap_or_default(),
             &dept.parent_id.clone().unwrap_or_default(),
         )

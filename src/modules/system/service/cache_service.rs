@@ -37,21 +37,21 @@ impl CacheService {
     pub fn new(cfg: &ApplicationConfig) -> Result<Self> {
         let cache = cfg.cache.as_str();
         if cache == "mem" {
-            println!("[xuangyin] cache_type: mem");
+            println!("[ruoyi_rust]  cache_type: mem");
             return Ok(Self {
                 inner: Box::new(MemService::default()),
             });
         } else if cache.starts_with("redis") {
            // #[cfg(feature = "cache_redis")]
             {
-                println!("[xuangyin] cache_type: redis");
+                println!("[ruoyi_rust]  cache_type: redis");
                 return Ok(Self {
                     inner: Box::new(RedisService::new(&cache)?),
                 });
             }
         }
         Err(Error::from(format!(
-            "[xuangyin] unknown of cache: \"{}\",current support 'mem' or 'redis'",
+            "[ruoyi_rust]  unknown of cache: \"{}\",current support 'mem' or 'redis'",
             cache
         )))
     }

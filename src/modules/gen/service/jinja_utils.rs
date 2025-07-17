@@ -100,7 +100,7 @@ pub fn prepare_context(
     //     setSubVelocityContext(velocityContext, table);
     // }
     let mut sql_ids = vec![]; //用为生成sql语句主键
-    for i in 0..10 {
+    for _ in 0..10 {
         sql_ids.push(ObjectId::new().to_string())
     }
     let cust_table_name = if class_name.to_case(Case::Snake).eq(&table_name) {

@@ -1,8 +1,7 @@
 use crate::config::global_constants::{LOGIN_SUC, LOGIN_TOKEN_KEY};
 use crate::context::CONTEXT;
-use crate::modules::system::constants::REDIS_UUID_CAPTCHA;
+use crate::system::service::REDIS_UUID_CAPTCHA;
 use crate::system::domain::dto::SignInDTO;
-use crate::system::domain::vo::JwtClaims;
 use crate::utils::base64::encode;
 use crate::web::User;
 use crate::{RespJson, RespVO};
@@ -73,10 +72,7 @@ pub async fn captcha() -> impl IntoResponse {
         .select_captcha_enabled()
         .await
         .unwrap_or(false);
-    json.insert(
-        "captchaEnabled".to_string(),
-        captcha_enabled.into(),
-    );
+    json.insert("captchaEnabled".to_string(), captcha_enabled.into());
 
     if captcha_enabled {
         let uuid = Uuid::new_v4();

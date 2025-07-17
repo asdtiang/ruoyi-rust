@@ -15,7 +15,6 @@ pub fn get_server_info() -> ServerVO {
     // First we update all information of our `System` struct.
 
     // We display all disks' information:
-    //   println!("=> disks:");
     let mut disks = vec![];
     for d in &sysinfo::Disks::new_with_refreshed_list() {
         let disk = DiskVO {
@@ -33,8 +32,6 @@ pub fn get_server_info() -> ServerVO {
             ),
         };
         disks.push(disk);
-        //     println!("{:?}", disk);
-        //   println!("{:?}", disk_);
     }
 
     let networks = sysinfo::Networks::new_with_refreshed_list();
@@ -82,14 +79,12 @@ pub fn get_server_info() -> ServerVO {
         used: cpu_usage,
         wait: 0.0,
     };
-    println!("{:?}", cpu);
     let sys_vo = SysVO {
         computer_ip: "".to_string(),
         computer_name: sysinfo::System::host_name().unwrap_or_default(),
         os_arch: sysinfo::System::kernel_version().unwrap_or_default(),
         os_name: sysinfo::System::long_os_version().unwrap_or_default(),
     };
-    println!("{:?}", sys_vo);
 
     ServerVO {
         cpu,

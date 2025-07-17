@@ -14,10 +14,10 @@ pub struct RedisService {
 
 impl RedisService {
     pub fn new(url: &str) -> Result<Self> {
-        println!("[xuangyin] connect redis ({})...", url);
+        println!("[ruoyi_rust]  connect redis ({})...", url);
         let client = redis::Client::open(url)
             .map_err(|e| Error::from(format!("open redis client failed={}", e)))?;
-        println!("[xuangyin] connect redis success!");
+        println!("[ruoyi_rust]  connect redis success!");
         Ok(Self { client })
     }
     pub async fn get_conn(&self) -> Result<MultiplexedConnection> {

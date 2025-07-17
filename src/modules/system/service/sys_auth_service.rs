@@ -1,36 +1,37 @@
 use crate::config::global_constants::{ADMIN_NAME, LOGIN_FAIL, LOGIN_SUC, LOGIN_TOKEN_KEY, STATUS_FORBIDDEN};
 use crate::context::CONTEXT;
-use crate::modules::system::constants::{ALL_PERMISSIONS, REDIS_UUID_CAPTCHA};
-use crate::{error_info, pool};
+use crate::error::{Error, Result};
+use crate::modules::system::constants::ALL_PERMISSIONS;
 use crate::system::domain::dto::SignInDTO;
 use crate::system::domain::mapper::sys_user::SysUser;
 use crate::system::domain::mapper::sys_user_role::SysUserRole;
 use crate::system::domain::vo::{JwtClaims, SysUserVO, UserCache};
 use crate::utils::password_encoder::PasswordEncoder;
+use crate::{error_info, pool};
 use axum::http::HeaderMap;
 use rbatis::field_name;
 use rbatis::rbdc::DateTime;
 use std::time::Duration;
 use uuid::Uuid;
-use crate::error::{Error, Result};
 
 const REDIS_KEY_RETRY: &'static str = "login:login_retry";
+
 pub struct SysAuthService {}
 
 impl SysAuthService {
     //返回token
-    pub async fn login(&self, arg: &SignInDTO, header_map: &HeaderMap) -> Result<String> {
-        self.is_need_wait_login_ex(&arg.username).await?;
+    pub async fn login(&self, sign_in_dto: &SignInDTO, header_map: &HeaderMap) -> Result<String> {
+        self.is_need_wait_login_ex(&sign_in_dto.username).await?;
         let captcha_enabled =CONTEXT.sys_config_service.select_captcha_enabled().await.unwrap_or(false);
         if captcha_enabled {
-            if arg.code.is_none() {
+            if sign_in_dto.code.is_none() {
                 return Err(Error::from("请输入验证码！"));
             }
-            let code = arg.code.as_deref().unwrap();
+            let code = sign_in_dto.code.as_deref().unwrap();
             if code.len() != 4 {
                 return Err(Error::from("验证码输入不正确！"));
             }
-            let uuid = arg.uuid.as_deref().unwrap_or_default();
+            let uuid = sign_in_dto.uuid.as_deref().unwrap_or_default();
             let code_in_cache = CONTEXT
                 .cache_service
                 .get_string(&format!("{}{}", REDIS_UUID_CAPTCHA, &uuid))
@@ -41,12 +42,12 @@ impl SysAuthService {
             }
         }
         let user: Option<SysUser> =
-            SysUser::select_by_column(pool!(), field_name!(SysUser.user_name), &arg.username)
+            SysUser::select_by_column(pool!(), field_name!(SysUser.user_name), &sign_in_dto.username)
                 .await?
                 .into_iter()
                 .next();
         if user.is_none() {
-            return Err(Error::from(format!("账号:{} 不存在!", arg.username)));
+            return Err(Error::from(format!("账号:{} 不存在!", sign_in_dto.username)));
         }
         let user = user.unwrap();
         if user.status.eq(&Some(STATUS_FORBIDDEN)) {
@@ -59,40 +60,36 @@ impl SysAuthService {
             user.password
                 .as_ref()
                 .ok_or_else(|| Error::from("错误的用户数据，密码为空!"))?,
-            &arg.password,
+            &sign_in_dto.password,
         ) {
             error = Some(Error::from("密码不正确!"));
         }
         //todo 加密时间过长，需要换一个，初步定为 https://github.com/RustCrypto/hashes
-        //   println!("密码验证{}",Local::now().timestamp_millis()-start);
 
         if error.is_some() {
             let _ = CONTEXT
                 .sys_logininfor_service
                 .add_async(&crate::utils::web_utils::build_logininfor(
                     header_map,
-                    arg.username.clone(),
+                    sign_in_dto.username.clone(),
                     LOGIN_FAIL,
                     error.clone().unwrap().to_string(),
                 ))
                 .await;
-            self.add_retry_login_limit_num(&arg.username).await?;
+            self.add_retry_login_limit_num(&sign_in_dto.username).await?;
             return Err(error.unwrap());
         }
-        //   println!("密码验证后{}",Local::now().timestamp_millis()-start);
 
         let token = self.add_to_cache_and_build_token(&user).await;
-        //  println!("Token{}",Local::now().timestamp_millis()-start);
         let _ = CONTEXT
             .sys_logininfor_service
             .add_async(&crate::utils::web_utils::build_logininfor(
                 header_map,
-                arg.username.clone(),
+                sign_in_dto.username.clone(),
                 LOGIN_SUC,
                 "成功".to_string(),
             ))
             .await;
-        //   println!("写入日志{}",Local::now().timestamp_millis()-start);
 
         token
     }
@@ -229,3 +226,5 @@ impl SysAuthService {
     }
 
 }
+
+pub const REDIS_UUID_CAPTCHA: &'static str = "login_captcha:";

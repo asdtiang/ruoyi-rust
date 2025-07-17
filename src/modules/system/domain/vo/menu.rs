@@ -72,13 +72,9 @@ impl SysMenuVO {
             && self.is_frame.clone().unwrap_or_default() == CHAR_FALSE
     }
     pub fn is_inner_link(&self) -> bool {
+        let path = self.path.clone().unwrap_or_default();
         self.is_frame.clone().unwrap_or_default() == CHAR_FALSE
-            && (self.path.clone().unwrap_or_default().starts_with("http://")
-                || self
-                    .path
-                    .clone()
-                    .unwrap_or_default()
-                    .starts_with("https://"))
+            && (path.starts_with("http://") || path.starts_with("https://"))
     }
     pub fn is_parent_view(&self) -> bool {
         !self.is_parent() && self.menu_type.clone().unwrap_or_default() == TYPE_DIR

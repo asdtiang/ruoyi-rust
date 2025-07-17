@@ -1,14 +1,13 @@
-use proc_macro::{Span, TokenStream};
+use proc_macro::TokenStream;
 use proc_macro2::Ident;
 use quote::{quote, ToTokens};
-use syn::parse::{Parse, Parser};
+use syn::parse::Parser;
 use syn::Data::Struct;
 use syn::{parse_macro_input, parse_quote, DataStruct, DeriveInput, Field, FnArg, ItemFn, LitFloat, LitStr, Meta};
 
 #[proc_macro_attribute]
 pub fn pre_authorize(attr: TokenStream, item: TokenStream) -> TokenStream {
     let func = parse_macro_input!(item as ItemFn); // 我们传入的是一个函数，所以要用到ItemFn
-                                                   //  println!("{:?}",func);
     let func_vis = &func.vis; // pub
     let func_block = &func.block; //.stmts.iter().map(|r|r.to_token_stream().to_string()).collect::<Vec<_>>().join("\n"); // 函数主体实现部分{}
 
@@ -70,125 +69,6 @@ pub fn pre_authorize(attr: TokenStream, item: TokenStream) -> TokenStream {
 
     expanded.into()
 }
-
-// #[proc_macro_attribute]
-// pub fn to_log(attr: TokenStream, item: TokenStream) -> TokenStream {
-//     let func = parse_macro_input!(item as ItemFn); // 我们传入的是一个函数，所以要用到ItemFn
-//     let func_vis = &func.vis; // pub
-//     let func_block = &func.block; //.stmts.iter().map(|r|r.to_token_stream().to_string()).collect::<Vec<_>>().join("\n"); // 函数主体实现部分{}
-//     let func_attrs = &func.attrs; //.stmts.iter().map(|r|r.to_token_stream().to_string()).collect::<Vec<_>>().join("\n"); // 函数主体实现部分{}
-//
-//     let func_decl = &func.sig; // 函数申明
-//
-//     let func_name = &func_decl.ident; // 函数名
-//     let func_asyncness = &func_decl.asyncness; // 函数名
-//     let func_generics = &func_decl.generics; // 函数泛型
-//     let func_inputs = &func_decl.inputs; // 函数输入参数
-//     let func_output = &func_decl.output; // 函数返回
-//
-//     // for Field {
-//     //     // 该字段的标识符
-//     //     ident,
-//     //     // 该字段的可见性
-//     //     vis,
-//     //     // 分隔符 `:`
-//     //     colon_token,
-//     //     // 该字段的类型
-//     //     ty,
-//     //     ..
-//     // } in func_inputs.iter(){
-//     //     println!("{}",ty.to_token_stream());
-//     // }
-//     let s = attr.to_string();
-//     let expanded = quote! { // 重新构建函数执行
-//         #(#func_attrs)*
-//         #func_vis #func_asyncness fn #func_name #func_generics(header_map_in_permit:axum::http::HeaderMap,#func_inputs) #func_output{
-//             match crate::token_auth::check_permit(header_map_in_permit, #s).await {//fixme 判断参数中是否存在httpRequest，以后再说
-//                  None =>  #func_block
-//              Some(res) => { return res.resp_json(); }
-//             }
-//
-//         }
-//     };
-//     expanded.into()
-// }
-
-// extern crate syn;
-// #[macro_use] extern crate quote;
-// extern crate proc_macro;
-// extern crate proc_macro2;
-//
-// use syn::parse::{Parse, ParseStream};
-// use proc_macro2::{Ident, Span};
-//
-// struct MacroInput {
-//     pub field_type: syn::Type,
-//     pub field_name: String,
-//     pub field_count: u64
-// }
-// impl Parse for MacroInput {
-//     fn parse(input: ParseStream) -> syn::Result<Self> {
-//         let field_type = input.parse::<syn::Type>()?;
-//         let _comma = input.parse::<syn::token::Comma>()?;
-//         let field_name = input.parse::<syn::LitStr>()?;
-//         let _comma = input.parse::<syn::token::Comma>()?;
-//         let count = input.parse::<syn::LitInt>()?;
-//         Ok(MacroInput {
-//             field_type: field_type,
-//             field_name: field_name.value(),
-//             field_count: count.base10_parse().unwrap()
-//         })
-//     }
-// }
-//
-// #[proc_macro_attribute]
-// pub fn derivefields(attr: TokenStream, item: TokenStream) -> TokenStream {
-//     let input = syn::parse_macro_input!(attr as MacroInput);
-//     let mut found_struct = false;
-//     item.into_iter().map(|r| {
-//         match &r {
-//             &proc_macro::TokenTree::Ident(ref ident) if ident.to_string() == "struct" => {
-//                 found_struct = true;
-//                 r
-//             },
-//             &proc_macro::TokenTree::Group(ref group) if group.delimiter() == proc_macro::Delimiter::Brace && found_struct == true => {
-//                 let mut stream = proc_macro::TokenStream::new();
-//                 stream.extend((0..input.field_count).fold(vec![], |mut state:Vec<proc_macro::TokenStream>, i| {
-//                     let field_name_str = format!("{}_{}", input.field_name, i);
-//                     let field_name = Ident::new(&field_name_str, Span::call_site());
-//                     let field_type = input.field_type.clone();
-//                     state.push(quote!(pub #field_name: #field_type,
-//                     ).into());
-//                     state
-//                 }).into_iter());
-//                 stream.extend(group.stream());
-//                 proc_macro::TokenTree::Group(
-//                     proc_macro::Group::new(
-//                         proc_macro::Delimiter::Brace,
-//                         stream
-//                     )
-//                 )
-//             }
-//             _ => r
-//         }
-//     }).collect()
-// }
-
-// #[proc_macro_attribute]
-// pub fn log_calls(_attr: TokenStream, item: TokenStream) -> TokenStream {
-//     let input = parse_macro_input!(item as syn::ItemFn);
-//     let func_name = &input.sig.ident;
-//     let func_block = &input.block;
-//
-//     let expanded = quote! {
-//         fn #func_name() {
-//             println!("Calling function: {}", stringify!(#func_name));
-//             #func_block
-//         }
-//     };
-//
-//     TokenStream::from(expanded)
-// }
 
 //为查询DTO增加page_no和page_size，并提供impl From<&#ident> for rbatis::PageRequest
 //根据参数增加params
@@ -309,7 +189,6 @@ pub fn page_request(attr: TokenStream, input: TokenStream) -> TokenStream {
             #page_impl_extend
          #data_scope_impl
             };
-        //println!("{}",res.to_string());
         res.into()
     } else {
         // 如果目标不是命名结构，则触发 panic 错误
@@ -394,7 +273,6 @@ pub fn gen_dto(attr: TokenStream, input: TokenStream) -> TokenStream {
                         Meta::List(e) => {
                             //fixme 更改
                             let s = e.tokens.to_string();
-                            println!("{s}");
                             let ss = s.split(",").map(|s| s.trim()).collect::<Vec<_>>();
                             if ss.contains(&"add") {
                                 has_add = true;
@@ -504,8 +382,6 @@ pub fn gen_dto(attr: TokenStream, input: TokenStream) -> TokenStream {
                 }
             }
         };
-        println!("{}", expanded.to_string());
-        //         println!("{:?}", add_fields);
         expanded.into()
     } else {
         // 如果目标不是命名结构，则触发 panic 错误
@@ -517,7 +393,6 @@ pub fn gen_dto(attr: TokenStream, input: TokenStream) -> TokenStream {
 #[proc_macro_attribute]
 pub fn data_scope(attr: TokenStream, item: TokenStream) -> TokenStream {
     let func = parse_macro_input!(item as ItemFn); // 我们传入的是一个函数，所以要用到ItemFn
-                                                   //  println!("{:?}",func);
     let func_vis = &func.vis; // pub
 
     //去年大括号
@@ -575,7 +450,6 @@ pub fn data_scope(attr: TokenStream, item: TokenStream) -> TokenStream {
 
         }
     };
-    //  println!("{}", expanded.to_string());
     expanded.into()
 }
 
@@ -597,7 +471,6 @@ pub fn transactional(ident: TokenStream, item: TokenStream) -> TokenStream {
             match res {
                 Ok(_)=>{#ident.commit().await?;}
                 Err(_)=>{
-                     println!("error ");
                     #ident.rollback().await?;}
             }
             res
@@ -664,7 +537,6 @@ pub fn export(item: TokenStream) -> TokenStream {
     let DeriveInput {
         data,
         ident,
-        attrs: atrrs_s,
         ..
     } = original_struct.clone();
     let mut expand = quote! {};
@@ -754,12 +626,6 @@ pub fn export(item: TokenStream) -> TokenStream {
             ident,
             // 该字段的属性
             attrs,
-            // 该字段的可见性
-            vis,
-            // 分隔符 `:`
-            // colon_token,
-            // 该字段的类型
-            ty,
             ..
         } in fields
         {
@@ -786,7 +652,6 @@ pub fn export(item: TokenStream) -> TokenStream {
             }
         }
     };
-    println!("result: {}", res);
     res.into()
 }
 

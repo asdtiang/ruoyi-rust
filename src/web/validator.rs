@@ -81,7 +81,7 @@ impl IntoResponse for ValidationError {
                 let error_messages: Vec<String> = errors
                     .field_errors()
                     .into_iter()
-                    .map(|(field, errors)| {
+                    .map(|(_, errors)| {
                         let messages: Vec<String> = errors
                             .iter()
                             .map(|error| {

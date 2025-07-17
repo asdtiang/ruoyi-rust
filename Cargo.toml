@@ -33,7 +33,7 @@ fast_log = { version = "1.7" }
 axum = { version = "0.8.4", features = ["macros", "multipart"] }
 tower-http = { version = "0.6.6", features = ["fs", "cors", "compression-full", "limit"] }
 #redis
-redis = { version = "0.32.2", features = ["tokio-comp"] }
+redis = { version = "0.32.4", features = ["tokio-comp"] }
 #jwt
 jsonwebtoken = "9.2"
 #captcha

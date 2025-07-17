@@ -10,9 +10,8 @@ use std::path::PathBuf;
 //只上传一个
 pub async fn upload(mut multipart: Multipart) -> impl IntoResponse {
     while let Some(field) = multipart.next_field().await.unwrap() {
-        let name = field.name().unwrap().to_string();
         let file_name = field.file_name().unwrap().to_string();
-        let content_type = field.content_type().unwrap().to_string();
+       // let content_type = field.content_type().unwrap().to_string();
         let data = field.bytes().await.unwrap();
         let date = DateTime::now();
         let new_file_name = format!("{}{}", uuid::Uuid::new_v4().to_string(), file_name);

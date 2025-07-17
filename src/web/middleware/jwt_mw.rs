@@ -1,8 +1,8 @@
 use crate::context::CONTEXT;
 use crate::web::token::auth::{JwtClaims, User};
+use crate::web::web_data::set_login_user_key;
 use axum::http::HeaderMap;
 use axum::{body::Body, extract::Request, middleware::Next, response::IntoResponse};
-use crate::web::web_data::set_login_user_key;
 
 pub const TOKEN_PREFIX: &'static str = "Bearer ";
 fn get_token(header_map: &HeaderMap) -> Option<String> {
@@ -24,7 +24,7 @@ pub async fn jwt_auth_middleware(mut req: Request<Body>, next: Next) -> impl Int
             let claims = JwtClaims::verify(&CONTEXT.config.jwt_secret, &t);
             if claims.is_ok() {
                 let user = User::from(claims.unwrap());
-                set_login_user_key(user.user_name.clone());
+                set_login_user_key(user.login_user_key.clone());
                 req.extensions_mut().insert(user);
             }
         }

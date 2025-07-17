@@ -344,7 +344,7 @@ impl GenTableService {
         if db_table_columns.len() == 0 {
             return Err(Error::from("同步数据失败，原表结构不存在"));
         }
-        let mut db_table_column_names = db_table_columns
+        let db_table_column_names = db_table_columns
             .iter()
             .map(|c| c.column_name.clone().unwrap_or_default())
             .collect::<Vec<_>>();

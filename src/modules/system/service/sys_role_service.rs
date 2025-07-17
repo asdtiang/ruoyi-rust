@@ -203,9 +203,8 @@ impl SysRoleService {
         self.check_role_allowed(role).await?;
         let role_id = role.role_id.clone().unwrap_or_default();
         self.check_role_data_scope(&role_id, user_name).await?;
-        let result = SysRole::update_by_column(pool!(), &role, field_name!(SysRole.role_id))
-            .await?
-            .rows_affected;
+        SysRole::update_by_column(pool!(), &role, field_name!(SysRole.role_id))
+            .await?;
         CONTEXT.sys_role_dept_service.remove_by_role_id(&role_id).await?;
         if !dept_ids.is_empty() {
             CONTEXT.sys_role_dept_service.add_role_depts(&role_id, dept_ids).await?;

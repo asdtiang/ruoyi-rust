@@ -33,7 +33,7 @@ impl SysDictTypeService {
         Ok(dict_type_vo)
     }
     pub async fn add(&self, arg: &SysDictType) -> Result<u64> {
-        self.check_dict_type_unique(&arg.dict_id, &arg.dict_type.clone().unwrap_or_default())
+        self.check_dict_type_unique(&None, &arg.dict_type.clone().unwrap_or_default())
             .await?;
         let result = Ok(SysDictType::insert(pool!(), &arg).await?.rows_affected);
         let _ = CONTEXT.sys_dict_data_service.update_cache().await;
@@ -82,7 +82,7 @@ impl SysDictTypeService {
     check_unique!(
         check_dict_type_unique,
         "sys_dict_type",
-        dict_code,
+        dict_id,
         dict_type,
         "字典已存在"
     );

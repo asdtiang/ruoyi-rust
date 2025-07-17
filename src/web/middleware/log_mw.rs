@@ -75,7 +75,7 @@ pub async fn log_write(
         oper_time: start.into(),
         cost_time: cost_time.into(),
     };
-    CONTEXT.sys_oper_log_service.add_async(&sys_oper_log).await;
+  let _=  CONTEXT.sys_oper_log_service.add_async(&sys_oper_log).await;
 
     let res = Response::from_parts(parts, Body::from(bytes));
 

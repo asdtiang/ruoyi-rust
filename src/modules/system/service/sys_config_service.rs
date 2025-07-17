@@ -35,7 +35,7 @@ impl SysConfigService {
             .await?;
         let result = SysConfig::insert(pool!(), &config).await?.rows_affected;
         if result == 1 {
-            self.set_to_cache(&config).await?;
+            self.save_to_cache(&config).await?;
         }
         Ok(result)
     }
@@ -47,7 +47,7 @@ impl SysConfigService {
             .await?
             .rows_affected;
         if result == 1 {
-            self.set_to_cache(&config).await?;
+            self.save_to_cache(&config).await?;
         }
         Ok(result)
     }
@@ -91,7 +91,7 @@ impl SysConfigService {
      */
     pub async fn select_captcha_enabled(&self) -> Result<bool> {
         let captcha_enabled = self
-            .select_config_by_key("sys.account.captcha_enabled")
+            .select_config_by_key("sys.account.captchaEnabled")
             .await;
         Ok(captcha_enabled.map(|c| c.eq("true")).unwrap_or(false))
     }
@@ -110,13 +110,12 @@ impl SysConfigService {
         }
         let config = SysConfig::select_by_column(pool!(), "config_key", config_key).await?;
         match config.into_iter().next() {
-            None => Ok("".to_string()),
+            None => {
+                Err(Error::from(format!("未找到配置参数：{}",config_key)))
+            },
             Some(c) => {
-                let config_value = c.config_value.unwrap_or_default();
-                CONTEXT
-                    .cache_service
-                    .set_string(&self.get_cache_key(&config_key), &config_value)
-                    .await?;
+                let config_value = c.config_value.clone().unwrap_or_default();
+                self.save_to_cache(&c).await?;
                 Ok(config_value)
             }
         }
@@ -136,18 +135,18 @@ impl SysConfigService {
 
     pub async fn reset_config_cache(&self) -> Result<()> {
         let _ = self.clear_config_cache().await?;
-        let _ = self.loading_config_cache().await?;
+        let _ = self.load_config_and_save_to_cache().await?;
         Ok(())
     }
     //加载所有的到redis
-    pub async fn loading_config_cache(&self) -> Result<u64> {
+    pub async fn load_config_and_save_to_cache(&self) -> Result<u64> {
         let config_list = SysConfig::select_all(pool!()).await?;
         for config in config_list {
-            self.set_to_cache(&config).await?;
+            self.save_to_cache(&config).await?;
         }
         Ok(1)
     }
-    async fn set_to_cache(&self, config: &SysConfig) -> Result<()> {
+    async fn save_to_cache(&self, config: &SysConfig) -> Result<()> {
         CONTEXT
             .cache_service
             .set_string(

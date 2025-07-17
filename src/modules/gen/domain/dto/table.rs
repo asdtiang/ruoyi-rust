@@ -1,6 +1,5 @@
 use crate::gen::domain::mapper::gen_table::GenTable;
 use crate::gen::domain::mapper::gen_table_column::GenTableColumn;
-use rbatis::rbdc::DateTime;
 
 #[derive(serde :: Serialize, serde :: Deserialize, Clone, Debug)]
 #[serde(rename_all = "camelCase")]
