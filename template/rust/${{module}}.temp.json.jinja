@@ -1,8 +1,8 @@
 {
-"gen_service_a":"pub ${{moduleName}}_${{businessName}}_service: ${{className}}Service,",
-"gen_service_b":"${{moduleName}}_${{businessName}}_service: ${{className}}Service {},",
-"gen_router_a":".nest(\"/${{businessName}}\",${{businessName}}_api())",
-"gen_router_b":"fn ${{businessName}}_api() -> Router {\n    Router::new()\n        .route(\"/list\", post(${{file_name}}_controller::list))\n        .route(\"/{${{pkColumn.columnName}}}\", get(${{file_name}}_controller::detail))\n        .route(\"/\", router_with_handler!(post,${{file_name}}_controller::add,log_write))\n        .route(\"/\", router_with_handler!(put,${{file_name}}_controller::update,log_write))\n        .route(\"/{${{pkColumn.columnName}}}\", delete(${{file_name}}_controller::remove))\n        .route(\"/export\", post(${{file_name}}_controller::export_to_excel))\n}"
+"gen_service_a":"pub ${{moduleName}}_${{business_name}}_service: ${{className}}Service,",
+"gen_service_b":"${{moduleName}}_${{business_name}}_service: ${{className}}Service {},",
+"gen_router_a":".nest(\"/${{businessName}}\",${{business_name}}_api())",
+"gen_router_b":"fn ${{business_name}}_api() -> Router {\n    Router::new()\n        .route(\"/list\", post(${{file_name}}_controller::list))\n        .route(\"/{${{pkColumn.columnName}}}\", get(${{file_name}}_controller::detail))\n        .route(\"/\", router_with_handler!(post,${{file_name}}_controller::add,log_write))\n        .route(\"/\", router_with_handler!(put,${{file_name}}_controller::update,log_write))\n        .route(\"/{${{pkColumn.columnName}}}\", delete(${{file_name}}_controller::remove))\n        .route(\"/export\", post(${{file_name}}_controller::export_to_excel))\n}"
 }
 
 

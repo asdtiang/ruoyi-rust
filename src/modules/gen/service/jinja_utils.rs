@@ -61,7 +61,7 @@ pub fn prepare_context(
     let business_name = gen_table.business_name.unwrap_or_default();
 
     let permission_prefix = format!("{module_name}:{business_name}");
-    let file_name = format!("{module_name}_{business_name}");
+    let file_name = format!("{module_name}_{business_name}").to_case(Case::Snake);
     let class_name = gen_table.class_name.unwrap_or_default();
     let fixed_header = gen_table
         .fixed_header
@@ -126,6 +126,7 @@ pub fn prepare_context(
         className=>class_name,
         class_name=>class_name.to_case(Case::Camel),
         businessName=>business_name,
+        business_name=>business_name.to_case(Case::Snake),
         BusinessName=>business_name.to_case(Case::UpperCamel),
         tableName=>table_name.clone(),
         custTableName=>cust_table_name,

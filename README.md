@@ -1,12 +1,11 @@
-# RuoYi-Vue Rust 重写项目
+# RuoYi-Vue Rust 
+by wizount, 2537660666,wx:glqqyx
 
 本项目基于 [abs-admin](https://github.com/rbatis/abs_admin) 开发，并参考了 [若依](https://gitee.com/y_project) 的 [RuoYi-Vue](https://gitee.com/y_project/RuoYi-Vue) 项目，使用 Rust 语言进行重写。
 
 我们正在寻找志同道合的开发者共同完成这个项目。目前部分功能已经实现，但还需要进一步完善。
 
 ## 技术栈
-
-- Rust 语言
 - rbatis ORM 框架
 - Axum Web 框架
 - JWT 用于身份验证
@@ -18,9 +17,8 @@
 - 系统管理：用户管理、角色管理、菜单管理、部门管理、岗位管理、字典管理、参数设置等
 - 监控管理：在线用户、登录日志、操作日志
 - 代码生成：支持从数据库表自动生成代码
-- 文件存储：支持本地存储和 S3/OSS 存储
+- 文件存储：支持本地存储和 S3/OSS（未实现) 存储
 - 数据权限控制
-- 多租户支持
 
 ## 项目结构
 
@@ -34,8 +32,8 @@
   - `gen`: 代码生成模块
   - `oa`: 办公自动化模块（待实现）
 - `src/utils`: 工具类
-- `src/token_auth`: 身份验证中间件
-- `src/web_data.rs`: Web 请求上下文数据
+- `src/web`: jwt实现、身份验证、日志处理、数据过滤，数据权限实现
+- `src/macro.rs` 宏，简化代码输入
 - `macros`: 自定义宏定义
 
 ## 开发状态
@@ -56,7 +54,7 @@
 
 ## 安装和运行
 
-请参考项目中的 `application.yml` 文件进行配置，然后运行：
+请参考项目中的 `application.yml`的配置，配置好`application-*.yml`文件将覆盖`application.yml`的配置，然后运行：
 
 ```bash
 cargo run

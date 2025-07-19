@@ -1,7 +1,7 @@
 use rbatis::{field_name, Page, PageRequest};
 use crate::${{moduleName}}::domain::vo::${{className}}VO;
 use crate::${{moduleName}}::domain::dto::${{className}}PageDTO;
-use crate::${{moduleName}}::domain::mapper::${{moduleName}}_${{businessName}}::${{className}};
+use crate::${{moduleName}}::domain::mapper::${{moduleName}}_${{business_name}}::${{className}};
 use crate::error::Error;
 use crate::error::Result;
 use crate::{export_excel_service, pool, remove_batch};
@@ -26,13 +26,13 @@ impl ${{className}}Service {
         Ok(notice)
     }
 
-    pub async fn add(&self, ${{businessName}}: ${{className}}) -> Result<u64> {
-        let result = Ok(${{className}}::insert(pool!(), &${{businessName}}).await?.rows_affected);
+    pub async fn add(&self, ${{business_name}}: ${{className}}) -> Result<u64> {
+        let result = Ok(${{className}}::insert(pool!(), &${{business_name}}).await?.rows_affected);
         result
     }
 
-    pub async fn update(&self, ${{businessName}}: ${{className}}) -> Result<u64> {
-        let result = ${{className}}::update_by_column(pool!(), &${{businessName}}, "${{pkColumn.columnName}}").await;
+    pub async fn update(&self, ${{business_name}}: ${{className}}) -> Result<u64> {
+        let result = ${{className}}::update_by_column(pool!(), &${{business_name}}, "${{pkColumn.columnName}}").await;
         Ok(result?.rows_affected)
     }
 
@@ -49,9 +49,10 @@ impl ${{className}}Service {
          let r = ${{className}}::delete_by_column(pool!(), "${{pkColumn.columnName}}", ${{pkColumn.columnName}}).await?;
          if r.rows_affected > 0 {
              //copy data to trash
+             use crate::context::CONTEXT;
              CONTEXT
                  .sys_trash_service
-                 .add("${{moduleName}}_${{businessName}}", &targets)
+                 .add("${{moduleName}}_${{business_name}}", &targets)
                  .await?;
          }
 
