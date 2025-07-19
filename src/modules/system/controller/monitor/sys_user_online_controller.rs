@@ -1,21 +1,21 @@
-use crate::config::global_constants::LOGIN_TOKEN_KEY;
+
 use crate::context::CONTEXT;
 use crate::error::Error;
 use crate::system::domain::vo::{SysUserOnlineVO, UserCache};
 
-use crate::{RespJson, RespVO};
+use crate::{error_wrapper, RespJson, RespVO};
 use axum::extract::Path;
 use axum::response::IntoResponse;
 use macros::pre_authorize;
-
+use crate::web::LOGIN_TOKEN_KEY;
 
 #[pre_authorize("monitor:online:list",user)]
 pub async fn list() -> impl IntoResponse {
-    let keys = CONTEXT.cache_service.keys(&format!("{}*", LOGIN_TOKEN_KEY)).await.unwrap();
+    error_wrapper!(CONTEXT.cache_service.keys(&crate::web::get_login_user_redis_key("*".to_string())),keys);
 
     let mut user_online_list = vec![];
 
-    for k in keys {
+    for k in keys.unwrap() {
         let c: Result<UserCache, Error> = CONTEXT.cache_service.get_json(&k).await;
         match c {
             Ok(u) => {
@@ -42,10 +42,10 @@ pub async fn list() -> impl IntoResponse {
 }
 
 
-#[pre_authorize("system:online:force_logout",user)]
+#[pre_authorize("system:online:force_logout")]
 pub async fn force_logout(token_id: Path<String>) -> impl IntoResponse {
-    let res = CONTEXT.cache_service.del(&format!("{}{}", LOGIN_TOKEN_KEY, token_id.0)).await.unwrap();
-    if res {
+    error_wrapper!(CONTEXT.cache_service.del(&crate::web::get_login_user_redis_key(token_id.0)),res);
+    if res.unwrap() {
         RespVO::<u64>::from_success_info("强制成功！").into_response()
     } else {
         RespVO::<u64>::from_success_info("强制失败！").into_response()

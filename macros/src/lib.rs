@@ -36,34 +36,23 @@ pub fn pre_authorize(attr: TokenStream, item: TokenStream) -> TokenStream {
         }
         Ok((permit_str, user_ident))
     };
-    let (permit_str, mut user_ident) = match parser.parse(attr) {
+    let (mut permit_str, mut user_ident) = match parser.parse(attr) {
         Ok(attr) => attr,
         Err(e) => return e.to_compile_error().into(),
     };
 
-    let expanded = if permit_str.is_some() {
-        if user_ident.is_none() {
-            user_ident = Some(parse_quote!(user));
-        }
-        quote! { // 重新构建函数执行
-            #(#func_attrs)*
-            #func_vis #func_asyncness fn #func_name #func_generics(axum::Extension(#user_ident): axum::Extension<crate::web::User>,#func_inputs) #func_output{
-                match crate::web::check_permit(&user, #permit_str).await {
-                    None =>  #func_block
-                    Some(res) => { res.into_response() }
-                }
-            }
-        }
-    } else {
-        let user_param_expanded = if user_ident.is_some() {
-            quote! {axum::Extension(#user_ident): axum::Extension<crate::web::User>,}
-        } else {
-            quote! {}
-        };
-        quote! { // 重新构建函数执行
-            #(#func_attrs)*
-            #func_vis #func_asyncness fn #func_name #func_generics(#user_param_expanded #func_inputs) #func_output{
-              #func_block
+    if user_ident.is_none() {
+        user_ident = Some(parse_quote!(user));
+    }
+    if permit_str.is_none() {
+        permit_str = Some(parse_quote!(""));
+    }
+    let expanded = quote! { // 重新构建函数执行
+        #(#func_attrs)*
+        #func_vis #func_asyncness fn #func_name #func_generics(axum::Extension(#user_ident): axum::Extension<crate::web::User>,#func_inputs) #func_output{
+            match crate::web::check_permit(&user, #permit_str).await {
+                None =>  #func_block
+                Some(res) => { res.into_response() }
             }
         }
     };
@@ -416,7 +405,6 @@ pub fn data_scope(attr: TokenStream, item: TokenStream) -> TokenStream {
         let mut user_alias = Some(parse_quote!(""));
         let mut login_user_key_ident = Some(parse_quote!(login_user_key));
 
-
         while !input.is_empty() {
             println!("loop");
             if input.peek(syn::Ident) {
@@ -475,7 +463,7 @@ pub fn data_scope(attr: TokenStream, item: TokenStream) -> TokenStream {
 
         }
     };
-    println!("expanded:{}",expanded.to_string());
+    println!("expanded:{}", expanded.to_string());
     expanded.into()
 }
 

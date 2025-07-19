@@ -151,7 +151,7 @@ impl SysMenuService {
     pub async fn tree_select(&self,login_user_key:&str) -> Result<Vec<MenuTreeSelectVO>> {
         let user_cache = CONTEXT
             .sys_user_service
-            .get_user_cache_by_token(login_user_key)
+            .get_user_cache_by_token(login_user_key.to_string())
             .await?;
         let menus = if user_cache.user_name == ADMIN_NAME {
             CONTEXT.sys_menu_service.all().await?

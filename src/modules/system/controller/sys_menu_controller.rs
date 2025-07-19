@@ -21,7 +21,7 @@ pub async fn list_all(dto: Option<Json<MenuPageDTO>>) -> impl IntoResponse {
 //菜单栏生成
 #[pre_authorize(user)]
 pub async fn routers() -> impl IntoResponse {
-    let user_cache = CONTEXT.sys_user_service.get_user_cache_by_token(&user.login_user_key).await;
+    let user_cache = CONTEXT.sys_user_service.get_user_cache_by_token(user.login_user_key).await;
     let data = CONTEXT.sys_menu_service.get_routers(&user_cache.unwrap()).await;
     RespVO::from_result(&data).into_response()
 }
@@ -74,7 +74,7 @@ pub async fn treeselect() -> impl IntoResponse {
 #[pre_authorize("system:menu:query",user)]
 pub async fn role_menu_treeselect( role_id: Path<String>) -> impl IntoResponse {
     let role_id = role_id.0;
-    let user_cache = CONTEXT.sys_user_service.get_user_cache_by_token(&user.login_user_key).await;
+    let user_cache = CONTEXT.sys_user_service.get_user_cache_by_token(user.login_user_key).await;
 
     let user_cache = if user_cache.is_ok(){
         user_cache.unwrap()

@@ -11,6 +11,7 @@ pub mod dept;
 pub mod post;
 pub mod notice;
 pub mod oper_log;
+pub mod profile;
 
 pub use config::*;
 pub use dept::*;
@@ -25,6 +26,7 @@ pub use user::*;
 
 pub use logininfor::*;
 pub use oper_log::*;
+pub use profile::*;
 
 
 use serde::{Deserialize, Serialize};

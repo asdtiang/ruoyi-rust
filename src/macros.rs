@@ -16,7 +16,8 @@ macro_rules! check_unique {
                     vec![to_value!($key_col)],
                 )
                 .await?;
-            if old_id.eq($id_col) {
+            println!("old_id: {:?}, id_col  {:?}", old_id,$id_col);
+            if old_id.is_none()||old_id.eq($id_col) {
                 Ok(())
             } else {
                 Err(Error::from($hint))
@@ -40,7 +41,7 @@ macro_rules! check_unique {
                     vec![to_value!($key_col1), to_value!($key_col2)],
                 )
                 .await?;
-            if old_id.eq($id_col) {
+            if old_id.is_none()||old_id.eq($id_col) {
                 Ok(())
             } else {
                 Err(Error::from($hint))

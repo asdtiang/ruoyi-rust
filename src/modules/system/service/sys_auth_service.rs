@@ -1,4 +1,4 @@
-use crate::config::global_constants::{ADMIN_NAME, LOGIN_FAIL, LOGIN_SUC, LOGIN_TOKEN_KEY, STATUS_FORBIDDEN};
+use crate::config::global_constants::{ADMIN_NAME, LOGIN_FAIL, LOGIN_SUC, STATUS_FORBIDDEN};
 use crate::context::CONTEXT;
 use crate::error::{Error, Result};
 use crate::modules::system::constants::ALL_PERMISSIONS;
@@ -177,8 +177,9 @@ impl SysAuthService {
             .into_iter()
             .map(|s| s.to_string())
             .collect();
+        
         let u=crate::web::User{//todo
-            login_user_key:"".to_string(),
+            login_user_key:uuid.to_string(),
             user_name:user_name.clone()
         };
         let dept=CONTEXT.sys_dept_service.detail(user.dept_id.clone().unwrap_or_default().as_str(),  &u).await.ok();
@@ -209,7 +210,7 @@ impl SysAuthService {
                 .unwrap(),
             login_time: DateTime::now().set_nano(0),
 
-            token_key: format!("{}{}", LOGIN_TOKEN_KEY, &uuid.to_string()),
+            token_key: crate::web::get_login_user_redis_key(uuid.to_string()),
         };
         let jwt_token = JwtClaims {
             login_user_key: uuid.to_string(),

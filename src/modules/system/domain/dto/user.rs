@@ -194,9 +194,3 @@ pub struct UserRoleAuthQueryDTO {
 }
 
 
-#[derive(Serialize, Deserialize, Clone, Debug)]
-#[serde(rename_all = "camelCase")]
-pub struct PasswordUpdateDTO {
-    pub old_password: Option<String>,
-    pub new_password: Option<String>
-}

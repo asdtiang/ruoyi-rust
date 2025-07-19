@@ -1,13 +1,14 @@
 use crate::context::CONTEXT;
-use crate::system::domain::dto::{PasswordUpdateDTO, UserUpdateDTO};
+use crate::modules::system::domain::dto::profile::PasswordUpdateDTO;
+use crate::system::domain::dto::{ProfileUpdateDTO, UserUpdateDTO};
+use crate::system::domain::mapper::sys_user::SysUser;
 use crate::utils::password_encoder::PasswordEncoder;
-use crate::{error_wrapper, RespJson, RespVO};
+use crate::{error_wrapper, update_marco, RespJson, RespVO};
 use axum::extract::Query;
 use axum::response::IntoResponse;
 use axum::Json;
 use macros::pre_authorize;
 use std::time::Duration;
-use log::error;
 /*
 * 用户自身的操作
 */
@@ -15,18 +16,17 @@ use log::error;
 //的用户信息
 #[pre_authorize(user)]
 pub async fn profile() -> impl IntoResponse {
-    let user_cache = CONTEXT
-        .sys_user_service
-        .get_user_cache_by_token(&user.login_user_key)
-        .await
-        .unwrap();
+    error_wrapper!(
+        CONTEXT.sys_user_service.get_user_cache_by_token(user.login_user_key),
+        user_cache
+    );
+
+    let user_cache = user_cache.unwrap();
+
     let mut res = RespJson::success_info("操作成功");
 
+    res.insert("data".to_string(), serde_json::json!(user_cache.user.unwrap()));
     res.insert(
-        "data".to_string(),
-        serde_json::json!(user_cache.user.unwrap()),
-    );
-      res.insert(
         "postGroup".to_string(),
         serde_json::json!(CONTEXT
             .sys_post_service
@@ -48,22 +48,25 @@ pub async fn profile() -> impl IntoResponse {
     res.into_response()
 }
 
-//用户自行修改用户信息
+//todo 重新设计 用户自行修改用户信息
 #[pre_authorize(user)]
-pub async fn update_profile(mut arg: Json<UserUpdateDTO>) -> impl IntoResponse {
-    let mut user_cache = CONTEXT
-        .sys_user_service
-        .get_user_cache_by_token(&user.login_user_key)
-        .await
-        .unwrap();
-    let clone = arg.0.clone();
-    arg.0.user_id = user_cache.id.clone().into();
-    error_wrapper!(CONTEXT.sys_user_service.update(arg.0,&user),res);
+pub async fn update_profile(dto: Json<ProfileUpdateDTO>) -> impl IntoResponse {
+    error_wrapper!(
+        CONTEXT.sys_user_service.get_user_cache_by_token(user.login_user_key()),
+        user_cache
+    );
+
+    let mut user_cache = user_cache.unwrap();
+    update_marco!(data, dto, user, SysUser);
+    data.user_id = user_cache.id.clone().into();
+
+    error_wrapper!(CONTEXT.sys_user_service.update_profile(data.clone()), res);
+
     let res = res.unwrap();
     if res > 0 {
         let mut user = user_cache.user.clone().unwrap();
-        user.phonenumber = clone.phonenumber;
-        user.email = clone.email;
+        user.phonenumber = data.phonenumber;
+        user.email = data.email;
         user_cache.user = user.into();
         let _ = CONTEXT
             .cache_service
@@ -79,17 +82,19 @@ pub async fn update_profile(mut arg: Json<UserUpdateDTO>) -> impl IntoResponse {
 
 //用户自行修改密码
 #[pre_authorize(user)]
-pub async fn update_pwd(arg: Query<PasswordUpdateDTO>) -> impl IntoResponse {
-    let user_cache = CONTEXT
-        .sys_user_service
-        .get_user_cache_by_token(&user.login_user_key)
-        .await
-        .unwrap();
+pub async fn update_pwd(dto: Query<PasswordUpdateDTO>) -> impl IntoResponse {
+    error_wrapper!(
+        CONTEXT.sys_user_service.get_user_cache_by_token(user.login_user_key),
+        user_cache
+    );
+
+    let user_cache = user_cache.unwrap();
+
     let user_id = user_cache.id.clone();
-    error_wrapper!(CONTEXT.sys_user_service.find_by_user_id(&user_id),user);
+    error_wrapper!(CONTEXT.sys_user_service.find_by_user_id(&user_id), user);
     let user = user.unwrap();
-    let new_password = &arg.new_password;
-    let old_password = &arg.old_password;
+    let new_password = &dto.new_password;
+    let old_password = &dto.old_password;
     if new_password.eq(old_password) {
         return RespVO::<u64>::from_error_info(500, "新密码不能与旧密码相同").into_response();
     }

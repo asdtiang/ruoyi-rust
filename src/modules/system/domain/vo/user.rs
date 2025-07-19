@@ -36,8 +36,8 @@ pub struct SysUserVO {
     /** 帐号状态（0正常 1停用） */
     #[excel( "帐号状态", readConverterExp = "0=正常,1=停用")]
     pub status: Option<char>,
-    /** 删除标志（0代表存在 2代表删除） */
-    pub del_flag: Option<char>,
+    // /** 删除标志（0代表存在 2代表删除） */
+    // pub del_flag: Option<char>,
     /** 最后登录IP */
     #[excel( "最后登录IP", attrType = crate::AttrType::EXPORT )]
     pub login_ip: Option<String>,
@@ -73,7 +73,6 @@ impl From<SysUser> for SysUserVO {
             //屏蔽密码
             password: None,
             status: arg.status,
-            del_flag: arg.del_flag,
             login_ip: arg.login_ip,
             login_date: arg.login_date,
             create_by: arg.create_by,

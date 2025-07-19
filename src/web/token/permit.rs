@@ -1,4 +1,4 @@
-use crate::config::global_constants::{ADMIN_NAME, LOGIN_TOKEN_KEY};
+use crate::config::global_constants::{ADMIN_NAME};
 use crate::context::CONTEXT;
 use crate::error::Error;
 use crate::system::domain::vo::UserCache;
@@ -9,7 +9,7 @@ use crate::RespVO;
 pub async fn checked_token(user: &User) -> Result<UserCache, Error> {
     //check token_auth alive
 
-    let key = format!("{}{}", LOGIN_TOKEN_KEY, user.login_user_key);
+    let key = crate::web::get_login_user_redis_key(user.login_user_key());
     let user_cache: Result<UserCache, Error> = CONTEXT.cache_service.get_json(&key).await;
     match user_cache {
         Ok(u) => {

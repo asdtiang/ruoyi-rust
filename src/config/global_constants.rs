@@ -13,4 +13,3 @@ pub const LOGIN_FAIL: char = '1';
 
 pub const ADMIN_NAME: &'static str = "admin";
 pub const ADMIN_USERID: &'static str = "1";
-pub const LOGIN_TOKEN_KEY: &'static str = "login_tokens:";

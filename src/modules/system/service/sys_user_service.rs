@@ -1,4 +1,3 @@
-use crate::config::global_constants::LOGIN_TOKEN_KEY;
 use crate::config::global_constants::{ADMIN_NAME, ADMIN_USERID};
 use crate::context::CONTEXT;
 use crate::error::Error;
@@ -8,13 +7,13 @@ use crate::system::domain::mapper::sys_user;
 use crate::system::domain::mapper::sys_user::SysUser;
 use crate::system::domain::vo::{SysDeptVO, SysUserVO, UserCache};
 use crate::utils::password_encoder::PasswordEncoder;
+use crate::web::User;
 use crate::{check_unique, export_excel_service, pool};
 use macros::data_scope;
 use rbatis::page::{Page, PageRequest};
 use rbatis::{field_name, IPage};
 use rbs::to_value;
 use std::collections::HashMap;
-use crate::web::User;
 
 pub struct SysUserService {}
 
@@ -24,7 +23,7 @@ impl SysUserService {
         let sys_user_page: Page<SysUser> = sys_user::select_page(pool!(), &PageRequest::from(&dto), &dto).await?;
         let mut page = Page::<SysUserVO>::from(sys_user_page);
 
-        let all_depts = CONTEXT.sys_dept_service.list(&DeptQueryDTO::default(),login_user_key).await?;
+        let all_depts = CONTEXT.sys_dept_service.list(&DeptQueryDTO::default(), login_user_key).await?;
         let mut dept_map = HashMap::new();
         all_depts.iter().for_each(|dept| {
             dept_map.insert(dept.dept_id.clone().unwrap_or_default(), dept.clone());
@@ -98,13 +97,13 @@ impl SysUserService {
         Ok(res.rows_affected)
     }
 
-    pub async fn update(&self, dto: UserUpdateDTO, user_:&User) -> Result<u64> {
+    pub async fn update(&self, dto: UserUpdateDTO, user_: &User) -> Result<u64> {
         let user_id = dto.user_id.clone();
         self.check_phonenumber_unique(&user_id, &dto.phonenumber.clone().unwrap_or_default())
             .await?;
         let user_id = user_id.unwrap_or_default();
         self.check_user_allowed(&user_id).await?;
-        self.check_user_data_scope(&user_id,user_).await?;
+        self.check_user_data_scope(&user_id, user_).await?;
 
         let role_ids = dto.role_ids.clone();
         let post_ids = dto.post_ids.clone();
@@ -128,8 +127,19 @@ impl SysUserService {
             .rows_affected)
     }
 
-    pub async fn remove(&self, user_id: &str,user:&User) -> Result<u64> {
-        let user_cache = CONTEXT.sys_user_service.get_user_cache_by_token(&user.login_user_key()).await?;
+    pub async fn update_profile(&self, sys_user: SysUser) -> Result<u64> {
+        let user_id = sys_user.user_id.clone();
+        self.check_phonenumber_unique(&user_id, &sys_user.phonenumber.clone().unwrap_or_default())
+            .await?;
+        self.check_email_unique(&user_id, &sys_user.phonenumber.clone().unwrap_or_default()).await?;
+        Ok(SysUser::update_by_column(pool!(), &sys_user, "user_id")
+            .await?
+            .rows_affected)
+    }
+
+
+    pub async fn remove(&self, user_id: &str, user: &User) -> Result<u64> {
+        let user_cache = CONTEXT.sys_user_service.get_user_cache_by_token(user.login_user_key()).await?;
         if user_cache.id.eq(user_id) {
             return Err(Error::from("不能删除自己！"));
         }
@@ -138,7 +148,7 @@ impl SysUserService {
             return Err(Error::from("id 不能为空！"));
         }
         self.check_user_allowed(user_id).await?;
-        self.check_user_data_scope(user_id,&user).await?;
+        self.check_user_data_scope(user_id, &user).await?;
         let r = pool!()
             .exec(
                 "update sys_user set del_flag = '2' where user_id = ?",
@@ -152,14 +162,14 @@ impl SysUserService {
         Ok(r.rows_affected)
     }
 
-    pub async fn get_user_cache_by_token(&self, login_user_key: &str) -> Result<UserCache> {
+    pub async fn get_user_cache_by_token(&self, login_user_key: String) -> Result<UserCache> {
         CONTEXT
             .cache_service
-            .get_json::<UserCache>(&format!("{}{}", LOGIN_TOKEN_KEY, login_user_key))
+            .get_json::<UserCache>(&crate::web::get_login_user_redis_key(login_user_key))
             .await
     }
 
-    pub async fn update_password(&self, dto: UserUpdateDTO,oper_user_name:&str) -> Result<u64> {
+    pub async fn update_password(&self, dto: UserUpdateDTO, oper_user_name: &str) -> Result<u64> {
         let user_id = dto.user_id.clone().unwrap_or_default();
         self.check_user_allowed(&user_id).await?;
         let new_password = Some(PasswordEncoder::encode(&dto.password.clone().unwrap()));
@@ -223,13 +233,13 @@ impl SysUserService {
      *
      * @param userId 用户id
      */
-    pub async fn check_user_data_scope(&self, user_id: &str,user:&User) -> Result<()> {
+    pub async fn check_user_data_scope(&self, user_id: &str, user: &User) -> Result<()> {
         if user.user_name.eq(ADMIN_NAME) {
             let mut dto = UserPageDTO::default();
-            dto.page_no= Some(1);
-            dto.page_size= Some(10);
+            dto.page_no = Some(1);
+            dto.page_size = Some(10);
             dto.user_id = Some(user_id.to_string());
-            let res = self.page(&dto,&user.login_user_key).await?;
+            let res = self.page(&dto, &user.login_user_key).await?;
             if res.records.is_empty() {
                 return Err(Error::from("没有权限访问用户数据！"));
             }

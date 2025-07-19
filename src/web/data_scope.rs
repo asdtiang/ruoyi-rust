@@ -38,7 +38,7 @@ where
 {
     //拼接权限sql前先清空params.dataScope参数防止注入
     dto.clear_data_scope_params();
-    let user_cache = CONTEXT.sys_user_service.get_user_cache_by_token(login_user_key).await?;
+    let user_cache = CONTEXT.sys_user_service.get_user_cache_by_token(login_user_key.to_string()).await?;
     let user = user_cache.user.unwrap();
     if user.admin {
         dto.set_data_scope_params("");

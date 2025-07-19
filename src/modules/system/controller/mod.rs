@@ -61,7 +61,7 @@ fn user_api() -> Router {
         )
         //profile
         .route("/profile", get(sys_profile_controller::profile))
-        .route("/profile", put(sys_profile_controller::profile))
+        .route("/profile", put(sys_profile_controller::update_profile))
         .route("/updatePwd", put(sys_profile_controller::update_pwd))
         .route("/export", post(sys_user_controller::export_to_excel))
 }

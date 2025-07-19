@@ -1,7 +1,7 @@
-use crate::config::global_constants::{LOGIN_SUC, LOGIN_TOKEN_KEY};
+use crate::config::global_constants::LOGIN_SUC;
 use crate::context::CONTEXT;
-use crate::system::service::REDIS_UUID_CAPTCHA;
 use crate::system::domain::dto::SignInDTO;
+use crate::system::service::REDIS_UUID_CAPTCHA;
 use crate::utils::base64::encode;
 use crate::web::User;
 use crate::{error_wrapper, RespJson, RespVO};
@@ -15,8 +15,7 @@ use std::time::Duration;
 use uuid::Uuid;
 
 pub async fn login(header_map: HeaderMap, arg: Json<SignInDTO>) -> impl IntoResponse {
-
-    error_wrapper!(CONTEXT.sys_auth_service.login(&arg.0, &header_map),token);
+    error_wrapper!(CONTEXT.sys_auth_service.login(&arg.0, &header_map), token);
     let token = token.unwrap();
     let mut res = RespJson::success();
     res.insert("token".to_string(), token.into());
@@ -37,7 +36,7 @@ pub async fn logout(user: Option<axum::Extension<User>>, header_map: HeaderMap) 
             .await;
         let _ = CONTEXT
             .cache_service
-            .del(&format!("{}{}", LOGIN_TOKEN_KEY, user.login_user_key))
+            .del(&crate::web::get_login_user_redis_key(user.login_user_key))
             .await;
     }
     RespVO::<String>::from_success_info("退出成功!").into_response()
@@ -45,9 +44,10 @@ pub async fn logout(user: Option<axum::Extension<User>>, header_map: HeaderMap) 
 
 #[pre_authorize(user)]
 pub async fn info() -> impl IntoResponse {
-    error_wrapper!(CONTEXT
-        .sys_user_service
-        .get_user_cache_by_token(&user.login_user_key),user_cache);
+    error_wrapper!(
+        CONTEXT.sys_user_service.get_user_cache_by_token(user.login_user_key),
+        user_cache
+    );
     let user_cache = user_cache.unwrap();
     let mut res = RespJson::success();
     res.insert("permissions".to_string(), serde_json::json!(&user_cache.permissions));
