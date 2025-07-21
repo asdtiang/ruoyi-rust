@@ -44,7 +44,7 @@ pub async fn remove(config_id: Path<String>) -> impl IntoResponse {
     RespVO::<u64>::judge_result(res, "", "删除失败！").into_response()
 }
 
-#[pre_authorize("system:config:remove")]
+#[pre_authorize("system:config:list")]
 pub async fn refresh_cache() -> impl IntoResponse {
     let _ = CONTEXT.sys_config_service.reset_config_cache().await;
     RespVO::<u64>::from_success_info("刷新成功").into_response()

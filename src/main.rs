@@ -51,7 +51,7 @@ async fn main() -> std::io::Result<()> {
         )
         .nest_service(
             "/assets",
-            ServeDir::new("../dist/assets/")
+            ServeDir::new("./dist/assets/")
                 .not_found_service(ServeFile::new("../dist/index.html")),
         );
 

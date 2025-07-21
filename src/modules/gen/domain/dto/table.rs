@@ -138,7 +138,7 @@ impl From<GenTableColumnUpdateDTO> for GenTableColumn {
             is_query,
             query_type,
             html_type,
-            dict_type,
+            dict_type:if dict_type.is_none(){Some("".to_string())} else{dict_type},
             sort,
             more,
             def_val,

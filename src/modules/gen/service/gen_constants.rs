@@ -68,6 +68,10 @@ pub const COLUMNTYPE_NUMBER  : [&str; 11] =  ["tinyint", "smallint", "mediumint"
 /**
  * 页面不需要编辑字段
  */
+pub const COLUMNNAME_NOT_INSERT : [&str; 3] =  ["update_by", "update_time", "del_flag"];
+/**
+ * 页面不需要编辑字段
+ */
 pub const COLUMNNAME_NOT_EDIT : [&str; 4] =  ["id", "create_by", "create_time", "del_flag"];
 
 /**

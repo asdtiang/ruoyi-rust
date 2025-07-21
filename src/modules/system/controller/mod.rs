@@ -165,11 +165,12 @@ fn config_api() -> Router {
         .route("/", router_with_handler!(post,sys_config_controller::add,log_write))
         .route("/", router_with_handler!(put,sys_config_controller::update,log_write))
         .route("/{config_id}", get(sys_config_controller::detail))
-        .route("/{config_id}", delete(sys_config_controller::remove))
+        //fixme 根据文档，为什么没有办法匹配/user/
         .route(
-            "/refreshCache",
+            "/refreshCache/",
             delete(sys_config_controller::refresh_cache),
         )
+        .route("/{config_id}", delete(sys_config_controller::remove))
         .route("/export", post(sys_config_controller::export_to_excel))
 }
 

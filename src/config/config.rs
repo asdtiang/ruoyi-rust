@@ -55,10 +55,11 @@ impl Default for ApplicationConfig {
 
         match fs::read_to_string(dev_or_release_yml) {
             Ok(s) => {
+                println!("loading profile {}",dev_or_release_yml);
                 hash.merge(&s);
             }
             Err(_) => {
-                println!("Can't load {}",dev_or_release_yml);
+                panic!("Can't load {}",dev_or_release_yml);
             }
         }
 

@@ -29,7 +29,7 @@ pub fn init_table(gen_table: &mut GenTable, oper_name: &str) {
         replace_text(&gen_table.table_comment.clone().unwrap_or_default()).into();
     gen_table.function_author = GEN_CONTEXT.config.author.clone().into();
     gen_table.create_by = oper_name.to_string().into();
-    gen_table.create_time= DateTime::now().set_nano(0).into();
+    gen_table.create_time = DateTime::now().set_nano(0).into();
 }
 
 /**
@@ -72,7 +72,7 @@ pub fn init_column_field(column: &mut GenTableColumn, table: &GenTable) {
                 };
             column.html_type = Some(html_type.to_string());
             more.insert("checkLength".to_string(), "1".to_string());
-            column.more=Some(json!(more));
+            column.more = Some(json!(more));
         }
     } else if gen_constants::COLUMNTYPE_TIME.contains(&data_type) {
         column.java_type = Some(gen_constants::TYPE_DATE.to_string());
@@ -111,16 +111,26 @@ pub fn init_column_field(column: &mut GenTableColumn, table: &GenTable) {
 
 
     let is_pk = column.is_pk.clone().unwrap_or_default() == '1';
-    if !gen_constants::COLUMNNAME_NOT_EDIT.contains(&column_name){
+    if !gen_constants::COLUMNNAME_NOT_INSERT.contains(&column_name) {
+        column.is_insert = Some(gen_constants::REQUIRE);
+    }
+    if !gen_constants::COLUMNNAME_NOT_EDIT.contains(&column_name) {
         column.is_edit = Some(gen_constants::REQUIRE);
+    }
+    if !gen_constants::COLUMNNAME_NOT_LIST.contains(&column_name) {
         column.is_list = Some(gen_constants::REQUIRE);
-        column.is_detail = Some(gen_constants::REQUIRE);
         column.is_export = Some(gen_constants::REQUIRE);
     }
-    if is_pk{
-        column.is_list = Some(gen_constants::REQUIRE);
-        column.is_detail = Some(gen_constants::REQUIRE);
+    if !gen_constants::COLUMNNAME_NOT_QUERY.contains(&column_name) {
+        column.is_query = Some(gen_constants::REQUIRE);
     }
+    if is_pk {
+        column.is_list = Some(gen_constants::NOT_REQUIRE);
+        column.is_edit = Some(gen_constants::NOT_REQUIRE);
+        column.is_export = Some(gen_constants::NOT_REQUIRE);
+        column.is_query = Some(gen_constants::NOT_REQUIRE);
+    }
+
 
 
     // 查询字段
@@ -146,7 +156,7 @@ pub fn init_column_field(column: &mut GenTableColumn, table: &GenTable) {
     }
     // 图片字段设置图片上传控件
     else if lowercase_column_name.ends_with("image")
-        ||lowercase_column_name.ends_with("images")
+        || lowercase_column_name.ends_with("images")
         || lowercase_column_name.ends_with("picture")
         || lowercase_column_name.ends_with("pictures")
     {
