@@ -1,9 +1,10 @@
 use crate::context::CONTEXT;
 use crate::modules::system::domain::dto::profile::PasswordUpdateDTO;
-use crate::system::domain::dto::{ProfileUpdateDTO, UserUpdateDTO};
+use crate::system::domain::dto::ProfileUpdateDTO;
 use crate::system::domain::mapper::sys_user::SysUser;
+use crate::system::domain::vo::{CommonDeptVO, CommonUserVO};
 use crate::utils::password_encoder::PasswordEncoder;
-use crate::{error_wrapper, update_marco, RespJson, RespVO};
+use crate::{error_wrapper, error_wrapper_unwrap, update_marco, RespJson, RespVO};
 use axum::extract::Query;
 use axum::response::IntoResponse;
 use axum::Json;
@@ -14,23 +15,21 @@ use std::time::Duration;
 */
 
 //的用户信息
-#[pre_authorize(user)]
+#[pre_authorize(user_cache)]
 pub async fn profile() -> impl IntoResponse {
-    error_wrapper!(
-        CONTEXT.sys_user_service.get_user_cache_by_token(user.login_user_key),
-        user_cache
-    );
-
-    let user_cache = user_cache.unwrap();
-
     let mut res = RespJson::success_info("操作成功");
-
-    res.insert("data".to_string(), serde_json::json!(user_cache.user.unwrap()));
+    error_wrapper_unwrap!(CONTEXT.sys_user_service.detail(&user_cache.user_id), user);
+    let mut user = CommonUserVO::from(user);
+    user.dept=Some(CommonDeptVO{
+        dept_id: user_cache.dept_id.into(),
+        dept_name:  user_cache.dept_name.into(),
+    });
+    res.insert("data".to_string(), serde_json::json!(user));
     res.insert(
         "postGroup".to_string(),
         serde_json::json!(CONTEXT
             .sys_post_service
-            .select_post_names_by_user_name(&&user.user_name)
+            .select_post_names_by_user_name(&&user_cache.user_name)
             .await
             .unwrap_or_default()
             .join(",")),
@@ -49,50 +48,31 @@ pub async fn profile() -> impl IntoResponse {
 }
 
 //todo 重新设计 用户自行修改用户信息
-#[pre_authorize(user)]
+#[pre_authorize(user_cache)]
 pub async fn update_profile(dto: Json<ProfileUpdateDTO>) -> impl IntoResponse {
-    error_wrapper!(
-        CONTEXT.sys_user_service.get_user_cache_by_token(user.login_user_key()),
-        user_cache
-    );
-
-    let mut user_cache = user_cache.unwrap();
-    update_marco!(data, dto, user, SysUser);
-    data.user_id = user_cache.id.clone().into();
+    update_marco!(data, dto, user_cache, SysUser);
+    data.user_id = user_cache.user_id.clone().into();
 
     error_wrapper!(CONTEXT.sys_user_service.update_profile(data.clone()), res);
 
-    let res = res.unwrap();
-    if res > 0 {
-        let mut user = user_cache.user.clone().unwrap();
-        user.phonenumber = data.phonenumber;
-        user.email = data.email;
-        user_cache.user = user.into();
-        let _ = CONTEXT
-            .cache_service
-            .set_string_ex(
-                &user_cache.token_key,
-                &user_cache.to_string(),
-                Some(Duration::from_secs(CONTEXT.config.token_expired_min * 60)),
-            )
-            .await;
-    }
-    RespVO::from_result(&Ok(res)).into_response()
+    let res = CONTEXT
+        .cache_service
+        .set_string_ex(
+            &user_cache.token_key,
+            &user_cache.to_string(),
+            Some(Duration::from_secs(CONTEXT.config.token_expired_min * 60)),
+        )
+        .await;
+
+    RespVO::from_result(&res).into_response()
 }
 
 //用户自行修改密码
-#[pre_authorize(user)]
+#[pre_authorize(user_cache)]
 pub async fn update_pwd(dto: Query<PasswordUpdateDTO>) -> impl IntoResponse {
-    error_wrapper!(
-        CONTEXT.sys_user_service.get_user_cache_by_token(user.login_user_key),
-        user_cache
-    );
 
-    let user_cache = user_cache.unwrap();
-
-    let user_id = user_cache.id.clone();
-    error_wrapper!(CONTEXT.sys_user_service.find_by_user_id(&user_id), user);
-    let user = user.unwrap();
+    let user_id = user_cache.user_id.clone();
+    error_wrapper_unwrap!(CONTEXT.sys_user_service.find_by_user_id(&user_id), user);
     let new_password = &dto.new_password;
     let old_password = &dto.old_password;
     if new_password.eq(old_password) {

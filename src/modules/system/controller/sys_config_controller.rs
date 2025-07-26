@@ -24,16 +24,16 @@ pub async fn detail(config_id: Path<String>) -> impl IntoResponse {
     RespVO::from_result(&config).into_response()
 }
 
-#[pre_authorize("system:config:add", user)]
+#[pre_authorize("system:config:add", user_cache)]
 pub async fn add(dto: crate::ValidatedForm<ConfigAddDTO>) -> impl IntoResponse {
-    add_marco!(data, dto, user, SysConfig);
+    add_marco!(data, dto, user_cache, SysConfig);
     let res = CONTEXT.sys_config_service.add(data).await;
     RespVO::<u64>::judge_result(res, "添加成功！", "添加失败！").into_response()
 }
 
-#[pre_authorize("system:config:edit", user)]
+#[pre_authorize("system:config:edit", user_cache)]
 pub async fn update(dto: crate::ValidatedForm<ConfigUpdateDTO>) -> impl IntoResponse {
-    update_marco!(data, dto, user, SysConfig);
+    update_marco!(data, dto, user_cache, SysConfig);
     let res = CONTEXT.sys_config_service.update(data).await;
     RespVO::from_result(&res).into_response()
 }

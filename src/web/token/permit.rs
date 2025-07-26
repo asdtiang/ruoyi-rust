@@ -1,74 +1,48 @@
-use crate::config::global_constants::{ADMIN_NAME};
-use crate::context::CONTEXT;
-use crate::error::Error;
-use crate::system::domain::vo::UserCache;
-use crate::web::User;
+use crate::web::token::auth::UserCache;
 use crate::RespVO;
 
-///Check whether the token_auth is valid and has not expired
-pub async fn checked_token(user: &User) -> Result<UserCache, Error> {
-    //check token_auth alive
 
-    let key = crate::web::get_login_user_redis_key(user.login_user_key());
-    let user_cache: Result<UserCache, Error> = CONTEXT.cache_service.get_json(&key).await;
-    match user_cache {
-        Ok(u) => {
-            //刷新过期时间
-            CONTEXT
-                .cache_service
-                .expire(&key, (CONTEXT.config.token_expired_min * 60) as i32)
-                .await?;
-            Ok(u)
-        }
-        Err(e) => Err(e),
-    }
-}
-///Permission to check
-/// permit_str支持与非 如sys:user:list||sys:user:delete，暂时不实现，只支持一个权限
-pub async fn check_auth(user_cache: &UserCache, permit_str: &str) -> Result<(), Error> {
+pub async fn check_permit(user_cache: &UserCache, permit_str: &str) -> Option<RespVO<u64>> {
     let permit_str = permit_str.replace("\"", "");
     if permit_str.len() == 0 {
-        return Ok(());
+        return None;
     }
-    if user_cache.user_name == ADMIN_NAME {
-        return Ok(());
+    if user_cache.is_admin() {
+        return None;
     }
 
-    //let sys_menu = CONTEXT.sys_menu_service.all().await?;
-    //权限校验
-    for cache_permission in &user_cache.permissions {
-        if cache_permission.eq(&permit_str) {
-            return Ok(());
-        }
+    if user_cache.permissions.contains(&permit_str) {
+        return None;
     }
-    Err(crate::error::Error::from(format!("无权限访问{}", permit_str)))
+    //仅提示拦截
+    let resp: RespVO<u64> = RespVO {
+        code: 500,
+        msg: Some("无权限访问，请联系管理员".to_string()),
+        data: None,
+    };
+    log::info!("无权限：{}", permit_str);
+    Some(resp)
 }
 
-pub async fn check_permit(user: &User, permit_str: &str) -> Option<RespVO<u64>> {
-    match checked_token(user).await {
-        Ok(data) => {
-            match check_auth(&data, permit_str).await {
-                Ok(_) => {}
-                Err(e) => {
-                    //仅提示拦截
-                    let resp: RespVO<u64> = RespVO {
-                        code: 500,
-                        msg: Some(e.to_string()),
-                        data: None,
-                    };
-                    return Some(resp);
-                }
-            }
-        }
-        Err(e) => {
-            //401 http状态码会强制前端退出当前登陆状态
-            let resp: RespVO<u64> = RespVO {
-                code: 401,
-                msg: Some(format!("Unauthorized for:{}", e.to_string())),
-                data: None,
-            };
-            return Some(resp);
+pub async fn check_role(user_cache: &UserCache, role_str: &str) -> Option<RespVO<u64>> {
+    let role_str = role_str.replace("\"", "");
+    if role_str.len() == 0 {
+        return None;
+    }
+    if user_cache.is_admin() {
+        return None;
+    }
+    for role in user_cache.roles.clone() {
+        if role.role_key.is_some_and(|s| s.eq(&role_str)) {
+            return None;
         }
     }
-    None
+    //仅提示拦截
+    let resp: RespVO<u64> = RespVO {
+        code: 500,
+        msg: Some("无权限访问，请联系管理员".to_string()),
+        data: None,
+    };
+    log::info!("无角色：{}", role_str);
+    Some(resp)
 }

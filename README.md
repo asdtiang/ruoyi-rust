@@ -1,6 +1,8 @@
 # RuoYi-Vue Rust 
 by wizount, 2537660666,wx:glqqyx
 
+正在努力开发，功能不完善，正式部署请慎重，作者不承担任何后果。
+
 本项目基于 [abs-admin](https://github.com/rbatis/abs_admin) 开发，并参考了 [若依](https://gitee.com/y_project) 的 [RuoYi-Vue](https://gitee.com/y_project/RuoYi-Vue) 项目，使用 Rust 语言进行重写。
 
 我们正在寻找志同道合的开发者共同完成这个项目。目前部分功能已经实现，但还需要进一步完善。

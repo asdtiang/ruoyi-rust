@@ -33,7 +33,7 @@ impl SysDictTypeService {
         Ok(dict_type_vo)
     }
     pub async fn add(&self, arg: &SysDictType) -> Result<u64> {
-        self.check_dict_type_unique(&None, &arg.dict_type.clone().unwrap_or_default())
+        self.check_dict_type_unique(&None, arg.dict_type.clone().unwrap_or_default())
             .await?;
         let result = Ok(SysDictType::insert(pool!(), &arg).await?.rows_affected);
         let _ = CONTEXT.sys_dict_data_service.update_cache().await;
@@ -41,7 +41,7 @@ impl SysDictTypeService {
     }
 
     pub async fn update(&self, data: SysDictType) -> Result<u64> {
-        self.check_dict_type_unique(&data.dict_id, &data.dict_type.clone().unwrap_or_default())
+        self.check_dict_type_unique(&data.dict_id,data.dict_type.clone().unwrap_or_default())
             .await?;
         let result = SysDictType::update_by_column(pool!(), &data, "dict_id").await;
         //todo 需要同时更改dict_data中的dict_type

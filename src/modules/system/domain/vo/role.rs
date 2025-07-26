@@ -62,3 +62,30 @@ impl From<SysRole> for SysRoleVO {
         }
     }
 }
+#[derive(Clone, Debug, serde::Serialize, serde::Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct CommonRoleVO {
+    /** 角色id */
+    pub role_id: Option<String>,
+    /** 角色名称 */
+    pub role_name: Option<String>,
+    /** 角色权限 */
+    pub role_key: Option<String>,
+    /** 角色排序 */
+    pub role_sort: Option<u32>,
+    /** 数据范围（1：所有数据权限；2：自定义数据权限；3：本部门数据权限；4：本部门及以下数据权限；5：仅本人数据权限） */
+    pub data_scope: Option<char>,
+    
+}
+
+impl From<SysRole> for CommonRoleVO {
+    fn from(arg: SysRole) -> Self {
+        Self {
+            role_id: arg.role_id,
+            role_name: arg.role_name,
+            role_key: arg.role_key,
+            role_sort: arg.role_sort,
+            data_scope: arg.data_scope,
+        }
+    }
+}

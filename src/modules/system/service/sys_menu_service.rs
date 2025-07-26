@@ -12,8 +12,9 @@ use crate::error::Result;
 use crate::modules::system::constants::{INNER_LINK, LAYOUT, PARENT_VIEW, TYPE_DIR, TYPE_MENU};
 use crate::pool;
 use crate::system::domain::mapper::sys_menu::SysMenu;
-use crate::system::domain::vo::{MenuTreeSelectVO, MetaVO, RouterVO, SysMenuVO, UserCache};
+use crate::system::domain::vo::{MenuTreeSelectVO, MetaVO, RouterVO, SysMenuVO};
 use crate::utils::string::capitalize;
+use crate::web::token::auth::UserCache;
 
 const RES_MENU_KEY: &'static str = "sys_menu:all";
 
@@ -148,17 +149,13 @@ impl SysMenuService {
     }
 
     //变成id 和label
-    pub async fn tree_select(&self,login_user_key:&str) -> Result<Vec<MenuTreeSelectVO>> {
-        let user_cache = CONTEXT
-            .sys_user_service
-            .get_user_cache_by_token(login_user_key.to_string())
-            .await?;
-        let menus = if user_cache.user_name == ADMIN_NAME {
+    pub async fn tree_select(&self,user_cache:&UserCache) -> Result<Vec<MenuTreeSelectVO>> {
+        let menus = if user_cache.is_admin() {
             CONTEXT.sys_menu_service.all().await?
         } else {
             CONTEXT
                 .sys_menu_service
-                .get_menu_list_by_user_id(&user_cache.id)
+                .get_menu_list_by_user_id(&user_cache.user_id)
                 .await?
         };
 
@@ -225,7 +222,7 @@ impl SysMenuService {
     ///生成菜单
     pub async fn get_routers(&self, user_cache: &UserCache) -> Result<Vec<RouterVO>> {
         let all_menus = self.all().await?;
-        let filtered_menus = if user_cache.user_name == ADMIN_NAME {
+        let filtered_menus = if user_cache.is_admin() {
             all_menus
         } else {
             let mut t = vec![];

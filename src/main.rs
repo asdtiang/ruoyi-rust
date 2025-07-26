@@ -2,7 +2,6 @@ use axum::extract::DefaultBodyLimit;
 use axum::{middleware, Router};
 use ruoyi_rust::build_api;
 use ruoyi_rust::context::CONTEXT;
-use ruoyi_rust::web::jwt_auth_middleware;
 use std::net::SocketAddr;
 use std::path::PathBuf;
 use tower_http::compression::predicate::SizeAbove;
@@ -39,7 +38,7 @@ async fn main() -> std::io::Result<()> {
             build_api().nest_service(
                 "/profile",
                 ServeDir::new(PathBuf::from(&CONTEXT.config.upload_path).join("profile")),
-            ).route_layer(middleware::from_fn(jwt_auth_middleware)),
+            ),
         )
         .layer(CompressionLayer::new().compress_when(SizeAbove::new(2048))) //启动压缩
         .layer(DefaultBodyLimit::disable())
@@ -60,8 +59,7 @@ async fn main() -> std::io::Result<()> {
         CONTEXT.config.server_url
     );
     let listener = tokio::net::TcpListener::bind(&CONTEXT.config.server_url)
-        .await
-        .unwrap();
+        .await?;
     axum::serve(
         listener,
         app.into_make_service_with_connect_info::<SocketAddr>(),

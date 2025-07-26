@@ -2930,6 +2930,7 @@ dependencies = [
 name = "ruoyi-rust"
 version = "0.3.0"
 dependencies = [
+ "async-trait",
  "aws-config",
  "aws-sdk-s3",
  "axum",

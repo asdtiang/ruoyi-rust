@@ -1,4 +1,3 @@
-use crate::config::global_constants::ADMIN_NAME;
 use crate::context::CONTEXT;
 use crate::error::{Error, Result};
 use crate::system::domain::dto::{RoleAuthUserPageDTO, RolePageDTO};
@@ -12,7 +11,6 @@ use crate::{export_excel_service, pool, remove_batch};
 use macros::data_scope;
 use rbatis::{field_name, Page, PageRequest};
 use rbs::to_value;
-use crate::web::User;
 
 const RES_KEY: &'static str = "sys_role:all";
 
@@ -72,7 +70,7 @@ impl SysRoleService {
         Ok(result)
     }
 
-    pub async fn update_status(&self, role: SysRole,user: &User) -> Result<u64> {
+    pub async fn update_status(&self, role: SysRole,user: &crate::UserCache) -> Result<u64> {
         let role_id = role.role_id.clone().unwrap_or_default();
         let status = role.status.unwrap_or_default();
         self.check_role_allowed(&role).await?;
@@ -143,7 +141,6 @@ impl SysRoleService {
 
         Ok(res)
     }
-    //查找所有roles，如果用户包含此权限，则flag=true
     pub async fn finds_role_ids_by_user_id(&self, user_id: &str) -> Result<Vec<String>> {
         let user_roles = SysUserRole::select_by_column(pool!(), "user_id", user_id).await?;
         let res = user_roles
@@ -182,8 +179,8 @@ impl SysRoleService {
             Ok(true)
         }
     }
-    pub async fn check_role_data_scope(&self, role_id: &str,user:&User) -> Result<bool> {
-        if !user.user_name.eq(ADMIN_NAME) {
+    pub async fn check_role_data_scope(&self, role_id: &str, user_cache:&crate::UserCache) -> Result<bool> {
+        if !user_cache.is_admin() {
             let dto = RolePageDTO {
                 page_no: None,
                 page_size: None,
@@ -193,14 +190,14 @@ impl SysRoleService {
                 status: None,
                 params: None,
             };
-            let roles = self.page(&dto,&user.login_user_key).await?;
+            let roles = self.page(&dto, user_cache).await?;
             if roles.records.is_empty() {
                 return Err(Error::from("没有权限访问角色数据！"));
             }
         }
         Ok(true)
     }
-    pub async fn auth_data_scope(&self, role: &SysRole, dept_ids: &Vec<String>,user: &User) -> Result<bool> {
+    pub async fn auth_data_scope(&self, role: &SysRole, dept_ids: &Vec<String>,user: &crate::UserCache) -> Result<bool> {
         self.check_role_allowed(role).await?;
         let role_id = role.role_id.clone().unwrap_or_default();
         self.check_role_data_scope(&role_id, user).await?;

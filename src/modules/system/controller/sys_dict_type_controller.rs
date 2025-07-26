@@ -16,14 +16,14 @@ pub async fn list(page: Json<DictTypePageDTO>) -> impl IntoResponse {
 }
 
 
-#[pre_authorize("system:dict:query", user)]
+#[pre_authorize("system:dict:query", user_cache)]
 pub async fn optionselect() -> impl IntoResponse {
     let data = CONTEXT.sys_dict_type_service.finds_all().await;
     RespVO::from_result(&data).into_response()
 }
 
 
-#[pre_authorize("system:dict:query", user)]
+#[pre_authorize("system:dict:query", user_cache)]
 pub async fn detail(dict_type_id: Path<String>) -> impl IntoResponse {
     let dict_type_id = dict_type_id.0;
     let dict_type_vo = CONTEXT.sys_dict_type_service.detail(&dict_type_id).await;
@@ -31,9 +31,9 @@ pub async fn detail(dict_type_id: Path<String>) -> impl IntoResponse {
 }
 
 
-#[pre_authorize("system:dict:add", user)]
+#[pre_authorize("system:dict:add", user_cache)]
 pub async fn add(dto: crate::ValidatedForm<DictTypeAddDTO>) -> impl IntoResponse {
-    add_marco!(data, dto, user, SysDictType);
+    add_marco!(data, dto, user_cache, SysDictType);
     if data.status.is_none() {
         data.status = Some(STATUS_NORMAL);
     }
@@ -42,9 +42,9 @@ pub async fn add(dto: crate::ValidatedForm<DictTypeAddDTO>) -> impl IntoResponse
 }
 
 
-#[pre_authorize("system:dict:edit", user)]
+#[pre_authorize("system:dict:edit", user_cache)]
 pub async fn update(dto: crate::ValidatedForm<DictTypeUpdateDTO>) -> impl IntoResponse {
-    update_marco!(data, dto, user, SysDictType);
+    update_marco!(data, dto, user_cache, SysDictType);
     let data = CONTEXT.sys_dict_type_service.update(data).await;
     RespVO::from_result(&data).into_response()
 }

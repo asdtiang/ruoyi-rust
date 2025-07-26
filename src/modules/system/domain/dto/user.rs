@@ -7,23 +7,24 @@ use rbatis::object_id::ObjectId;
 use serde::{Deserialize, Serialize};
 use validator::Validate;
 
-#[derive(Serialize, Deserialize, Validate,  Clone, Debug)]
+#[derive(Serialize, Deserialize, Validate, Clone, Debug)]
 #[serde(rename_all = "camelCase")]
 pub struct UserAddDTO {
     /** 部门ID */
     pub dept_id: Option<String>,
-     #[validate(custom(function = "crate::xss_validator", message = "用户账号不能包含脚本字符"))]
+    #[validate(custom(function = "crate::xss_validator", message = "用户账号不能包含脚本字符"))]
     /** 用户账号 */
-     #[validate(custom(function = "crate::xss_validator", message = "用户账号不能包含脚本字符"))]
+    #[validate(custom(function = "crate::xss_validator", message = "用户账号不能包含脚本字符"))]
     #[validate(custom(function = "crate::string_required", message = "用户账号不能为空"))]
     #[validate(length(max = 30, message = "用户账号长度不能超过30个字符"))]
     pub user_name: Option<String>,
-     #[validate(custom(function = "crate::xss_validator", message = "用户昵称不能包含脚本字符"))]
+    #[validate(custom(function = "crate::xss_validator", message = "用户昵称不能包含脚本字符"))]
     /** 用户昵称 */
-     #[validate(custom(function = "crate::xss_validator", message = "用户昵称不能包含脚本字符"))]
+    #[validate(custom(function = "crate::xss_validator", message = "用户昵称不能包含脚本字符"))]
     #[validate(length(max = 30, message = "用户昵称长度不能超过30个字符"))]
     pub nick_name: Option<String>,
     /** 用户邮箱 */
+    //todo 当前台传入"",导致引起校验
     #[validate(email(message = "邮箱格式不正确"))]
     #[validate(length(max = 50, message = "邮箱长度不能超过50个字符"))]
     pub email: Option<String>,
@@ -67,7 +68,7 @@ impl From<UserAddDTO> for SysUser {
     }
 }
 
-#[derive(Serialize, Deserialize,validator::Validate, Clone, Debug)]
+#[derive(Serialize, Deserialize, validator::Validate, Clone, Debug)]
 #[serde(rename_all = "camelCase")]
 pub struct UserUpdateDTO {
     /** 用户ID */
@@ -75,7 +76,7 @@ pub struct UserUpdateDTO {
     /** 部门ID */
     pub dept_id: Option<String>,
     /** 用户昵称 */
-     #[validate(custom(function = "crate::xss_validator", message = "用户昵称不能包含脚本字符"))]
+    #[validate(custom(function = "crate::xss_validator", message = "用户昵称不能包含脚本字符"))]
     #[validate(length(max = 30, message = "用户昵称长度不能超过30个字符"))]
     pub nick_name: Option<String>,
     /** 用户邮箱 */
@@ -122,8 +123,8 @@ impl From<UserUpdateDTO> for SysUser {
         }
     }
 }
-#[page_request(params,dataScope)]
-#[derive(Serialize, Deserialize, Clone, Debug,Default)]
+#[page_request(params, dataScope)]
+#[derive(Serialize, Deserialize, Clone, Debug, Default)]
 #[serde(rename_all = "camelCase")]
 pub struct UserPageDTO {
     pub user_id: Option<String>,
@@ -131,7 +132,6 @@ pub struct UserPageDTO {
     pub phonenumber: Option<String>,
     pub status: Option<String>,
     pub dept_id: Option<String>,
-
 }
 
 impl From<&UserRolePageDTO> for UserPageDTO {
@@ -180,9 +180,7 @@ pub struct UsersRoleDTO {
 pub struct UserRolePageDTO {
     pub user_name: Option<String>,
     pub name: Option<String>,
-
 }
-
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
 #[serde(rename_all = "camelCase")]
@@ -192,5 +190,3 @@ pub struct UserRoleAuthQueryDTO {
     /** 角色组 */
     pub role_ids: Option<String>,
 }
-
-

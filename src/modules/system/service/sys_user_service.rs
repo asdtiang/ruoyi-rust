@@ -1,13 +1,13 @@
-use crate::config::global_constants::{ADMIN_NAME, ADMIN_USERID};
+use crate::config::global_constants::ADMIN_USERID;
 use crate::context::CONTEXT;
 use crate::error::Error;
 use crate::error::Result;
 use crate::system::domain::dto::{DeptQueryDTO, UserAddDTO, UserPageDTO, UserUpdateDTO};
 use crate::system::domain::mapper::sys_user;
 use crate::system::domain::mapper::sys_user::SysUser;
-use crate::system::domain::vo::{SysDeptVO, SysUserVO, UserCache};
+use crate::system::domain::vo::{SysDeptVO, SysUserVO};
 use crate::utils::password_encoder::PasswordEncoder;
-use crate::web::User;
+use crate::web::token::auth::UserCache;
 use crate::{check_unique, export_excel_service, pool};
 use macros::data_scope;
 use rbatis::page::{Page, PageRequest};
@@ -57,11 +57,11 @@ impl SysUserService {
     }
 
     pub async fn add(&self, dto: &UserAddDTO, create_by: String) -> Result<u64> {
-        self.check_user_name_unique(&None, &dto.user_name.clone().unwrap_or_default())
+        self.check_user_name_unique(&None, dto.user_name.clone().unwrap_or_default())
             .await?;
-        self.check_phonenumber_unique(&None, &dto.phonenumber.clone().unwrap_or_default())
+        self.check_phonenumber_unique(&None, dto.phonenumber.clone().unwrap_or_default())
             .await?;
-        self.check_email_unique(&None, &dto.email.clone().unwrap_or_default())
+        self.check_email_unique(&None, dto.email.clone().unwrap_or_default())
             .await?;
 
         let role_ids = dto.role_ids.clone().unwrap_or_default();
@@ -97,9 +97,9 @@ impl SysUserService {
         Ok(res.rows_affected)
     }
 
-    pub async fn update(&self, dto: UserUpdateDTO, user_: &User) -> Result<u64> {
+    pub async fn update(&self, dto: UserUpdateDTO, user_: &crate::UserCache) -> Result<u64> {
         let user_id = dto.user_id.clone();
-        self.check_phonenumber_unique(&user_id, &dto.phonenumber.clone().unwrap_or_default())
+        self.check_phonenumber_unique(&user_id, dto.phonenumber.clone().unwrap_or_default())
             .await?;
         let user_id = user_id.unwrap_or_default();
         self.check_user_allowed(&user_id).await?;
@@ -129,26 +129,24 @@ impl SysUserService {
 
     pub async fn update_profile(&self, sys_user: SysUser) -> Result<u64> {
         let user_id = sys_user.user_id.clone();
-        self.check_phonenumber_unique(&user_id, &sys_user.phonenumber.clone().unwrap_or_default())
+        self.check_phonenumber_unique(&user_id, sys_user.phonenumber.clone().unwrap_or_default())
             .await?;
-        self.check_email_unique(&user_id, &sys_user.phonenumber.clone().unwrap_or_default()).await?;
+        self.check_email_unique(&user_id, sys_user.phonenumber.clone().unwrap_or_default()).await?;
         Ok(SysUser::update_by_column(pool!(), &sys_user, "user_id")
             .await?
             .rows_affected)
     }
 
 
-    pub async fn remove(&self, user_id: &str, user: &User) -> Result<u64> {
-        let user_cache = CONTEXT.sys_user_service.get_user_cache_by_token(user.login_user_key()).await?;
-        if user_cache.id.eq(user_id) {
+    pub async fn remove(&self, user_id: &str, user_cache: &crate::UserCache) -> Result<u64> {
+        if user_cache.user_id.eq(user_id) {
             return Err(Error::from("不能删除自己！"));
         }
-
         if user_id.is_empty() {
             return Err(Error::from("id 不能为空！"));
         }
         self.check_user_allowed(user_id).await?;
-        self.check_user_data_scope(user_id, &user).await?;
+        self.check_user_data_scope(user_id, user_cache).await?;
         let r = pool!()
             .exec(
                 "update sys_user set del_flag = '2' where user_id = ?",
@@ -233,13 +231,13 @@ impl SysUserService {
      *
      * @param userId 用户id
      */
-    pub async fn check_user_data_scope(&self, user_id: &str, user: &User) -> Result<()> {
-        if user.user_name.eq(ADMIN_NAME) {
+    pub async fn check_user_data_scope(&self, user_id: &str, user: &crate::UserCache) -> Result<()> {
+        if user.is_admin(){
             let mut dto = UserPageDTO::default();
             dto.page_no = Some(1);
             dto.page_size = Some(10);
             dto.user_id = Some(user_id.to_string());
-            let res = self.page(&dto, &user.login_user_key).await?;
+            let res = self.page(&dto, &user).await?;
             if res.records.is_empty() {
                 return Err(Error::from("没有权限访问用户数据！"));
             }
@@ -253,7 +251,7 @@ impl SysUserService {
             .next()
             .ok_or_else(|| Error::from("找不到此用户"))
     }
-    pub async fn remove_batch(&self, user_ids: &str, user: &User) -> Result<u64> {
+    pub async fn remove_batch(&self, user_ids: &str, user: &crate::UserCache) -> Result<u64> {
         let user_ids = user_ids.split(",").collect::<Vec<&str>>();
         for id in user_ids {
             self.remove(id, user).await?;

@@ -9,7 +9,7 @@ use macros::pre_authorize;
 use rbatis::Page;
 
 
-#[pre_authorize("monitor:operlog:list",user)]
+#[pre_authorize("monitor:operlog:list", user_cache)]
 pub async fn list(dto: Json<OperLogPageDTO>) -> impl IntoResponse {
     let data = CONTEXT.sys_oper_log_service.page(&dto.0).await;
     let data=data.map(|l|Page::<SysOperLogVO>::from(l));
@@ -31,7 +31,7 @@ export_excel_controller!(
 
 
 
-#[pre_authorize("monitor:operlog:remove",user)]
+#[pre_authorize("monitor:operlog:remove", user_cache)]
 pub async fn remove(oper_id: Path<String>) -> impl IntoResponse {
     let oper_id = oper_id.0;
     let rows_affected = CONTEXT
@@ -40,7 +40,7 @@ pub async fn remove(oper_id: Path<String>) -> impl IntoResponse {
         .await;
     RespVO::<u64>::judge_result(rows_affected, "", "删除失败！").into_response()
 }
-#[pre_authorize("monitor:operlog:remove",user)]
+#[pre_authorize("monitor:operlog:remove", user_cache)]
 pub async fn clean() -> impl IntoResponse {
 
     let rows_affected = CONTEXT .sys_oper_log_service.  clean() .await;

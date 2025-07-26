@@ -21,9 +21,9 @@ pub async fn detail(dict_data_id: Path<String>) -> impl IntoResponse {
     RespVO::from_result(&dict_data_vo).into_response()
 }
 
-#[pre_authorize("system:dict:add", user)]
+#[pre_authorize("system:dict:add", user_cache)]
 pub async fn add(dto: crate::ValidatedForm<DictDataAddDTO>) -> impl IntoResponse {
-    add_marco!(data, dto, user, SysDictData);
+    add_marco!(data, dto, user_cache, SysDictData);
     if data.status.is_none() {
         data.status = Some(STATUS_NORMAL);
     }
@@ -31,9 +31,9 @@ pub async fn add(dto: crate::ValidatedForm<DictDataAddDTO>) -> impl IntoResponse
     RespVO::<u64>::judge_result(rows_affected, "", "添加失败！").into_response()
 }
 
-#[pre_authorize("system:dict:edit", user)]
+#[pre_authorize("system:dict:edit", user_cache)]
 pub async fn update(dto: crate::ValidatedForm<DictDataUpdateDTO>) -> impl IntoResponse {
-    update_marco!(data, dto, user, SysDictData);
+    update_marco!(data, dto, user_cache, SysDictData);
     let rows_affected = CONTEXT.sys_dict_data_service.update(data).await;
     RespVO::<u64>::judge_result(rows_affected, "", "更新失败！").into_response()
 }

@@ -35,7 +35,7 @@ impl SysDictDataService {
     }
 
     pub async fn add(&self, arg: &SysDictData) -> Result<u64> {
-        self.check_dict_value_unique(&&None,&arg.dict_type.clone().unwrap_or_default(),&arg.dict_value.clone().unwrap_or_default()).await?;
+        self.check_dict_value_unique(&None,&arg.dict_type.clone().unwrap_or_default(),&arg.dict_value.clone().unwrap_or_default()).await?;
         let result = Ok(SysDictData::insert(pool!(), &arg).await?.rows_affected);
         self.update_cache().await?;
         result

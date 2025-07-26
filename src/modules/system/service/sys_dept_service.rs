@@ -1,4 +1,3 @@
-use crate::config::global_constants::ADMIN_NAME;
 use crate::context::CONTEXT;
 use crate::error::Error;
 use crate::error::Result;
@@ -8,12 +7,10 @@ use crate::system::domain::mapper;
 use crate::system::domain::mapper::sys_dept;
 use crate::system::domain::mapper::sys_dept::SysDept;
 use crate::system::domain::vo::{DeptTreeVO, SysDeptVO};
-use crate::{check_unique_sql, pool};
-use macros::data_scope;
+use crate::{ pool, UserCache};
+use macros::{data_scope, transactional};
 use rbatis::field_name;
 use rbs::to_value;
-use crate::web::User;
-
 pub struct SysDeptService {}
 
 impl SysDeptService {
@@ -23,18 +20,17 @@ impl SysDeptService {
         Ok(data)
     }
 
-    pub async fn detail(&self, dept_id: &str,user:&User) -> Result<SysDeptVO> {
-        self.check_dept_data_scope(dept_id,user).await?;
+    pub async fn detail(&self, dept_id: &str, user: &crate::UserCache) -> Result<SysDeptVO> {
+        self.check_dept_data_scope(dept_id, user).await?;
         let dept = self.get_dept_by_id(dept_id).await?;
         Ok(SysDeptVO::from(dept))
     }
 
     pub async fn add(&self, dept: SysDept) -> Result<u64> {
-
         self.check_dept_name_unique(
             &&None,
-            &dept.dept_name.clone().unwrap_or_default(),
-            &dept.parent_id.clone().unwrap_or_default(),
+            &dept.dept_name,
+            &dept.parent_id,
         )
         .await?;
 
@@ -44,41 +40,36 @@ impl SysDeptService {
         }
         Ok(SysDept::insert(pool!(), &dept).await?.rows_affected)
     }
-
+    //加入事务
     pub async fn update(&self, dto: SysDept) -> Result<u64> {
         let mut dept = SysDept::from(dto);
         let dept_name = dept.dept_name.clone().unwrap_or_default();
         let parent_id = dept.parent_id.clone().unwrap_or_default();
         let dept_id = dept.dept_id.clone().unwrap_or_default();
 
-        self.check_dept_name_unique(&dept.dept_id,&dept_name, &parent_id).await?;
+        self.check_dept_name_unique(&dept.dept_id, &dept.dept_name, &dept.parent_id)
+            .await?;
 
         if dept_id.eq(&parent_id) {
-            return Err(Error::from(format!(
-                "修改部门'{dept_name}'失败，上级部门不能是自己"
-            )));
+            return Err(Error::from(format!("修改部门'{dept_name}'失败，上级部门不能是自己")));
         }
         if dept.status.unwrap_or_default().eq(&DEPT_DISABLE)
             && self.select_normal_children_dept_by_id(&dept_id).await? > 0
         {
             return Err(Error::from("该部门包含未停用的子部门！"));
         }
-        let new_parent_dept = self.get_dept_by_id(&parent_id).await;
-        let old_dept = self.get_dept_by_id(&dept_id).await;
-        if new_parent_dept.is_ok() && old_dept.is_ok() {
-            let new_parent_dept = new_parent_dept?;
-            let old_dept = old_dept?;
+        let new_parent_dept = self.get_dept_by_id(&parent_id).await?;
+        let old_dept = self.get_dept_by_id(&dept_id).await?;
 
-            let new_ancestors = format!(
-                "{},{}",
-                new_parent_dept.ancestors.clone().unwrap_or_default(),
-                new_parent_dept.clone().dept_id.unwrap_or_default()
-            );
-            let old_ancestors = old_dept.dept_id.unwrap_or_default();
-            dept.ancestors = Some(new_ancestors.clone());
-            self.update_dept_children(&dept_id, &new_ancestors, &old_ancestors)
-                .await?;
-        }
+        let new_ancestors = format!(
+            "{},{}",
+            new_parent_dept.ancestors.clone().unwrap_or_default(),
+            new_parent_dept.clone().dept_id.unwrap_or_default()
+        );
+        let old_ancestors = old_dept.ancestors.unwrap_or_default();
+        dept.ancestors = Some(new_ancestors.clone());
+        self.update_dept_children(&dept_id, &new_ancestors, &old_ancestors)
+            .await?;
         let result = SysDept::update_by_column(pool!(), &dept, "dept_id").await?;
         Ok(result.rows_affected)
     }
@@ -95,30 +86,32 @@ impl SysDeptService {
                 vec![to_value!(dept_id)],
             )
             .await?;
-        CONTEXT
-            .sys_role_dept_service
-            .remove_by_dept_id(dept_id)
-            .await?;
+        CONTEXT.sys_role_dept_service.remove_by_dept_id(dept_id).await?;
         tx.commit().await?;
         Ok(res.rows_affected)
     }
     //根据user id获得本单位及下属单位部门列表 todo
-    pub async fn get_dept_tree(&self, login_user_key: &str) -> Result<Vec<DeptTreeVO>> {
-        let depts = self.list(&DeptQueryDTO::default(),login_user_key).await?;
-        let depts = depts
-            .into_iter()
-            .map(|d| DeptTreeVO::from(d))
-            .collect::<Vec<_>>();
-        self.build_dept_tree(&depts)
+    pub async fn get_dept_tree(&self, user_cache: &UserCache) -> Result<Vec<DeptTreeVO>> {
+        let depts = self.list(&DeptQueryDTO::default(), user_cache).await?;
+        let depts = depts.into_iter().map(|d| DeptTreeVO::from(d)).collect::<Vec<_>>();
+        self.build_dept_tree(depts)
     }
     ///An depts array with a hierarchy
-    pub fn build_dept_tree(&self, all_depts: &Vec<DeptTreeVO>) -> Result<Vec<DeptTreeVO>> {
+    pub fn build_dept_tree(&self, all_depts: Vec<DeptTreeVO>) -> Result<Vec<DeptTreeVO>> {
         //find tops
-        let mut tops = all_depts
-            .into_iter()
-            .filter(|d| d.is_parent())
-            .map(|d| d.clone())
+        let mut tops = vec![];
+        let temp_list = all_depts
+            .iter()
+            .map(|d| d.id.clone().unwrap_or_default())
             .collect::<Vec<_>>();
+        for dept in all_depts.iter() {
+            if !temp_list.contains(&dept.parent_id.clone().unwrap_or_default()) {
+                tops.push(dept.clone());
+            }
+        }
+        if tops.is_empty() {
+            tops = all_depts.clone();
+        }
         for mut item in &mut tops {
             self.loop_find_children(&mut item, &all_depts);
         }
@@ -129,7 +122,7 @@ impl SysDeptService {
     pub fn loop_find_children(&self, arg: &mut DeptTreeVO, all_depts: &Vec<DeptTreeVO>) {
         let mut children = vec![];
         for item in all_depts {
-            if !item.is_parent() && item.parent_id == arg.id {
+            if item.parent_id == arg.id {
                 let mut item = item.clone();
                 self.loop_find_children(&mut item, all_depts);
                 children.push(item);
@@ -139,11 +132,7 @@ impl SysDeptService {
             arg.children = Some(children);
         }
     }
-    pub async fn select_dept_list_by_role_id(
-        &self,
-        role_id: &str,
-        dept_check_strictly: bool,
-    ) -> Result<Vec<String>> {
+    pub async fn select_dept_list_by_role_id(&self, role_id: &str, dept_check_strictly: bool) -> Result<Vec<String>> {
         let ids = sys_dept::select_dept_list_by_role_id(pool!(), role_id, dept_check_strictly)
             .await?
             .iter()
@@ -197,21 +186,26 @@ impl SysDeptService {
         Ok(count)
     }
 
-
     //  校验当前部门名称是否唯一
-    check_unique_sql!(check_dept_name_unique,"sys_dept",dept_id,dept_name,parent_id,"部门名称已存在"
-        ,"select count(1) as count from sys_dept where dept_name={?} and parent_id = {?} and del_flag = '0'");
+
+    pub async fn check_dept_name_unique(&self, dept_id: &Option<String>, dept_name:  &Option<String>, parent_id:  &Option<String>) -> Result<()> {
+                let old_id: Option<String> = pool!()
+                    .query_decode("select dept_id as count from sys_dept where dept_name=? and parent_id = ? and del_flag = '0'",
+                                  vec![to_value!(dept_name), to_value!(parent_id)])
+                    .await?;
+        if old_id.is_none()||old_id.eq(dept_id) {
+                    Ok(())
+                } else {
+                    Err(Error::from("部门名称已存在"))
+                }
+            }
+
 
     /**
     * 修改子元素关系
 
     */
-    async fn update_dept_children(
-        &self,
-        dept_id: &str,
-        new_ancestors: &str,
-        old_ancestors: &str,
-    ) -> Result<()> {
+    async fn update_dept_children(&self, dept_id: &str, new_ancestors: &str, old_ancestors: &str) -> Result<()> {
         let mut children = self.select_children_dept_by_id(dept_id).await?;
         children.iter_mut().for_each(|child| {
             child.ancestors = Some(child.ancestors.clone().unwrap_or_default().replacen(
@@ -225,17 +219,17 @@ impl SysDeptService {
         }
         Ok(())
     }
-    
+
     /**
-     * 校验部门是否有数据权限
+     * 校验部门是否有数据权限，todo 重写
      *
      * @param dept_id 部门id
      */
-    pub async fn check_dept_data_scope(&self, dept_id: &str,user:&User) -> Result<()> {
-        if !user.user_name.eq(ADMIN_NAME) {
+    pub async fn check_dept_data_scope(&self, dept_id: &str, user_cache: &crate::UserCache) -> Result<()> {
+        if !user_cache.is_admin() {
             let mut dto = DeptQueryDTO::default();
             dto.dept_id = Some(dept_id.to_string());
-            let res = self.list(&dto,&user.login_user_key()).await?;
+            let res = self.list(&dto, &user_cache).await?; //todo 重写
             if res.is_empty() {
                 return Err(Error::from("没有权限访问部门数据！"));
             }
@@ -243,7 +237,7 @@ impl SysDeptService {
         Ok(())
     }
 
-    async fn get_dept_by_id(&self, dept_id: &str) -> Result<SysDept> {
+    pub(crate) async fn get_dept_by_id(&self, dept_id: &str) -> Result<SysDept> {
         let dept = SysDept::select_by_column(pool!(), field_name!(SysDept.dept_id), dept_id)
             .await?
             .into_iter()
@@ -252,6 +246,5 @@ impl SysDeptService {
         Ok(dept)
     }
 
-
-   // export_excel_service!(DeptPageDTO, SysDeptVO,sys_dept::select_page);
+    // export_excel_service!(DeptPageDTO, SysDeptVO,sys_dept::select_page);
 }

@@ -13,10 +13,10 @@ use rbs::to_value;
 pub struct SysUserRoleService {}
 
 impl SysUserRoleService {
-    pub async fn page(&self, arg: &UserRolePageDTO,login_user_key:&str) -> Result<Page<SysUserVO>> {
+    pub async fn page(&self, arg: &UserRolePageDTO,user_cache:&crate::UserCache) -> Result<Page<SysUserVO>> {
         let vo = CONTEXT
             .sys_user_service
-            .page(&UserPageDTO::from(arg),login_user_key)
+            .page(&UserPageDTO::from(arg),user_cache)
             .await?;
 
         Ok(vo)
@@ -101,16 +101,18 @@ impl SysUserRoleService {
     pub async fn find_roles_by_user_id(
         &self,
         user_id: &str
-    ) -> Result<Option<Vec<SysRole>>> {
+    ) -> Result<Vec<SysRole>> {
         if user_id.is_empty() {
-            return Ok(None);
+            return Ok(vec![]);
         }
+        
+        //todo 要不要变成关联查询
         let user_roles =
             SysUserRole::select_by_column(pool!(), field_name!(SysUserRole.user_id), user_id)
                 .await?;
 
         let role_ids = &rbatis::table_field_vec!(&user_roles, role_id);
         let roles = CONTEXT.sys_role_service.finds(role_ids).await?;
-        Ok(Some(roles))
+        Ok(roles)
     }
 }

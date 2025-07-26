@@ -1,10 +1,10 @@
 use crate::config::global_constants::LOGIN_SUC;
 use crate::context::CONTEXT;
 use crate::system::domain::dto::SignInDTO;
+use crate::system::domain::vo::CommonUserVO;
 use crate::system::service::REDIS_UUID_CAPTCHA;
 use crate::utils::base64::encode;
-use crate::web::User;
-use crate::{error_wrapper, RespJson, RespVO};
+use crate::{error_wrapper_unwrap, RespJson, RespVO, UserCache};
 use axum::http::HeaderMap;
 use axum::response::IntoResponse;
 use axum::Json;
@@ -15,14 +15,13 @@ use std::time::Duration;
 use uuid::Uuid;
 
 pub async fn login(header_map: HeaderMap, arg: Json<SignInDTO>) -> impl IntoResponse {
-    error_wrapper!(CONTEXT.sys_auth_service.login(&arg.0, &header_map), token);
-    let token = token.unwrap();
+    error_wrapper_unwrap!(CONTEXT.sys_auth_service.login(&arg.0, &header_map), token);
     let mut res = RespJson::success();
     res.insert("token".to_string(), token.into());
     res.into_response()
 }
 
-pub async fn logout(user: Option<axum::Extension<User>>, header_map: HeaderMap) -> impl IntoResponse {
+pub async fn logout(user: Option<axum::Extension<UserCache>>, header_map: HeaderMap) -> impl IntoResponse {
     if let Some(user) = user {
         let user = user.0;
         let _ = CONTEXT
@@ -42,16 +41,16 @@ pub async fn logout(user: Option<axum::Extension<User>>, header_map: HeaderMap) 
     RespVO::<String>::from_success_info("退出成功!").into_response()
 }
 
-#[pre_authorize(user)]
+#[pre_authorize(user_cache)]
 pub async fn info() -> impl IntoResponse {
-    error_wrapper!(
-        CONTEXT.sys_user_service.get_user_cache_by_token(user.login_user_key),
-        user_cache
-    );
-    let user_cache = user_cache.unwrap();
     let mut res = RespJson::success();
     res.insert("permissions".to_string(), serde_json::json!(&user_cache.permissions));
-    res.insert("user".to_string(), serde_json::json!(&user_cache.user));
+    error_wrapper_unwrap!(
+        CONTEXT.sys_user_service.detail(&user_cache.user_id),
+        user
+    );
+    let user=CommonUserVO::from(user);
+   res.insert("user".to_string(), serde_json::json!(&user));
     res.insert(
         "roles".to_string(),
         serde_json::json!(rbatis::table_field_vec!(&user_cache.roles, role_key)),

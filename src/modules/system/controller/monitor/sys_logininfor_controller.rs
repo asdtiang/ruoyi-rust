@@ -9,7 +9,7 @@ use macros::pre_authorize;
 use rbatis::Page;
 
 
-#[pre_authorize("monitor:logininfor:list",user)]
+#[pre_authorize("monitor:logininfor:list", user_cache)]
 pub async fn list(dto: Json<LogininforPageDTO>) -> impl IntoResponse {
     let data = CONTEXT.sys_logininfor_service.page(&dto.0).await;
     let data=data.map(|l|Page::<SysLogininforVO>::from(l));
@@ -18,7 +18,7 @@ pub async fn list(dto: Json<LogininforPageDTO>) -> impl IntoResponse {
 
 
 
-#[pre_authorize("monitor:logininfor:remove",user)]
+#[pre_authorize("monitor:logininfor:remove", user_cache)]
 pub async fn remove(info_id: Path<String>) -> impl IntoResponse {
     let info_id = info_id.0;
     let rows_affected = CONTEXT
@@ -27,7 +27,7 @@ pub async fn remove(info_id: Path<String>) -> impl IntoResponse {
         .await;
     RespVO::<u64>::judge_result(rows_affected, "", "删除失败！").into_response()
 }
-#[pre_authorize("monitor:logininfor:remove",user)]
+#[pre_authorize("monitor:logininfor:remove", user_cache)]
 pub async fn clean() -> impl IntoResponse {
 
     let rows_affected = CONTEXT .sys_logininfor_service.  clean() .await;

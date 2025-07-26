@@ -2,9 +2,8 @@ pub mod middleware;
 pub use middleware::*;
 pub mod data_scope;
 pub mod token;
-pub mod validator;
+pub mod extractors;
 
-pub use token::auth::User;
 pub use token::permit::check_permit;
 
 pub const LOGIN_TOKEN_KEY: &'static str = "login_tokens:";

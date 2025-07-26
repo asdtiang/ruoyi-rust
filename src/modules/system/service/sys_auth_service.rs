@@ -5,14 +5,15 @@ use crate::modules::system::constants::ALL_PERMISSIONS;
 use crate::system::domain::dto::SignInDTO;
 use crate::system::domain::mapper::sys_user::SysUser;
 use crate::system::domain::mapper::sys_user_role::SysUserRole;
-use crate::system::domain::vo::{JwtClaims, SysUserVO, UserCache};
+use crate::system::domain::vo::CommonRoleVO;
 use crate::utils::password_encoder::PasswordEncoder;
+use crate::web::token::auth::UserCache;
 use crate::{error_info, pool};
 use axum::http::HeaderMap;
-use rbatis::field_name;
 use rbatis::rbdc::DateTime;
 use std::time::Duration;
 use uuid::Uuid;
+use crate::web::token::jwt::JwtClaims;
 
 const REDIS_KEY_RETRY: &'static str = "login:login_retry";
 
@@ -22,7 +23,11 @@ impl SysAuthService {
     //返回token
     pub async fn login(&self, sign_in_dto: &SignInDTO, header_map: &HeaderMap) -> Result<String> {
         self.is_need_wait_login_ex(&sign_in_dto.username).await?;
-        let captcha_enabled =CONTEXT.sys_config_service.select_captcha_enabled().await.unwrap_or(false);
+        let captcha_enabled = CONTEXT
+            .sys_config_service
+            .select_captcha_enabled()
+            .await
+            .unwrap_or(false);
         if captcha_enabled {
             if sign_in_dto.code.is_none() {
                 return Err(Error::from("请输入验证码！"));
@@ -41,13 +46,12 @@ impl SysAuthService {
                 return Err(Error::from("验证码输入不正确！"));
             }
         }
-        let user: Option<SysUser> =
-            SysUser::select_by_column(pool!(), field_name!(SysUser.user_name), &sign_in_dto.username)
-                .await?
-                .into_iter()
-                .next();
+        let user: Option<SysUser> = SysUser::select_by_column(pool!(), "user_name", &sign_in_dto.username)
+            .await?
+            .into_iter()
+            .next();
         if user.is_none() {
-            return Err(Error::from(format!("账号:{} 不存在!", sign_in_dto.username)));
+            return Err(Error::from("账号不存在或者密码错误!"));
         }
         let user = user.unwrap();
         if user.status.eq(&Some(STATUS_FORBIDDEN)) {
@@ -57,27 +61,23 @@ impl SysAuthService {
 
         // check pwd
         if !PasswordEncoder::verify(
-            user.password
-                .as_ref()
-                .ok_or_else(|| Error::from("错误的用户数据，密码为空!"))?,
+            user.password.as_ref().ok_or_else(|| Error::from("用户数据错误!"))?,
             &sign_in_dto.password,
         ) {
-            error = Some(Error::from("密码不正确!"));
+            error = Some(Error::from("账号不存在或者密码错误!"));
         }
-        //todo 加密时间过长，需要换一个，初步定为 https://github.com/RustCrypto/hashes
-
-        if error.is_some() {
+        if let Some(err) = error {
             let _ = CONTEXT
                 .sys_logininfor_service
                 .add_async(&crate::utils::web_utils::build_logininfor(
                     header_map,
                     sign_in_dto.username.clone(),
                     LOGIN_FAIL,
-                    error.clone().unwrap().to_string(),
+                    err.to_string(),
                 ))
                 .await;
             self.add_retry_login_limit_num(&sign_in_dto.username).await?;
-            return Err(error.unwrap());
+            return Err(err);
         }
 
         let token = self.add_to_cache_and_build_token(&user).await;
@@ -132,24 +132,12 @@ impl SysAuthService {
                 .set_string_ex(
                     &format!("{}{}", REDIS_KEY_RETRY, account),
                     &num.to_string(),
-                    Some(Duration::from_secs(
-                        CONTEXT.config.login_fail_retry_wait_sec,
-                    )),
+                    Some(Duration::from_secs(CONTEXT.config.login_fail_retry_wait_sec)),
                 )
                 .await?;
         }
         Ok(())
     }
-    // //fixme 没有用到
-    //  async fn get_user_info_by_token(&self, user_cache: &UserCache) -> Result<String> {
-    //     let user = SysUser::select_by_column(pool!(), field_name!(SysUser.user_id), &user_cache.id)
-    //         .await?
-    //         .into_iter()
-    //         .next();
-    //     let user =
-    //         user.ok_or_else(|| Error::from(format!("账号:{} 不存在!", user_cache.user_name)))?;
-    //     self.get_user_info(&user).await
-    // }
     //返回token
     async fn add_to_cache_and_build_token(&self, user: &SysUser) -> Result<String> {
         //去除密码，增加安全性
@@ -160,15 +148,13 @@ impl SysAuthService {
             .clone()
             .ok_or_else(|| Error::from("错误的用户数据，id为空!"))?;
 
-        let user_name=user.user_name.clone().unwrap_or_default();
+        let user_name = user.user_name.clone().unwrap_or_default();
         //提前查找所有权限，避免在各个函数方法中重复查找
         let all_menus = CONTEXT.sys_menu_service.finds_all_map().await?;
 
         let uuid = Uuid::new_v4();
 
-        let user_roles =
-            SysUserRole::select_by_column(pool!(), field_name!(SysUserRole.user_id), &user_id)
-                .await?;
+        let user_roles = SysUserRole::select_by_column(pool!(), "user_id", &user_id).await?;
         let role_menu = CONTEXT
             .sys_role_service
             .find_role_menu(&rbatis::table_field_vec!(&user_roles, role_id))
@@ -177,16 +163,13 @@ impl SysAuthService {
             .into_iter()
             .map(|s| s.to_string())
             .collect();
-        
-        let u=crate::web::User{//todo
-            login_user_key:uuid.to_string(),
-            user_name:user_name.clone()
-        };
-        let dept=CONTEXT.sys_dept_service.detail(user.dept_id.clone().unwrap_or_default().as_str(),  &u).await.ok();
+
+        let dept_id = user.dept_id.clone().unwrap_or_default();
+
+        let dept = CONTEXT.sys_dept_service.get_dept_by_id(&dept_id).await?;
 
         let menus = CONTEXT.sys_menu_service.finds_menu(&menu_ids, &all_menus);
-        let permissions: Vec<String> = if ADMIN_NAME.eq(&user_name)
-        {
+        let permissions: Vec<String> = if ADMIN_NAME.eq(&user_name) {
             vec![ALL_PERMISSIONS.to_string()]
         } else {
             rbatis::table_field_vec!(&menus, perms)
@@ -194,27 +177,27 @@ impl SysAuthService {
                 .map(|s| s.to_string())
                 .collect()
         };
-
-        let mut user:SysUserVO=user.clone().into();
-        user.dept=dept;
+        let roles = CONTEXT
+            .sys_user_role_service
+            .find_roles_by_user_id(&user_id)
+            .await?
+            .into_iter()
+            .map(|r| CommonRoleVO::from(r))
+            .collect();
         let user_cache = UserCache {
-            id: user_id.clone(),
-            user_name:user_name.clone(),
-            user: Some(user),
+            user_id: user_id.clone(),
+            user_name: user_name.clone(),
+            dept_id: dept_id.clone(),
+            dept_name: dept.dept_name.unwrap(),
             permissions,
             menu_ids,
-            roles: CONTEXT
-                .sys_user_role_service
-                .find_roles_by_user_id(&user_id)
-                .await?
-                .unwrap(),
+            roles,
             login_time: DateTime::now().set_nano(0),
-
+            login_user_key: uuid.to_string(),
             token_key: crate::web::get_login_user_redis_key(uuid.to_string()),
         };
         let jwt_token = JwtClaims {
             login_user_key: uuid.to_string(),
-            user_name: user_name.clone(),
             exp: DateTime::now().set_nano(0).unix_timestamp_millis() as usize,
         };
         let access_token = jwt_token.create_token(&CONTEXT.config.jwt_secret)?;
@@ -229,7 +212,6 @@ impl SysAuthService {
             .await;
         Ok(access_token)
     }
-
 }
 
 pub const REDIS_UUID_CAPTCHA: &'static str = "login_captcha:";

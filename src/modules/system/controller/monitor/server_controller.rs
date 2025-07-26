@@ -4,7 +4,7 @@ use axum::response::IntoResponse;
 use macros::pre_authorize;
 
 
-#[pre_authorize("monitor:server:list",user)]
+#[pre_authorize("monitor:server:list", user_cache)]
 pub async fn server_info() -> impl IntoResponse {
    RespVO::from_result(&Ok(get_server_info())).into_response()
 }

@@ -1,5 +1,5 @@
-use serde::{Deserialize, Serialize};
 use crate::system::domain::mapper::sys_user::SysUser;
+use serde::{Deserialize, Serialize};
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
 #[serde(rename_all = "camelCase")]

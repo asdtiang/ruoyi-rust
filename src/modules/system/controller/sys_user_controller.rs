@@ -1,38 +1,36 @@
-use crate::config::global_constants::ADMIN_NAME;
 use crate::context::CONTEXT;
 use crate::system::domain::dto::{UserAddDTO, UserPageDTO, UserRoleAuthQueryDTO, UserUpdateDTO};
 use crate::system::domain::vo::SysUserVO;
-use crate::{export_excel_controller, error_wrapper, PageVO, RespJson, RespVO};
+use crate::{error_wrapper_unwrap, export_excel_controller, PageVO, RespJson, RespVO};
 use axum::extract::{Path, Query};
 use axum::response::IntoResponse;
 use axum::Json;
-use futures_util::future::err;
 use macros::pre_authorize;
 
-#[pre_authorize("system:user:list", user)]
+#[pre_authorize("system:user:list", user_cache)]
 pub async fn list(dto: Json<UserPageDTO>) -> impl IntoResponse {
-    let vo = CONTEXT.sys_user_service.page(&dto.0, &user.login_user_key).await;
+    let vo = CONTEXT.sys_user_service.page(&dto.0, &user_cache).await;
     PageVO::from_result(&vo).into_response()
 }
 
-#[pre_authorize("system:user:add", user)]
+#[pre_authorize("system:user:add", user_cache)]
 pub async fn add(arg: crate::ValidatedForm<UserAddDTO>) -> impl IntoResponse {
-    let rows_affected = CONTEXT.sys_user_service.add(&arg.0, user.user_name).await;
+    let rows_affected = CONTEXT.sys_user_service.add(&arg.0, user_cache.user_name).await;
     RespVO::from_result(&rows_affected).into_response()
 }
 
 //用户编辑，需要查询post和role列表
 
-#[pre_authorize("system:user:query", user)]
+#[pre_authorize("system:user:query", user_cache)]
 pub async fn detail(user_id: Option<Path<String>>) -> impl IntoResponse {
     let mut res = RespJson::success_info("操作成功");
 
     if user_id.is_some() {
         let user_id = user_id.unwrap().0;
 
-        error_wrapper!(CONTEXT.sys_user_service.detail(&user_id),user);
+        error_wrapper_unwrap!(CONTEXT.sys_user_service.detail(&user_id), user);
 
-        let user = SysUserVO::from(user.unwrap());
+        let user = SysUserVO::from(user);
         let role_ids: Vec<String> = CONTEXT
             .sys_role_service
             .finds_role_ids_by_user_id(&user_id)
@@ -60,24 +58,21 @@ pub async fn detail(user_id: Option<Path<String>>) -> impl IntoResponse {
     res.into_response()
 }
 
-#[pre_authorize("system:user:edit", user)]
+#[pre_authorize("system:user:edit", user_cache)]
 pub async fn update(arg: crate::ValidatedForm<UserUpdateDTO>) -> impl IntoResponse {
-    let res = CONTEXT.sys_user_service.update(arg.0,&user).await;
+    let res = CONTEXT.sys_user_service.update(arg.0, &user_cache).await;
     RespVO::from_result(&res).into_response()
 }
 
-#[pre_authorize("system:user:remove", user)]
+#[pre_authorize("system:user:remove", user_cache)]
 pub async fn remove(user_id: Path<String>) -> impl IntoResponse {
-    let rows_affected = CONTEXT
-        .sys_user_service
-        .remove_batch(&user_id, &user)
-        .await;
+    let rows_affected = CONTEXT.sys_user_service.remove_batch(&user_id, &user_cache).await;
     RespVO::<u64>::judge_result(rows_affected, "删除成功", "删除失败").into_response()
 }
 
-#[pre_authorize("system:user:query", user)]
+#[pre_authorize(user_cache)]//todo 需要加入权限？
 pub async fn get_dept_tree() -> impl IntoResponse {
-    let dept_tree = CONTEXT.sys_dept_service.get_dept_tree(&user.login_user_key).await;
+    let dept_tree = CONTEXT.sys_dept_service.get_dept_tree(&user_cache).await;
     RespVO::from_result(&dept_tree).into_response()
 }
 
@@ -92,11 +87,10 @@ pub async fn set_auth_roles(arg: Query<UserRoleAuthQueryDTO>) -> impl IntoRespon
     RespVO::<u64>::from_success_info("更新成功！").into_response()
 }
 
-#[pre_authorize("system:user:query", user)]
+#[pre_authorize("system:user:query", user_cache)]
 pub async fn get_auth_roles(user_id: Path<String>) -> impl IntoResponse {
     let user_id = user_id.0;
     let sys_user = CONTEXT.sys_user_service.detail(&user_id).await;
-    let is_admin = user.user_name.eq(ADMIN_NAME);
     match sys_user {
         Ok(user) => {
             let mut user = SysUserVO::from(user);
@@ -112,7 +106,7 @@ pub async fn get_auth_roles(user_id: Path<String>) -> impl IntoResponse {
                 .finds_roles_by_user_id(&user_id)
                 .await
                 .unwrap_or_default();
-            let filter_roles = if is_admin {
+            let filter_roles = if user_cache.is_admin() {
                 roles
             } else {
                 roles.into_iter().filter(|r| r.admin).collect::<Vec<_>>()
@@ -127,11 +121,11 @@ pub async fn get_auth_roles(user_id: Path<String>) -> impl IntoResponse {
     }
 }
 
-#[pre_authorize("system:user:resetPwd", user)]
+#[pre_authorize("system:user:resetPwd", user_cache)]
 pub async fn reset_pwd(dto: Json<UserUpdateDTO>) -> impl IntoResponse {
     let user_id = dto.user_id.clone().unwrap_or_default();
-    error_wrapper!(CONTEXT.sys_user_service.check_user_data_scope(&user_id, &user),res);
-    let res = CONTEXT.sys_user_service.update_password(dto.0, &user.user_name).await;
+    error_wrapper_unwrap!(CONTEXT.sys_user_service.check_user_data_scope(&user_id, &user_cache), res);
+    let res = CONTEXT.sys_user_service.update_password(dto.0, &user_cache.user_name).await;
     RespVO::<u64>::judge_result(res, "更新成功！", "").into_response()
 }
 

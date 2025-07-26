@@ -1,6 +1,5 @@
-use crate::context::CONTEXT;
 use crate::error::Result;
-use crate::DataScopeTrait;
+use crate::{DataScopeTrait, UserCache};
 
 /**
  * 全部数据权限
@@ -32,21 +31,19 @@ pub const DATA_SCOPE_SELF: char = '5';
  */
 pub const DATA_SCOPE: &'static str = "dataScope";
 
-pub async fn build_data_scope<T>(dto: &mut T, dept_alias: &str, user_alias: &str,login_user_key:&str) -> Result<bool>
+pub async fn build_data_scope<T>(dto: &mut T, dept_alias: &str, user_alias: &str,user_cache:&UserCache) -> Result<bool>
 where
     T: DataScopeTrait,
 {
     //拼接权限sql前先清空params.dataScope参数防止注入
     dto.clear_data_scope_params();
-    let user_cache = CONTEXT.sys_user_service.get_user_cache_by_token(login_user_key.to_string()).await?;
-    let user = user_cache.user.unwrap();
-    if user.admin {
+    if user_cache.is_admin() {
         dto.set_data_scope_params("");
         return Ok(true);
     }
     let mut sql_string = String::new();
     let mut conditions = vec![];
-    let dept_id = user.dept_id.unwrap_or_default();
+    let dept_id = user_cache.dept_id.clone();
 
     //未用到  /**
     //      * 权限字符（用于多个角色匹配符合要求的权限）默认根据权限注解@ss获取，多个权限用逗号分隔开来
@@ -57,7 +54,7 @@ where
     //     dataScopeFilter(joinPoint, currentUser, controllerDataScope.deptAlias(),
     //                     controllerDataScope.userAlias(), permission);
     // }
-    for role in user_cache.roles {
+    for role in user_cache.roles.iter() {
         let data_scope = role.data_scope.unwrap_or_default();
         if DATA_SCOPE_CUSTOM != data_scope && conditions.contains(&data_scope) {
             continue;
@@ -75,7 +72,7 @@ where
             sql_string.push_str(&format!(
                 " OR {}.dept_id IN ( SELECT dept_id FROM sys_role_dept WHERE role_id = '{}' ) ",
                 dept_alias,
-                role.role_id.unwrap_or_default()
+                role.role_id.clone().unwrap_or_default()
             ));
         } else if DATA_SCOPE_DEPT == data_scope {
             sql_string.push_str(&format!(" OR {}.dept_id = '{}' ", dept_alias, dept_id));
@@ -88,7 +85,7 @@ where
                 sql_string.push_str(&format!(
                     " OR {}.user_id = '{}' ",
                     user_alias,
-                    user.user_id.clone().unwrap_or_default()
+                    user_cache.user_id
                 ));
             } else {
                 // 数据权限为仅本人且没有userAlias别名不查询任何数据
@@ -100,12 +97,12 @@ where
 
     // 多角色情况下，所有角色都不包含传递过来的权限字符，这个时候sqlString也会为空，所以要限制一下,不查询任何数据
     if conditions.len() == 0 {
-        sql_string.push_str(&format!(" OR {}.dept_id = 0 ", dept_alias));
+        sql_string.push_str(&format!(" OR {}.dept_id = '0' ", dept_alias));
     }
 
     if sql_string.len() > 0 {
         dto.set_data_scope_params(&format!(" AND ({})", sql_string[4..].to_string()));
     }
-    println!("sql_string:{}", sql_string);
+    //println!("sql_string:{}", sql_string);
     Ok(true)
 }

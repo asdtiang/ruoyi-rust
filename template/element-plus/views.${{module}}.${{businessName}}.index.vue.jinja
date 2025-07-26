@@ -237,7 +237,7 @@ label="${{ column.comment }}" {% if column.sortable %} sortable="custom" {% endi
           {% if not column.special and not column.isPk and (column.isEdit or column.isInsert) %}
 
           {% if not column.isEdit and column.isInsert %} {% set disabled=":disabled='isEdit'" %}{%else%} {% set disabled="" %}{% endif %}
-          <{% if insertEditCnt>=8 %}el-col {% if column.htmlType == "textarea" or column.htmlType == "imageUpload" %}:span="24"{% else %}
+          <{% if insertEditCnt>=8 %}el-col {% if column.htmlType == "textarea" or column.htmlType == "imageUpload" or column.htmlType == "fileUpload" %}:span="24"{% else %}
                                                  :span="12"{% endif %}{% endif %} {% if column.isEdit and not column.isInsert %} v-show="isEdit"{% endif %}>
             <el-form-item label="${{ column.comment }}" prop="${{ column.javaField }}">
               {% if column.htmlType == "input" %}

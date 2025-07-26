@@ -26,9 +26,9 @@ pub async fn detail(dict_id: Path<String>) -> impl IntoResponse {
 
 
 
-#[pre_authorize("system:post:add",user)]
+#[pre_authorize("system:post:add", user_cache)]
 pub async fn add(dto: crate::ValidatedForm<PostAddDTO>) -> impl IntoResponse {
-    add_marco!(data, dto, user, SysPost);
+    add_marco!(data, dto, user_cache, SysPost);
     if data.status.is_none() {
         data.status = Some(STATUS_NORMAL);
     }
@@ -37,9 +37,9 @@ pub async fn add(dto: crate::ValidatedForm<PostAddDTO>) -> impl IntoResponse {
 }
 
 
-#[pre_authorize("system:post:edit",user)]
+#[pre_authorize("system:post:edit", user_cache)]
 pub async fn update(dto: crate::ValidatedForm<PostUpdateDTO>) -> impl IntoResponse {
-    update_marco!(data, dto, user, SysPost);
+    update_marco!(data, dto, user_cache, SysPost);
     let rows_affected = CONTEXT.sys_post_service.update(data).await;
     RespVO::<u64>::judge_result(rows_affected, "", "更新失败！").into_response()
 }

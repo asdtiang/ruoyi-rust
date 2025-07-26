@@ -13,11 +13,16 @@ use rbatis::Page;
 use serde_json::json;
 use std::collections::HashMap;
 
-#[pre_authorize("tool:gen:list")]
-pub async fn list(dto: Json<TablePageDTO>) -> impl IntoResponse {
-    let data = GEN_CONTEXT.gen_table_service.page(&dto.0).await;
-    let data = data.map(|d| Page::<GenTableVO>::from(d));
-    PageVO::from_result(&data).into_response()
+#[axum::debug_handler]
+pub async fn list(user_cache: crate::UserCache, dto: Json<TablePageDTO>) -> impl IntoResponse {
+    match crate::web::check_permit(&user_cache, "tool:gen:list").await {
+        None => {
+            let data = GEN_CONTEXT.gen_table_service.page(&dto.0).await;
+            let data = data.map(|d| Page::<GenTableVO>::from(d));
+            PageVO::from_result(&data).into_response()
+        }
+        Some(res) => { res.into_response() }
+    }
 }
 
 #[pre_authorize("tool:gen:list")]
@@ -55,19 +60,19 @@ pub async fn detail(table_id: Path<String>) -> impl IntoResponse {
     res.into_response()
 }
 
-#[pre_authorize("tool:gen:edit", user)]
+#[pre_authorize("tool:gen:edit", user_cache)]
 pub async fn update(dto: Json<GenTableUpdateDTO>) -> impl IntoResponse {
     let columns = dto.0.columns.clone().map(|d| {
         d.into_iter()
             .map(|d| {
                 let mut col = GenTableColumn::from(d);
-                col.update_by = Some(user.user_name.clone());
+                col.update_by = Some(user_cache.user_name());
                 col.update_time = Some(rbatis::rbdc::datetime::DateTime::now().set_nano(0).into());
                 col
             })
             .collect::<Vec<_>>()
     });
-    update_marco!(data, dto, user, GenTable);
+    update_marco!(data, dto, user_cache, GenTable);
     let res = GEN_CONTEXT.gen_table_service.update(data, columns).await;
     RespVO::<u64>::judge_result(res, "保存成功！", "保存失败！").into_response()
 }
@@ -78,11 +83,11 @@ pub async fn remove(table_id: Path<String>) -> impl IntoResponse {
     RespVO::<u64>::judge_result(rows_affected, "", "删除失败！").into_response()
 }
 
-#[pre_authorize("tool:gen:import",user)]
+#[pre_authorize("tool:gen:import", user_cache)]
 pub async fn import_table(table_name: axum::extract::Query<TableNamesDTO>) -> impl IntoResponse {
     let tables = table_name.0.tables.unwrap_or_default();
     let table_names = tables.split(",").collect::<Vec<&str>>();
-    let insert_cnt = GEN_CONTEXT.gen_table_service.import_gen_table(table_names,&user.user_name).await;
+    let insert_cnt = GEN_CONTEXT.gen_table_service.import_gen_table(table_names,&user_cache.user_name).await;
 
     RespVO::<u64>::judge_result(insert_cnt, "导入成功！", "导入失败！").into_response()
 }

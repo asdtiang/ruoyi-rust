@@ -9,13 +9,13 @@ use axum::response::IntoResponse;
 use axum::Json;
 use macros::pre_authorize;
 
-#[pre_authorize("system:dept:list",user)]
+#[pre_authorize("system:dept:list", user_cache)]
 pub async fn list(dto: Option<Json<DeptQueryDTO>>) -> impl IntoResponse {
     let dto = match dto {
         None => DeptQueryDTO::default(),
         Some(d) => d.0,
     };
-    let rows = CONTEXT.sys_dept_service.list(&dto,&user.login_user_key).await;
+    let rows = CONTEXT.sys_dept_service.list(&dto,&user_cache).await;
     let rows = rows.map(|depts| {
         depts
             .iter()
@@ -25,11 +25,11 @@ pub async fn list(dto: Option<Json<DeptQueryDTO>>) -> impl IntoResponse {
     RespVO::from_result(&rows).into_response()
 }
 
-#[pre_authorize("system:dept:list",user)]
+#[pre_authorize("system:dept:list", user_cache)]
 pub async fn exclude_child(dept_id: Path<String>) -> impl IntoResponse {
     let dept_id = dept_id.0;
     let query: DeptQueryDTO = DeptQueryDTO::default();
-    let rows = CONTEXT.sys_dept_service.list(&query,&user.login_user_key).await;
+    let rows = CONTEXT.sys_dept_service.list(&query,&user_cache).await;
 
     match rows {
         Ok(vo) => {
@@ -54,15 +54,15 @@ pub async fn exclude_child(dept_id: Path<String>) -> impl IntoResponse {
     }
 }
 
-#[pre_authorize("system:dept:query", user)]
+#[pre_authorize("system:dept:query", user_cache)]
 pub async fn detail(dept_id: Path<String>) -> impl IntoResponse {
-    let dept_vo = CONTEXT.sys_dept_service.detail(&dept_id.0, &user).await;
+    let dept_vo = CONTEXT.sys_dept_service.detail(&dept_id.0, &user_cache).await;
     RespVO::from_result(&dept_vo).into_response()
 }
 
-#[pre_authorize("system:dept:add", user)]
+#[pre_authorize("system:dept:add", user_cache)]
 pub async fn add(dto: crate::ValidatedForm<DeptAddDTO>) -> impl IntoResponse {
-    add_marco!(data, dto, user, SysDept);
+    add_marco!(data, dto, user_cache, SysDept);
     if data.status.is_none() {
         data.status = Some(STATUS_NORMAL);
     }
@@ -70,9 +70,9 @@ pub async fn add(dto: crate::ValidatedForm<DeptAddDTO>) -> impl IntoResponse {
     RespVO::<u64>::judge_result(res, "", "添加失败！").into_response()
 }
 
-#[pre_authorize("system:dept:edit", user)]
-pub async fn update(dto: crate::web::validator::ValidatedForm<DeptUpdateDTO>) -> impl IntoResponse {
-    add_marco!(data, dto, user, SysDept);
+#[pre_authorize("system:dept:edit", user_cache)]
+pub async fn update(dto: crate::web::extractors::validator::ValidatedForm<DeptUpdateDTO>) -> impl IntoResponse {
+    add_marco!(data, dto, user_cache, SysDept);
     let res = CONTEXT.sys_dept_service.update(data).await;
     RespVO::<u64>::judge_result(res, "", "更新失败！").into_response()
 }

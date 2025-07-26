@@ -31,7 +31,7 @@ impl SysConfigService {
 
 
     pub async fn add(&self, config: SysConfig) -> Result<u64> {
-        self.check_config_key_unique(&None, config.config_key.clone().unwrap().as_str())
+        self.check_config_key_unique(&None, config.config_key.clone().unwrap_or_default())
             .await?;
         let result = SysConfig::insert(pool!(), &config).await?.rows_affected;
         if result == 1 {
@@ -41,7 +41,7 @@ impl SysConfigService {
     }
 
     pub async fn update(&self, config: SysConfig) -> Result<u64> {
-        self.check_config_key_unique(&None, config.config_key.clone().unwrap().as_str())
+        self.check_config_key_unique(&None, config.config_key.clone().unwrap_or_default())
             .await?;
         let result = SysConfig::update_by_column(pool!(), &config, "config_id")
             .await?

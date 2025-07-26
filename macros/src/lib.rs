@@ -42,15 +42,15 @@ pub fn pre_authorize(attr: TokenStream, item: TokenStream) -> TokenStream {
     };
 
     if user_ident.is_none() {
-        user_ident = Some(parse_quote!(user));
+        user_ident = Some(parse_quote!(user_cache));
     }
     if permit_str.is_none() {
         permit_str = Some(parse_quote!(""));
     }
     let expanded = quote! { // 重新构建函数执行
         #(#func_attrs)*
-        #func_vis #func_asyncness fn #func_name #func_generics(axum::Extension(#user_ident): axum::Extension<crate::web::User>,#func_inputs) #func_output{
-            match crate::web::check_permit(&user, #permit_str).await {
+        #func_vis #func_asyncness fn #func_name #func_generics(#user_ident: crate::UserCache,#func_inputs) #func_output{
+            match crate::web::check_permit(&#user_ident, #permit_str).await {
                 None =>  #func_block
                 Some(res) => { res.into_response() }
             }
@@ -403,10 +403,9 @@ pub fn data_scope(attr: TokenStream, item: TokenStream) -> TokenStream {
     let parser = |input: syn::parse::ParseStream| {
         let mut dept_alias = Some(parse_quote!(""));
         let mut user_alias = Some(parse_quote!(""));
-        let mut login_user_key_ident = Some(parse_quote!(login_user_key));
+        let mut user_cache_ident = Some(parse_quote!(user_cache));
 
         while !input.is_empty() {
-            println!("loop");
             if input.peek(syn::Ident) {
                 let ident: syn::Ident = input.parse()?;
                 if input.peek(syn::Token![=]) {
@@ -425,16 +424,16 @@ pub fn data_scope(attr: TokenStream, item: TokenStream) -> TokenStream {
                         _ => {}
                     }
                 } else {
-                    login_user_key_ident = Some(ident);
+                    user_cache_ident = Some(ident);
                 }
             } else if input.peek(syn::Token![,]) {
                 input.parse::<syn::Token![,]>()?;
             } else {
             }
         }
-        Ok((dept_alias, user_alias, login_user_key_ident))
+        Ok((dept_alias, user_alias, user_cache_ident))
     };
-    let (dept_alias, user_alias, login_user_key_ident) = match parser.parse(attr) {
+    let (dept_alias, user_alias, user_cache_ident) = match parser.parse(attr) {
         Ok(attr) => attr,
         Err(e) => return e.to_compile_error().into(),
     };
@@ -456,14 +455,13 @@ pub fn data_scope(attr: TokenStream, item: TokenStream) -> TokenStream {
     let dept_alias = dept_alias.map(|a| a.to_token_stream()).unwrap_or_default();
     let expanded = quote! { // 重新构建函数执行
         #(#func_attrs)*
-        #func_vis #func_asyncness fn #func_name #func_generics(#func_inputs,#login_user_key_ident:&str) #func_output{
+        #func_vis #func_asyncness fn #func_name #func_generics(#func_inputs,#user_cache_ident:&crate::UserCache) #func_output{
             let mut #dto_ident = #dto_ident.clone();
-            crate::web::data_scope::build_data_scope(&mut #dto_ident, #dept_alias, #user_alias,#login_user_key_ident).await?;
+            crate::web::data_scope::build_data_scope(&mut #dto_ident, #dept_alias, #user_alias,#user_cache_ident).await?;
             #stmts_expanded
 
         }
     };
-    println!("expanded:{}", expanded.to_string());
     expanded.into()
 }
 

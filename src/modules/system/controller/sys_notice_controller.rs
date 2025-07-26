@@ -25,17 +25,17 @@ pub async fn detail(notice_id: Path<String>) -> impl IntoResponse {
 }
 
 
-#[pre_authorize("system:notice:add",user)]
+#[pre_authorize("system:notice:add", user_cache)]
 pub async fn add(dto: crate::ValidatedForm<NoticeAddDTO>) -> impl IntoResponse {
-    add_marco!(data, dto, user, SysNotice);
+    add_marco!(data, dto, user_cache, SysNotice);
     let res = CONTEXT.sys_notice_service.add(data).await;
     RespVO::from_result(&res).into_response()
 }
 
 
-#[pre_authorize("system:notice:edit",user)]
+#[pre_authorize("system:notice:edit", user_cache)]
 pub async fn update(dto: crate::ValidatedForm<NoticeUpdateDTO>) -> impl IntoResponse {
-    update_marco!(data, dto, user, SysNotice);
+    update_marco!(data, dto, user_cache, SysNotice);
     let res = CONTEXT.sys_notice_service.update(data).await;
     RespVO::from_result(&res).into_response()
 }

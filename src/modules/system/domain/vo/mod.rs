@@ -8,7 +8,7 @@ pub mod notice;
 pub mod post;
 pub mod role;
 pub mod router;
-pub mod sign_in;
+pub mod user_cache;
 pub mod logininfor;
 pub mod user;
 pub mod oper_log;
@@ -26,6 +26,6 @@ pub use oper_log::*;
 pub use post::*;
 pub use role::*;
 pub use router::*;
-pub use sign_in::*;
 pub use user::*;
+pub use user_cache::*;
 

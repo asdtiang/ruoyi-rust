@@ -12,13 +12,13 @@ use axum::Json;
 use macros::pre_authorize;
 use serde_json::json;
 
-#[pre_authorize("system:role:list", user)]
+#[pre_authorize("system:role:list", user_cache)]
 pub async fn list(dto: Json<RolePageDTO>) -> impl IntoResponse {
-    let vo = CONTEXT.sys_role_service.page(&dto.0,&user.login_user_key).await;
+    let vo = CONTEXT.sys_role_service.page(&dto.0,&user_cache).await;
     PageVO::from_result(&vo).into_response()
 }
 
-#[pre_authorize("system:role:query", user)]
+#[pre_authorize("system:role:query", user_cache)]
 pub async fn detail(role_id: Path<String>) -> impl IntoResponse {
     let role_id = role_id.0;
     let role_vo = CONTEXT
@@ -29,18 +29,18 @@ pub async fn detail(role_id: Path<String>) -> impl IntoResponse {
     RespVO::from_result(&role_vo).into_response()
 }
 
-#[pre_authorize("system:role:add", user)]
+#[pre_authorize("system:role:add", user_cache)]
 pub async fn add(dto: crate::ValidatedForm<RoleAddDTO>) -> impl IntoResponse {
     let menu_ids = dto.0.menu_ids.clone().unwrap();
-    add_marco!(data, dto, user, SysRole);
+    add_marco!(data, dto, user_cache, SysRole);
     let res = CONTEXT.sys_role_service.add(data, menu_ids).await;
     RespVO::from_result(&res).into_response()
 }
 
-#[pre_authorize("system:role:edit", user)]
+#[pre_authorize("system:role:edit", user_cache)]
 pub async fn update(dto: crate::ValidatedForm<RoleUpdateDTO>) -> impl IntoResponse {
     let menu_ids = dto.0.menu_ids.clone().unwrap();
-    update_marco!(data, dto, user, SysRole);
+    update_marco!(data, dto, user_cache, SysRole);
     let vo = CONTEXT.sys_role_service.update(data, menu_ids).await;
     RespVO::from_result(&vo).into_response()
 }
@@ -54,17 +54,17 @@ pub async fn remove(role_id: Path<String>) -> impl IntoResponse {
 
 //已分配此角色的用户
 
-#[pre_authorize("system:role:query",user)]
+#[pre_authorize("system:role:query", user_cache)]
 pub async fn allocated_user_list(arg: Query<RoleAuthUserPageDTO>) -> impl IntoResponse {
-    let vo = CONTEXT.sys_role_service.allocated_user_list_page(&arg.0,&user.login_user_key).await;
+    let vo = CONTEXT.sys_role_service.allocated_user_list_page(&arg.0,&user_cache).await;
     PageVO::from_result(&vo).into_response()
 }
 
 //未分配此角色的用户
 
-#[pre_authorize("system:role:query",user)]
+#[pre_authorize("system:role:query", user_cache)]
 pub async fn unallocated_user_list(arg: Query<RoleAuthUserPageDTO>) -> impl IntoResponse {
-    let vo = CONTEXT.sys_role_service.unallocated_user_list_page(&arg.0,&user.login_user_key).await;
+    let vo = CONTEXT.sys_role_service.unallocated_user_list_page(&arg.0,&user_cache).await;
     PageVO::from_result(&vo).into_response()
 }
 
@@ -99,14 +99,14 @@ pub async fn cancel_user_all(arg: Query<UsersRoleDTO>) -> impl IntoResponse {
     RespVO::<u64>::judge_result(rows_affected, "批量取消授权成功。", "批量取消授权失败！").into_response()
 }
 
-#[pre_authorize("system:role:edit", user)]
+#[pre_authorize("system:role:edit", user_cache)]
 pub async fn change_status(dto: Json<RoleUpdateDTO>) -> impl IntoResponse {
-    update_marco!(data, dto, user, SysRole);
-    let res = CONTEXT.sys_role_service.update_status(data, &user).await;
+    update_marco!(data, dto, user_cache, SysRole);
+    let res = CONTEXT.sys_role_service.update_status(data, &user_cache).await;
     RespVO::from_result(&res).into_response()
 }
 
-#[pre_authorize("system:role:query")]
+#[pre_authorize("system:role:query",user_cache)]
 pub async fn get_dept_tree_by_role_id(role_id: Path<String>) -> impl IntoResponse {
     let role_id = role_id.0;
     let role = CONTEXT.sys_role_service.detail(&role_id).await;
@@ -118,7 +118,7 @@ pub async fn get_dept_tree_by_role_id(role_id: Path<String>) -> impl IntoRespons
                 .select_dept_list_by_role_id(&role_id, r.dept_check_strictly.eq(&Some('1')))
                 .await;
             json.insert("checkedKeys".to_string(), json!(dept_ids.unwrap_or_default()));
-            let depts = CONTEXT.sys_dept_service.get_dept_tree("").await;
+            let depts = CONTEXT.sys_dept_service.get_dept_tree(&user_cache).await;
 
             json.insert("depts".to_string(), json!(depts.unwrap_or_default()));
         }
@@ -127,14 +127,14 @@ pub async fn get_dept_tree_by_role_id(role_id: Path<String>) -> impl IntoRespons
     json.into_response()
 }
 
-#[pre_authorize("system:role:edit", user)]
+#[pre_authorize("system:role:edit", user_cache)]
 pub async fn data_scope(dto: Json<RoleUpdateDTO>) -> impl IntoResponse {
     let dept_ids = dto.0.dept_ids.clone().unwrap_or_default();
     let role = SysRole::from(dto.0);
 
     let r = CONTEXT
         .sys_role_service
-        .auth_data_scope(&role, &dept_ids, &user)
+        .auth_data_scope(&role, &dept_ids, &user_cache)
         .await;
     RespVO::from_result(&r).into_response()
 }

@@ -3,7 +3,7 @@ use rbatis::rbdc::datetime::DateTime;
 
 #[derive(Clone, Debug, serde::Serialize, serde::Deserialize)]
 #[serde(rename_all = "camelCase")]
-#[derive( macros::Export)]
+#[derive(macros::Export)]
 pub struct SysDeptVO {
     /** 部门ID */
     pub dept_id: Option<String>,
@@ -78,5 +78,23 @@ impl From<SysDept> for DeptTreeVO {
 impl DeptTreeVO {
     pub fn is_parent(&self) -> bool {
         self.parent_id.is_none() || self.parent_id.clone().unwrap_or_default().eq("0")
+    }
+}
+
+#[derive(Clone, Debug, serde::Serialize, serde::Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct CommonDeptVO {
+    /** 部门ID */
+    pub dept_id: Option<String>,
+    /** 部门名称 */
+    pub dept_name: Option<String>,
+}
+
+impl From<SysDept> for CommonDeptVO {
+    fn from(arg: SysDept) -> Self {
+        Self {
+            dept_id: arg.dept_id,
+            dept_name: arg.dept_name,
+        }
     }
 }
