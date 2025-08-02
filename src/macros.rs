@@ -1,3 +1,5 @@
+use crate::UserCache;
+
 #[macro_export]
 macro_rules! check_unique {
     ($func_name:ident, $table:expr, $id_col:ident, $key_col:ident,$hint:expr) => {
@@ -96,6 +98,16 @@ macro_rules! remove_batch {
             let $ids = $ids.split(",").collect::<Vec<&str>>();
             for id in $ids {
                 self.remove(id).await?;
+            }
+            Ok(1)
+        }
+    };
+    ($ids:ident,$user_cache:ident) => {
+        pub async fn remove_batch(&self, $ids: &str,$user_cache:&UserCache) -> Result<u64> {
+            //fixme 是否要加入事务
+            let $ids = $ids.split(",").collect::<Vec<&str>>();
+            for id in $ids {
+                self.remove(id,$user_cache).await?;
             }
             Ok(1)
         }

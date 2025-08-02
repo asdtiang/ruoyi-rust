@@ -23,7 +23,10 @@ impl SysUserService {
         let sys_user_page: Page<SysUser> = sys_user::select_page(pool!(), &PageRequest::from(&dto), &dto).await?;
         let mut page = Page::<SysUserVO>::from(sys_user_page);
 
-        let all_depts = CONTEXT.sys_dept_service.list(&DeptQueryDTO::default(), login_user_key).await?;
+        let all_depts = CONTEXT
+            .sys_dept_service
+            .list(&DeptQueryDTO::default(), login_user_key)
+            .await?;
         let mut dept_map = HashMap::new();
         all_depts.iter().for_each(|dept| {
             dept_map.insert(dept.dept_id.clone().unwrap_or_default(), dept.clone());
@@ -131,12 +134,12 @@ impl SysUserService {
         let user_id = sys_user.user_id.clone();
         self.check_phonenumber_unique(&user_id, sys_user.phonenumber.clone().unwrap_or_default())
             .await?;
-        self.check_email_unique(&user_id, sys_user.phonenumber.clone().unwrap_or_default()).await?;
+        self.check_email_unique(&user_id, sys_user.phonenumber.clone().unwrap_or_default())
+            .await?;
         Ok(SysUser::update_by_column(pool!(), &sys_user, "user_id")
             .await?
             .rows_affected)
     }
-
 
     pub async fn remove(&self, user_id: &str, user_cache: &crate::UserCache) -> Result<u64> {
         if user_cache.user_id.eq(user_id) {
@@ -232,7 +235,7 @@ impl SysUserService {
      * @param userId 用户id
      */
     pub async fn check_user_data_scope(&self, user_id: &str, user: &crate::UserCache) -> Result<()> {
-        if user.is_admin(){
+        if !user.is_admin() {
             let mut dto = UserPageDTO::default();
             dto.page_no = Some(1);
             dto.page_size = Some(10);

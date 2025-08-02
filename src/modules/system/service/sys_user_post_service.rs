@@ -49,40 +49,51 @@ impl SysUserPostService {
     //     Ok(SysUserPost::insert(pool!(), &user_post).await?.rows_affected)
     // }
 
-
     pub async fn add_user_posts(&self, user_id: &str, post_ids: &Vec<String>) -> Result<u64> {
-        let rows = post_ids.into_iter().map(|r_id| SysUserPost {
-            user_id: user_id.to_string().into(),
-            post_id: r_id.to_string().into(),
-        }).collect::<Vec<_>>();
+        let rows = post_ids
+            .into_iter()
+            .map(|r_id| SysUserPost {
+                user_id: user_id.to_string().into(),
+                post_id: r_id.to_string().into(),
+            })
+            .collect::<Vec<_>>();
 
-        Ok(SysUserPost::insert_batch(pool!(), &rows, 20)
-            .await?.rows_affected)
+        Ok(SysUserPost::insert_batch(pool!(), &rows, 20).await?.rows_affected)
     }
 
     pub async fn add_users_post(&self, post_id: &str, user_ids: &Vec<String>) -> Result<u64> {
-        let rows = user_ids.into_iter().map(|u_id| SysUserPost {
-            user_id: u_id.to_string().into(),
-            post_id: post_id.to_string().into(),
-        }).collect::<Vec<_>>();
+        let rows = user_ids
+            .into_iter()
+            .map(|u_id| SysUserPost {
+                user_id: u_id.to_string().into(),
+                post_id: post_id.to_string().into(),
+            })
+            .collect::<Vec<_>>();
 
-        Ok(SysUserPost::insert_batch(pool!(), &rows, 20)
-            .await?
-            .rows_affected)
+        Ok(SysUserPost::insert_batch(pool!(), &rows, 20).await?.rows_affected)
     }
 
-
     pub async fn remove(&self, user_post: &SysUserPost) -> Result<u64> {
-        let res =
-            pool!().exec("delete from sys_user_post where user_id=? and post_id=?",
-                         vec![to_value!(user_post.user_id.as_ref().unwrap()), to_value!(user_post.post_id.as_ref().unwrap())]).await.unwrap();
+        let res = pool!()
+            .exec(
+                "delete from sys_user_post where user_id=? and post_id=?",
+                vec![
+                    to_value!(user_post.user_id.as_ref().unwrap()),
+                    to_value!(user_post.post_id.as_ref().unwrap()),
+                ],
+            )
+            .await
+            .unwrap();
         Ok(res.rows_affected)
     }
     pub async fn remove_users_post(&self, post_id: &str, user_ids: &Vec<String>) -> Result<u64> {
-        let rows = user_ids.into_iter().map(|u_id| SysUserPost {
-            user_id: u_id.to_string().into(),
-            post_id: post_id.to_string().into(),
-        }).collect::<Vec<_>>();
+        let rows = user_ids
+            .into_iter()
+            .map(|u_id| SysUserPost {
+                user_id: u_id.to_string().into(),
+                post_id: post_id.to_string().into(),
+            })
+            .collect::<Vec<_>>();
 
         let mut cnt = 0;
         for r in rows {
@@ -99,7 +110,6 @@ impl SysUserPostService {
         )
     }
 
-
     pub async fn remove_by_user_id(&self, user_id: &str) -> Result<u64> {
         Ok(
             SysUserPost::delete_by_column(pool!(), field_name!(SysUserPost.user_id), user_id)
@@ -108,10 +118,12 @@ impl SysUserPostService {
         )
     }
 
-
     pub async fn reset_through_user_id(&self, user_id: &str, post_ids: &Vec<String>) -> Result<u64> {
         self.remove_by_user_id(user_id).await?;
-        self.add_user_posts(user_id, post_ids).await
+        if !post_ids.is_empty() {
+            self.add_user_posts(user_id, post_ids).await
+        } else {
+            Ok(0)
+        }
     }
-    
 }

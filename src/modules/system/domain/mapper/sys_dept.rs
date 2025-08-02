@@ -43,7 +43,9 @@ pub struct SysDept {
     if dto.status != '':
       ` and status = #{dto.status}`
     if dto.params.dataScope != '':
-      `${dto.params.dataScope}`")]
+      `${dto.params.dataScope}`
+    if do_count == false:
+    ` order by order_num`")]
 pub async fn select_all_(
     rb: &dyn Executor,
     dto: &crate::system::domain::dto::DeptQueryDTO,
