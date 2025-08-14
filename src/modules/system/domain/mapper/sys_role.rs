@@ -19,8 +19,7 @@ impl_select_page!(SysRole{select_page(dto:&RolePageDTO)=>
       ` and date_format(create_time,'%y%m%d') <= date_format(#{dto.params.endTime},'%y%m%d')`
     if dto.params.dataScope != '':
       `${dto.params.dataScope}`
-    if do_count == false:
-     ` order by role_sort`"
+    ` order by role_sort`"
 });
 
 ///RoleTable

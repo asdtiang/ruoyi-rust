@@ -12,8 +12,7 @@ impl_select_page!(SysDictData{select_page(dto: &crate::system::domain::dto::Dict
       ` and dict_label like #{'%'+dto.dictLabel+'%'}`
     if dto.status != '':
       ` and status = #{dto.status}`
-    if do_count == false:
-     ` order by dict_sort`"});
+    ` order by dict_sort`"});
 impl_select!(SysDictData{select_by_dict_type(dict_type:&String)=>"`where dict_type =#{dict_type} order by dict_sort`"});
 
 #[derive(Clone, Debug, serde::Serialize, serde::Deserialize)]

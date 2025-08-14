@@ -44,7 +44,6 @@ pub struct SysDept {
       ` and status = #{dto.status}`
     if dto.params.dataScope != '':
       `${dto.params.dataScope}`
-    if do_count == false:
     ` order by order_num`")]
 pub async fn select_all_(
     rb: &dyn Executor,

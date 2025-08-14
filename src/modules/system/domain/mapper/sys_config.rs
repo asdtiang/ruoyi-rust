@@ -36,6 +36,5 @@ impl_select_page!(SysConfig{select_page(dto: &crate::system::domain::dto::Config
       ` and date_format(create_time,'%y%m%d') >= date_format(#{dto.params.beginTime},'%y%m%d')`
     if dto.params.endTime != '':
       ` and date_format(create_time,'%y%m%d') <= date_format(#{dto.params.endTime},'%y%m%d')`
-    if do_count == false:
-     ` order by create_time`"});
+    ` order by create_time`"});
 

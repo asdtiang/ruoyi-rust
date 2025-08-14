@@ -14,8 +14,7 @@ impl_select_page!(SysPost{select_page(dto: &crate::system::domain::dto::PostPage
       ` and post_code like #{'%'+dto.postCode+'%'}`
     if dto.status != '':
       ` and status = #{dto.status}`
-    if do_count == false:
-     ` order by post_sort`"});
+    ` order by post_sort`"});
 
 #[derive(Clone, Debug, serde::Serialize, serde::Deserialize)]
 pub struct SysPost {

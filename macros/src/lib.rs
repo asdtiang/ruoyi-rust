@@ -85,12 +85,13 @@ pub fn page_request(attr: TokenStream, input: TokenStream) -> TokenStream {
         }
     });
     parse_macro_input!(attr with parser);
-    let mut params = quote! {};
-    if is_params {
-        params = quote! {
+    let mut params = if is_params {
+        quote! {
             pub params:Option<std::collections::HashMap<String, String>>,
-        };
-    }
+        }
+    } else {
+        quote! {}
+    };
 
     // 将输入的 token 流解析为 `DeriveInput`
     let original_struct = parse_macro_input!(input as DeriveInput);

@@ -12,8 +12,7 @@ impl_select_page!(SysNotice{select_page(dto: &crate::system::domain::dto::Notice
       ` and create_by = #{dto.createBy}`
     if dto.noticeType != '':
       ` and notice_type = #{dto.noticeType}`
-    if do_count == false:
-     ` order by notice_title`"});
+    ` order by notice_title`"});
 
 #[derive(Clone, Debug, serde::Serialize, serde::Deserialize)]
 pub struct SysNotice {

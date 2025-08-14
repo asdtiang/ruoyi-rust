@@ -59,9 +59,7 @@ pysql_select_page!(select_page(dto:&UserPageDTO) -> SysUser =>
       ` and (u.dept_id = #{dto.deptId} OR u.dept_id IN ( SELECT t.dept_id FROM sys_dept t WHERE find_in_set(#{dto.deptId}, ancestors)))`
     if dto.params.dataScope != '':
       `${dto.params.dataScope}`
-    if do_count == false:
-     ` order by u.create_time`
-     ` limit ${dto.pageNo - 1},${dto.pageSize}`
+    ` order by u.create_time`
      "#);
 impl_select!(SysUser{select_by_id(id:String) -> Option => "`where id = #{id} limit 1`"});
 
@@ -79,8 +77,6 @@ pysql_select_page!(allocated_user_list(dto: &RoleAuthUserPageDTO) -> SysUser =>
     ` AND u.phonenumber like concat('%', #{dto.phonenumber}, '%')`
   if dto.params.dataScope != '':
     `${dto.params.dataScope}`
-  if do_count == false:
-    ` limit #{dto.pageNo -1}, #{dto.pageSize}`
 "#);
 
 
@@ -97,8 +93,6 @@ pysql_select_page!(unallocated_user_list(dto: &RoleAuthUserPageDTO) -> SysUser =
   if dto.phonenumber != '':
     ` AND u.phonenumber like concat('%', #{dto.phonenumber}, '%')`
   if dto.params.dataScope != '':
-   if do_count == false:
-  ` ${dto.params.dataScope}`
-  ` limit #{dto.pageNo -1}, #{dto.pageSize}`
+  ` ${dto.params.dataScope}``
 "#);
 

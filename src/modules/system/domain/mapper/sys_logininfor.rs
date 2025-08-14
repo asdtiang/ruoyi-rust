@@ -5,9 +5,7 @@ crud!(SysLogininfor {});
 
 
 impl_select_page!(SysLogininfor{select_page(dto: &crate::system::domain::dto::LogininforPageDTO) =>
-    "``
-      if do_count == false:
-         ` order by login_time desc`"});
+    " order by login_time desc"});
 
 #[derive(Clone, Debug, serde::Serialize, serde::Deserialize)]
 pub struct SysLogininfor {

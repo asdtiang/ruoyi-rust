@@ -108,9 +108,7 @@ pysql_select_page!(select_db_table_list(dto:&TablePageDTO) -> GenTableColumn =>
         ` AND date_format(create_time,'%y%m%d') >= date_format(#{dto.params.beginTime},'%y%m%d')`
     if dto.params.endTime != '':
         ` AND date_format(create_time,'%y%m%d') <= date_format(#{dto.params.endTime},'%y%m%d')`
-    if do_count == false:
-        ` order by create_time desc`
-        ` limit ${dto.pageNo - 1},${dto.pageSize}`"#);
+    ` order by create_time desc`"#);
 
 #[html_sql(r#"
       <select id="select_db_table_columns_by_name">

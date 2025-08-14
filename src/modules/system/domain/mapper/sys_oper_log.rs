@@ -4,9 +4,7 @@ use rbatis::{crud, impl_select_page};
 crud!(SysOperLog {});
 
 impl_select_page!( SysOperLog{select_page(dto: &crate::system::domain::dto::OperLogPageDTO) =>
-    "``
-      if do_count == false:
-         ` order by oper_time desc`"});
+    "order by oper_time desc"});
 
 #[derive(Clone, Debug, serde::Serialize, serde::Deserialize)]
 pub struct SysOperLog {

@@ -15,8 +15,7 @@ impl_select_page!(SysDictType{select_page(dto: &crate::system::domain::dto::Dict
       ` and date_format(create_time,'%y%m%d') <= date_format(#{dto.params.endTime},'%y%m%d')`
     if dto.status != '':
       ` and status = #{dto.status}`
-    if do_count == false:
-     ` order by create_time`"});
+    ` order by create_time`"});
 
 ///dictionary table
 #[derive(Clone, Debug, serde::Serialize, serde::Deserialize)]

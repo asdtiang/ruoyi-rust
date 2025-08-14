@@ -9,8 +9,7 @@ impl_select!(SysMenu{query_menu(dto: &crate::system::domain::dto::MenuPageDTO) =
       ` and menu_name like #{'%'+dto.menuName+'%'}`
     if dto.status != '':
       ` and status = #{dto.status}`
-    if do_count == false:
-     ` order by order_num`"});
+    ` order by order_num`"});
 impl_select!(SysMenu{select_all_order_num() =>
     "` order by order_num`"});
 
