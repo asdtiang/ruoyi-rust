@@ -28,6 +28,7 @@ pub fn init_table(gen_table: &mut GenTable, oper_name: &str) {
     gen_table.function_name =
         replace_text(&gen_table.table_comment.clone().unwrap_or_default()).into();
     gen_table.function_author = GEN_CONTEXT.config.author.clone().into();
+    gen_table.tpl_back_type=Some("rust".to_string());
     gen_table.create_by = oper_name.to_string().into();
     gen_table.create_time = DateTime::now().set_nano(0).into();
 }
@@ -119,6 +120,7 @@ pub fn init_column_field(column: &mut GenTableColumn, table: &GenTable) {
     }
     if !gen_constants::COLUMNNAME_NOT_LIST.contains(&column_name) {
         column.is_list = Some(gen_constants::REQUIRE);
+        column.is_detail = Some(gen_constants::REQUIRE);
         column.is_export = Some(gen_constants::REQUIRE);
     }
     if !gen_constants::COLUMNNAME_NOT_QUERY.contains(&column_name) {
@@ -127,6 +129,7 @@ pub fn init_column_field(column: &mut GenTableColumn, table: &GenTable) {
     if is_pk {
         column.is_list = Some(gen_constants::NOT_REQUIRE);
         column.is_edit = Some(gen_constants::NOT_REQUIRE);
+        column.is_detail = Some(gen_constants::NOT_REQUIRE);
         column.is_export = Some(gen_constants::NOT_REQUIRE);
         column.is_query = Some(gen_constants::NOT_REQUIRE);
     }

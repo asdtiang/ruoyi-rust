@@ -1,7 +1,7 @@
 use crate::context::CONTEXT;
 use crate::system::domain::dto::{UserAddDTO, UserPageDTO, UserRoleAuthQueryDTO, UserUpdateDTO};
 use crate::system::domain::vo::SysUserVO;
-use crate::{error_wrapper_unwrap, export_excel_controller, PageVO, RespJson, RespVO};
+use crate::{error_wrapper, error_wrapper_unwrap, export_excel_controller, PageVO, RespJson, RespVO};
 use axum::extract::{Path, Query};
 use axum::response::IntoResponse;
 use axum::Json;
@@ -124,7 +124,7 @@ pub async fn get_auth_roles(user_id: Path<String>) -> impl IntoResponse {
 #[pre_authorize("system:user:resetPwd", user_cache)]
 pub async fn reset_pwd(dto: Json<UserUpdateDTO>) -> impl IntoResponse {
     let user_id = dto.user_id.clone().unwrap_or_default();
-    error_wrapper_unwrap!(CONTEXT.sys_user_service.check_user_data_scope(&user_id, &user_cache), res);
+    error_wrapper!(CONTEXT.sys_user_service.check_user_data_scope(&user_id, &user_cache),res);
     let res = CONTEXT.sys_user_service.update_password(dto.0, &user_cache.user_name).await;
     RespVO::<u64>::judge_result(res, "更新成功！", "").into_response()
 }

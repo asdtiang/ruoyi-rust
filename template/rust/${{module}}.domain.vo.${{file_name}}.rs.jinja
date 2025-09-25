@@ -8,6 +8,7 @@ use ${{use}};
 #[serde(rename_all = "camelCase")]
 #[derive(macros::Export)]
 pub struct ${{className}}VO {
+// ${{pkColumn.columnComment}}
 pub ${{pkColumn.columnName}}:Option<${{pkColumn.javaType}}>,
 {% for column in columns %}
 {% if column.isDetail %}
@@ -33,6 +34,7 @@ impl From<${{className}}> for ${{className}}VO {
 #[derive(Clone, Debug, serde::Serialize, serde::Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct ${{className}}ListVO {
+// ${{pkColumn.columnComment}}
 pub ${{pkColumn.columnName}}:Option<${{pkColumn.javaType}}>,
 {% for column in columns %}
 {% if column.isList %}

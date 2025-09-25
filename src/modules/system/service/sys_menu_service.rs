@@ -1,5 +1,5 @@
 use crate::config::global_constants::{
-    ADMIN_NAME, CHAR_FALSE,
+     CHAR_FALSE,
 };
 use crate::system::domain::dto::MenuPageDTO;
 use rbatis::field_name;

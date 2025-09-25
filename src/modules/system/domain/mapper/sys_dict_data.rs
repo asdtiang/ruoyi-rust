@@ -13,7 +13,7 @@ impl_select_page!(SysDictData{select_page(dto: &crate::system::domain::dto::Dict
     if dto.status != '':
       ` and status = #{dto.status}`
     ` order by dict_sort`"});
-impl_select!(SysDictData{select_by_dict_type(dict_type:&String)=>"`where dict_type =#{dict_type} order by dict_sort`"});
+impl_select!(SysDictData{select_by_dict_type(dict_type:&str)=>"`where dict_type =#{dict_type} order by dict_sort`"});
 
 #[derive(Clone, Debug, serde::Serialize, serde::Deserialize)]
 pub struct SysDictData {

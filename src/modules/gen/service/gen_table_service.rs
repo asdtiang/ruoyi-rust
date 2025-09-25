@@ -8,6 +8,7 @@ use crate::gen::GEN_CONTEXT;
 use crate::utils::file_utils::find_files_with_extension;
 use crate::utils::string::substring_unicode;
 use crate::{pool, remove_batch};
+use futures_util::StreamExt;
 use macros::transactional;
 use minijinja::syntax::SyntaxConfig;
 use rbatis::object_id::ObjectId;
@@ -95,7 +96,70 @@ impl GenTableService {
         }
         Ok(table_name_list.len() as u64)
     }
-    async fn generator_code_type(&self, gen_table: &GenTable, language: &str, gen_path: &str) -> Result<()> {
+
+    pub async fn generate_code(&self, table_names: Vec<&str>) -> Result<()> {
+        let tables = gen_table::select_gen_table_list_by_names(pool!(), &table_names).await?;
+        for t in tables {
+            let code_map = self.generate(&t).await?;
+            for (path, v) in code_map {
+                fs::create_dir_all(&path.parent().unwrap())?;
+                fs::write(path, v)?;
+            }
+        }
+        Ok(())
+    }
+    pub async fn preview_code(&self, table_id: &str) -> Result<Vec<(String, String)>> {
+        let table = GenTable::select_by_column(pool!(), field_name!(GenTable.table_id), table_id)
+            .await?
+            .into_iter()
+            .next();
+        if let Some(t) = table {
+            let code_map = self.generate(&t).await?;
+            let res = code_map
+                .iter()
+                .map(|(path, v)| {
+                    let name = format!(
+                        "{}/{}",
+                        path.parent().unwrap().to_str().unwrap(),
+                        path.file_name().unwrap().to_str().unwrap()
+                    );
+                    return (name, v.to_string());
+                })
+                .collect::<Vec<_>>();
+            Ok(res)
+        } else {
+            Err(Error::from("错误id"))
+        }
+    }
+
+    async fn generate(&self, table: &GenTable) -> Result<HashMap<PathBuf, String>> {
+        let mut code_map = HashMap::new();
+        self.generate_code_of_lng(
+            &table,
+            &table.tpl_back_type.clone().unwrap_or_default(),
+            &table.gen_path_back.clone().unwrap_or_default(),
+            &mut code_map,
+        )
+        .await?;
+        self.generate_code_of_lng(
+            &table,
+            &table.tpl_web_type.clone().unwrap_or_default(),
+            &table.gen_path_front.clone().unwrap_or_default(),
+            &mut code_map,
+        )
+        .await?;
+        Ok(code_map)
+    }
+    /*
+    生成各类语言
+        */
+    async fn generate_code_of_lng(
+        &self,
+        gen_table: &GenTable,
+        language: &str,
+        gen_path: &str,
+        code_map: &mut HashMap<PathBuf, String>,
+    ) -> Result<()> {
         let tlt_path = std::env::current_dir()?.join("template").join(language);
         use minijinja::Environment;
         let mut env = Environment::new();
@@ -149,16 +213,15 @@ impl GenTableService {
             let path = PathBuf::from(&gen_path)
                 .join(file_name_split.join("/"))
                 .join(format!("{file_name}.{suffix}"));
-            fs::create_dir_all(&path.parent().unwrap())?;
             let mut code = code;
 
             let ext = path.extension().unwrap_or_default();
             if ext.eq("rs") {
                 code = self.format_rust_code(&code)?;
             } else if ext.eq("vue") {
-                code = self.format_html_code(&code,"vue")?;
+                code = self.format_html_code(&code, "vue")?;
             } else if ext.eq("js") {
-                code = self.format_html_code(&code,"typescript")?;
+                code = self.format_html_code(&code, "typescript")?;
             }
             loop {
                 let t_code = code.replace("\n  \n", "\n").replace("\n\n", "\n");
@@ -171,36 +234,20 @@ impl GenTableService {
             if is_first && path.exists() {
                 println!("文件{}已存在！", path.display());
             } else {
-                fs::write(&path, code.as_bytes())?;
+                code_map.insert(path.clone(), code);
+                // fs::write(&path, code.as_bytes())?;
             }
         }
         if language.eq("rust") {
             let path = PathBuf::from(&gen_path).join(&module_name);
-            self.fill_mod(path.as_path(), true)?;
-            self.fill_mod_in_module(path.join("mod.rs").as_path(), &table_name)?;
+            self.fill_mod(path.as_path(), true, code_map)?;
+            self.fill_mod_in_module(path.join("mod.rs").as_path(), &table_name, code_map)?;
         }
         Ok(())
     }
-    pub async fn generator_code(&self, table_names: Vec<&str>) -> Result<()> {
-        let tables = gen_table::select_gen_table_list_by_names(pool!(), &table_names).await?;
-        for t in tables {
-            self.generator_code_type(
-                &t,
-                &t.tpl_back_type.clone().unwrap_or_default(),
-                &t.gen_path_back.clone().unwrap_or_default(),
-            )
-            .await?;
-            self.generator_code_type(
-                &t,
-                &t.tpl_web_type.clone().unwrap_or_default(),
-                &t.gen_path_front.clone().unwrap_or_default(),
-            )
-            .await?;
-        }
-        Ok(())
-    }
+
     //完成mod.rs引用
-    pub fn fill_mod(&self, dir: &Path, first_lvl: bool) -> Result<()> {
+    fn fill_mod(&self, dir: &Path, first_lvl: bool, code_map: &mut HashMap<PathBuf, String>) -> Result<()> {
         let mut file_names = Vec::new();
         if dir.is_dir() {
             let parent_name = dir.file_name().unwrap().to_str().unwrap().to_string();
@@ -212,7 +259,7 @@ impl GenTableService {
                 let file_name = substring_unicode(file_name.as_str(), 0, idx);
                 if path.is_dir() {
                     // 递归处理子目录
-                    self.fill_mod(&path, false)?;
+                    self.fill_mod(&path, false, code_map)?;
                     file_names.push(file_name);
                 } else if let Some(ext) = path.extension() {
                     if ext == "rs" {
@@ -232,31 +279,45 @@ impl GenTableService {
                     }
                 })
                 .collect::<Vec<String>>();
+            let path = dir.join("mod.rs");
             if first_lvl {
                 if !fs::exists(dir.join("mod.rs"))? {
-                    fs::write(dir.join("mod.rs"), pub_mod.join("\n").as_bytes())?;
+                    code_map.insert(path, pub_mod.join("\n"));
+                    // fs::write(dir.join("mod.rs"), pub_mod.join("\n").as_bytes())?;
                 }
             } else {
-                fs::write(dir.join("mod.rs"), pub_mod.join("\n").as_bytes())?;
+                code_map.insert(path, pub_mod.join("\n"));
+                // fs::write(path, pub_mod.join("\n").as_bytes())?;
             }
         }
 
         Ok(())
     }
 
-    //在模块下的mod.rs插入数据
-    pub fn fill_mod_in_module(&self, mod_rs_file: &Path, table_name: &str) -> Result<()> {
+    //在src/modules/**/mod.rs插入数据，由temp.json填入
+    fn fill_mod_in_module(
+        &self,
+        mod_rs_file: &Path,
+        table_name: &str,
+        code_map: &mut HashMap<PathBuf, String>,
+    ) -> Result<()> {
         if !mod_rs_file.exists() {
             return Ok(());
         }
+        let mut json = None;
+        code_map.iter().for_each(|(k, v)| {
+            if k.ends_with("emp.json") {
+                json = Some(v.to_string());
+            }
+        });
         let json_file = mod_rs_file.parent().unwrap().join("temp.json");
-        if !json_file.exists() {
+        if json.is_none() {
             return Ok(());
         }
 
-        let json = fs::read_to_string(json_file.as_path())?;
-        fs::remove_file(json_file.as_path())?;
-        let value: serde_json::Value = serde_json::from_str(&json).map_err(|e| Error::from(e.to_string()))?;
+        // let json = fs::read_to_string(json_file.as_path())?;
+        //  fs::remove_file(json_file.as_path())?;
+        let value: Value = serde_json::from_str(&json.unwrap_or_default()).map_err(|e| Error::from(e.to_string()))?;
         if let Value::Object(map) = value {
             for (k, v) in map {
                 if let Value::String(s) = v {
@@ -280,7 +341,8 @@ impl GenTableService {
                     }
                     if !is_have {
                         let mod_rs = mod_rs.replace(&end_key, &format!("//{auto_gen_key}\n{s}\n{end_key}"));
-                        fs::write(mod_rs_file, mod_rs)?;
+                        code_map.insert(mod_rs_file.to_path_buf(), mod_rs);
+                        //fs::write(mod_rs_file, mod_rs)?;
                     }
                 }
             }
@@ -307,7 +369,7 @@ impl GenTableService {
         Ok(String::from_utf8(output.stdout).unwrap_or(code.to_string()))
     }
 
-    pub fn format_html_code(&self, code: &str,language:&str) -> Result<String> {
+    pub fn format_html_code(&self, code: &str, language: &str) -> Result<String> {
         let mut child = Command::new("prettier.cmd")
             .arg("--print-width=160")
             .arg(format!("--parser={}", language))

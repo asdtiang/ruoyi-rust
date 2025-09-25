@@ -26,7 +26,7 @@ pub async fn detail(${{pkColumn.columnName}}: Path<String>) -> impl IntoResponse
 //新增${{functionName}}
 #[pre_authorize("${{permissionPrefix}}:add", user_cache)]
 pub async fn add(dto: crate::ValidatedForm<${{className}}AddDTO>) -> impl IntoResponse {
-    add_marco!(data, dto, user, ${{className}});
+    add_marco!(data, dto, user_cache, ${{className}});
     let res = ${{moduleName|upper}}_CONTEXT.${{moduleName}}_${{business_name}}_service.add(data).await;
     RespVO::from_result(&res).into_response()
 }
@@ -34,7 +34,7 @@ pub async fn add(dto: crate::ValidatedForm<${{className}}AddDTO>) -> impl IntoRe
 //更新${{functionName}}
 #[pre_authorize("${{permissionPrefix}}:edit", user_cache)]
 pub async fn update(dto: crate::ValidatedForm<${{className}}UpdateDTO>) -> impl IntoResponse {
-    update_marco!(data, dto, user, ${{className}});
+    update_marco!(data, dto, user_cache, ${{className}});
     let res = ${{moduleName|upper}}_CONTEXT.${{moduleName}}_${{business_name}}_service.update(data).await;
     RespVO::from_result(&res).into_response()
 }

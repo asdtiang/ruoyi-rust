@@ -9,7 +9,7 @@ use axum::{
     extract::Request,
     http::StatusCode,
     middleware::Next,
-    response::{IntoResponse, Response}
+    response::{IntoResponse, Response},
 };
 use http_body_util::BodyExt;
 use rbatis::object_id::ObjectId;
@@ -49,13 +49,13 @@ pub async fn log_write(
 
     let start = DateTime::now();
     let res = next.run(req).await;
-    let cost_time =
-        (DateTime::now().unix_timestamp_millis() - start.unix_timestamp_millis()) as u64;
+    let cost_time = (DateTime::now().unix_timestamp_millis() - start.unix_timestamp_millis()) as u64;
 
     let (parts, body) = res.into_parts();
     let bytes = get_body_bytes(body).await?;
     let json_result = std::str::from_utf8(&bytes).ok().map(|x| x.to_string());
 
+    //todo 需要完善
     let sys_oper_log = SysOperLog {
         oper_id: ObjectId::new().to_string().into(),
         title: String::new().into(),
@@ -75,14 +75,10 @@ pub async fn log_write(
         oper_time: start.into(),
         cost_time: cost_time.into(),
     };
-  let _=  CONTEXT.sys_oper_log_service.add_async(&sys_oper_log).await;
-
+    let _ = CONTEXT.sys_oper_log_service.add_async(&sys_oper_log).await;
     let res = Response::from_parts(parts, Body::from(bytes));
-
     Ok(res)
 }
-
-
 
 async fn get_body_bytes<B>(body: B) -> Result<Bytes, (StatusCode, String)>
 where
@@ -92,10 +88,7 @@ where
     let bytes = match body.collect().await {
         Ok(collected) => collected.to_bytes(),
         Err(err) => {
-            return Err((
-                StatusCode::BAD_REQUEST,
-                format!("failed to read body: {err}"),
-            ));
+            return Err((StatusCode::BAD_REQUEST, format!("failed to read body: {err}")));
         }
     };
     Ok(bytes)

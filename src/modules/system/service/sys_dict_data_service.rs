@@ -4,6 +4,7 @@ use crate::error::Result;
 use crate::system::domain::dto::DictDataPageDTO;
 use crate::system::domain::mapper::sys_dict_data::SysDictData;
 use crate::system::domain::vo::{SysDictDataSimpleVO, SysDictDataVO};
+use crate::system::service::dict_utils;
 use crate::system::service::dict_utils::get_dict_redis_key;
 use crate::{check_unique, export_excel_service, pool, remove_batch};
 use rbatis::{field_name, Page, PageRequest};
@@ -19,7 +20,11 @@ impl SysDictDataService {
         Ok(page)
     }
 
-    pub async fn get_by_dict_type(&self, dict_type: &String) -> Result<Vec<SysDictDataSimpleVO>> {
+    pub async fn get_by_dict_type(&self, dict_type: &str) -> Result<Vec<SysDictDataSimpleVO>> {
+        let data=dict_utils::get_dict_cache(dict_type).await;
+        if let Ok(data) = data {
+            return Ok(data);
+        }
         let data = SysDictData::select_by_dict_type(pool!(), &dict_type).await?;
         let res=   data.into_iter().map(|d| SysDictDataSimpleVO::from(d)).collect();
         Ok(res)

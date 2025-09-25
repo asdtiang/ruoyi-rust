@@ -45,10 +45,6 @@ pub async fn detail(table_id: Path<String>) -> impl IntoResponse {
         .select_gen_table_column_list_by_table_id(&table_id.0)
         .await;
     let list = list.map(|d| d.into_iter().map(|d| GenTableColumnVO::from(d)).collect::<Vec<_>>());
-    // GenTable table = genTableService.selectGenTableById(tableId);
-    // List<GenTable> tables = genTableService.selectGenTableAll();
-    // List<GenTableColumn> list = genTableColumnService.select_gen_table_column_list_by_table_id(tableId);
-    // Map<String, Object> map = new HashMap<String, Object>();
     let mut res = RespJson::success();
     let mut data = HashMap::new();
 
@@ -96,8 +92,14 @@ pub async fn import_table(table_name: axum::extract::Query<TableNamesDTO>) -> im
 pub async fn batch_gen_code(table_name: Path<String>) -> impl IntoResponse {
     let tables = table_name.0;
     let table_names = tables.split(",").collect::<Vec<&str>>();
-    let tables = GEN_CONTEXT.gen_table_service.generator_code(table_names).await;
+    let tables = GEN_CONTEXT.gen_table_service.generate_code(table_names).await;
     RespVO::from_result(&tables).into_response()
+}
+#[pre_authorize("tool:gen:code")]
+pub async fn preview_code(table_id: Path<String>) -> impl IntoResponse {
+    let table_id = table_id.0;
+    let codes = GEN_CONTEXT.gen_table_service.preview_code(&table_id).await;
+    RespVO::from_result(&codes).into_response()
 }
 #[pre_authorize("tool:gen:code")]
 pub async fn synch_db(table_name: Path<String>) -> impl IntoResponse {

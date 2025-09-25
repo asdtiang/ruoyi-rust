@@ -27,5 +27,4 @@ pub use post::*;
 pub use role::*;
 pub use router::*;
 pub use user::*;
-pub use user_cache::*;
 

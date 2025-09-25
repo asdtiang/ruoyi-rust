@@ -1,7 +1,7 @@
-use jsonwebtoken::{decode, encode, DecodingKey, EncodingKey, Header, Validation};
-use jsonwebtoken::errors::ErrorKind;
-use serde::{Deserialize, Serialize};
 use crate::error::Error;
+use jsonwebtoken::errors::ErrorKind;
+use jsonwebtoken::{decode, encode, DecodingKey, EncodingKey, Header, Validation};
+use serde::{Deserialize, Serialize};
 
 /// JWT authentication Token structure
 /// diff: 不再保存如此多的信息，都保留在缓存

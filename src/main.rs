@@ -1,5 +1,5 @@
 use axum::extract::DefaultBodyLimit;
-use axum::{middleware, Router};
+use axum::Router;
 use ruoyi_rust::build_api;
 use ruoyi_rust::context::CONTEXT;
 use std::net::SocketAddr;

@@ -1,5 +1,3 @@
-use crate::UserCache;
-
 #[macro_export]
 macro_rules! check_unique {
     ($func_name:ident, $table:expr, $id_col:ident, $key_col:ident,$hint:expr) => {
@@ -312,3 +310,27 @@ macro_rules! update_single_col {
     };
 }
 
+///简化一下更改双列
+#[macro_export]
+macro_rules! update_double_col {
+    ($fnc_name:ident,$col_name1:ident,$col_name2:ident,$pk_col_name:ident,$dto:ident,$table:expr) => {
+        pub async fn $fnc_name(&self, dto: &$dto) -> crate::error::Result<u64> {
+            let $pk_col_name = dto.$pk_col_name.clone().unwrap_or_default();
+            let $col_name1 = dto.$col_name1.clone().unwrap_or_default();
+             let $col_name2 = dto.$col_name2.clone().unwrap_or_default();
+            let res = pool!()
+                .exec(
+                     &format!(
+                        "update {} set {}  = ?,{}  = ?  where {} = ? ",
+                        $table,
+                        stringify!($col_name1),
+                        stringify!($col_name2),
+                        stringify!($pk_col_name)
+                    ),
+                    vec![to_value!($col_name1), to_value!($col_name2), to_value!($pk_col_name)],
+                )
+                .await?;
+            Ok(res.rows_affected)
+        }
+    };
+}

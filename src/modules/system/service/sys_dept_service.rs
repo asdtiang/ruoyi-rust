@@ -7,8 +7,8 @@ use crate::system::domain::mapper;
 use crate::system::domain::mapper::sys_dept;
 use crate::system::domain::mapper::sys_dept::SysDept;
 use crate::system::domain::vo::{DeptTreeVO, SysDeptVO};
-use crate::{ pool, UserCache};
-use macros::{data_scope, transactional};
+use crate::{pool, UserCache};
+use macros::data_scope;
 use rbatis::field_name;
 use rbs::to_value;
 pub struct SysDeptService {}
