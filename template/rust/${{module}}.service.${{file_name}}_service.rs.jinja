@@ -17,13 +17,13 @@ impl ${{className}}Service {
     }
 
     pub async fn detail(&self, ${{pkColumn.columnName}}: &str) -> Result<${{className}}> {
-        let notice =
+        let  ${{business_name}} =
             ${{className}}::select_by_column(pool!(), field_name!(${{className}}.${{pkColumn.columnName}}), ${{pkColumn.columnName}})
                 .await?
                 .into_iter()
                 .next()
                 .ok_or_else(|| Error::from(format!("不存在:{:?} ！", ${{pkColumn.columnName}})))?;
-        Ok(notice)
+        Ok( ${{business_name}})
     }
 
     pub async fn add(&self, ${{business_name}}: ${{className}}) -> Result<u64> {

@@ -3,7 +3,6 @@ use crate::context::CONTEXT;
 use crate::system::domain::dto::SignInDTO;
 use crate::system::domain::vo::CommonUserVO;
 use crate::system::service::REDIS_UUID_CAPTCHA;
-use crate::utils::base64::encode;
 use crate::{error_wrapper_unwrap, RespJson, RespVO, UserCache};
 use axum::http::HeaderMap;
 use axum::response::IntoResponse;
@@ -13,6 +12,7 @@ use captcha::Captcha;
 use macros::pre_authorize;
 use std::time::Duration;
 use uuid::Uuid;
+use crate::utils::base64::Base64;
 
 pub async fn login(header_map: HeaderMap, arg: Json<SignInDTO>) -> impl IntoResponse {
     error_wrapper_unwrap!(CONTEXT.sys_auth_service.login(&arg.0, &header_map), token);
@@ -86,7 +86,7 @@ pub async fn captcha() -> impl IntoResponse {
         }
 
         json.insert("uuid".to_string(), uuid.to_string().into());
-        json.insert("img".to_string(), encode(&png, png.len()).into());
+        json.insert("img".to_string(), Base64::encode(&png).into());
     }
     json.into_response()
 }

@@ -25,6 +25,9 @@ impl UserCache {
     pub fn user_name(&self) -> String {
         self.user_name.clone()
     }
+    pub fn dept_id(&self) -> String {
+        self.dept_id.clone()
+    }
     pub fn login_user_key(&self) -> String {
         self.login_user_key.clone()
     }

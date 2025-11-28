@@ -108,24 +108,22 @@ impl GenTableService {
         }
         Ok(())
     }
-    pub async fn preview_code(&self, table_id: &str) -> Result<Vec<(String, String)>> {
+    pub async fn preview_code(&self, table_id: &str) -> Result<HashMap<String,String>> {
         let table = GenTable::select_by_column(pool!(), field_name!(GenTable.table_id), table_id)
             .await?
             .into_iter()
             .next();
         if let Some(t) = table {
             let code_map = self.generate(&t).await?;
-            let res = code_map
+            let mut res =HashMap::new();
+             code_map
                 .iter()
-                .map(|(path, v)| {
-                    let name = format!(
-                        "{}/{}",
-                        path.parent().unwrap().to_str().unwrap(),
-                        path.file_name().unwrap().to_str().unwrap()
-                    );
-                    return (name, v.to_string());
-                })
-                .collect::<Vec<_>>();
+                .for_each(|(path, v)| {
+                    let name=path.to_str().unwrap().to_string();
+                    let name=name.replace(&t.gen_path_back.clone().unwrap_or_default(),"");
+                    let name=name.replace(&t.gen_path_front.clone().unwrap_or_default(),"");
+                    res.insert(name, v.to_string());
+                });
             Ok(res)
         } else {
             Err(Error::from("错误id"))
@@ -306,7 +304,7 @@ impl GenTableService {
         }
         let mut json = None;
         code_map.iter().for_each(|(k, v)| {
-            if k.ends_with("emp.json") {
+            if k.ends_with("temp.json") {
                 json = Some(v.to_string());
             }
         });
@@ -416,20 +414,17 @@ impl GenTableService {
             let column_name = column.column_name.clone().unwrap_or_default();
             if let Some(prev_column) = table_column_map.get(&column_name) {
                 column.column_id = prev_column.column_id.clone();
-                //todo more
+
                 if column.is_list.is_some_and(|c| c == gen_constants::REQUIRE) {
                     // 如果是列表，继续保留查询方式/字典类型选项
                     column.dict_type = prev_column.dict_type.clone();
                     column.query_type = prev_column.query_type.clone();
                 }
-                // if (StringUtils.isNotEmpty(prev_column.getIsRequired()) && !column.isPk()
-                //     && (column.isInsert() || column.isEdit())
-                //     && ((column.isUsableColumn()) || (!column.isSuperColumn())))
-                // {
-                //     // 如果是(新增/修改&非主键/非忽略及父属性)，继续保留必填/显示类型选项
-                //     column.setIsRequired(prev_column.getIsRequired());
-                //     column.setHtmlType(prev_column.getHtmlType());
-                // }
+                column.is_edit= prev_column.is_edit.clone();
+                column.is_insert= prev_column.is_insert.clone();
+                column.is_detail= prev_column.is_detail.clone();
+                column.is_export= prev_column.is_export.clone();
+
                 column.more = prev_column.more.clone();
                 GenTableColumn::update_by_column(pool!(), &column, "column_id").await?;
             } else {

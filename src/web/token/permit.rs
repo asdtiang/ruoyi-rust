@@ -23,7 +23,7 @@ pub async fn check_permit(user_cache: &UserCache, permit_str: &str) -> Option<Re
     log::info!("无权限：{}", permit_str);
     Some(resp)
 }
-
+///如果没有这个role就返回Some
 pub async fn check_role(user_cache: &UserCache, role_str: &str) -> Option<RespVO<u64>> {
     let role_str = role_str.replace("\"", "");
     if role_str.len() == 0 {
