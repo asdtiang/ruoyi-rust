@@ -480,10 +480,14 @@ pub fn transactional(ident: TokenStream, item: TokenStream) -> TokenStream {
         #(#func_attrs)*
         #func_vis #func_decl{
             let #ident = crate::pool!().acquire_begin().await?;
-            let res=#func_block;
+            let func= async || #func_block;
+             let res = func().await;
             match res {
-                Ok(_)=>{#ident.commit().await?;}
+                Ok(_)=>{
+                      println!("commit");
+                    #ident.commit().await?;}
                 Err(_)=>{
+                      println!("rollback");
                     #ident.rollback().await?;}
             }
             res
