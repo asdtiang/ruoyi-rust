@@ -13,7 +13,7 @@ macro_rules! check_unique {
                         $table,
                         stringify!($key_col)
                     ),
-                    vec![to_value!($key_col)],
+                    vec![rbs::to_value!($key_col)],
                 )
                 .await?;
             //println!("old_id: {:?}, id_col  {:?}", old_id,$id_col);

@@ -95,6 +95,9 @@ impl SysMenuService {
         let num = SysMenu::delete_by_column(pool!(), "menu_id", id)
             .await?
             .rows_affected;
+
+        CONTEXT.sys_role_menu_service.remove_by_menu_id(&id).await?;
+        
         CONTEXT.sys_trash_service.add("sys_menu", &trash).await?;
 
         self.update_cache().await?;

@@ -39,6 +39,9 @@ pub struct MenuAddDTO {
     pub component: Option<String>,
     /** 路由参数 */
     pub query: Option<String>,
+    /** 路由名称 */
+    #[validate(length(max = 50, message = "路由名称不能超过50个字符"))]
+    pub route_name: Option<String>,
     /** 是否为外链（0是 1否） */
     pub is_frame: Option<char>,
     /** 是否缓存（0缓存 1不缓存） */
@@ -68,6 +71,7 @@ impl From<MenuAddDTO> for SysMenu {
             path: arg.path,
             component: arg.component,
             query: arg.query,
+            route_name: arg.route_name,
             is_frame: arg.is_frame,
             is_cache: arg.is_cache,
             menu_type: arg.menu_type,
@@ -107,6 +111,9 @@ pub struct MenuUpdateDTO {
     pub component: Option<String>,
     /** 路由参数 */
     pub query: Option<String>,
+    /** 路由名称 */
+    #[validate(length(max = 50, message = "路由名称不能超过50个字符"))]
+    pub route_name: Option<String>,
     /** 是否为外链（0是 1否） */
     pub is_frame: Option<char>,
     /** 是否缓存（0缓存 1不缓存） */
@@ -138,6 +145,7 @@ impl From<MenuUpdateDTO> for SysMenu {
             path: arg.path,
             component: arg.component,
             query: arg.query,
+            route_name: arg.route_name,
             is_frame: arg.is_frame,
             is_cache: arg.is_cache,
             menu_type: arg.menu_type,

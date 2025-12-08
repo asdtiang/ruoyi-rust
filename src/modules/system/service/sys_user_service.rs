@@ -173,8 +173,7 @@ impl SysUserService {
     pub async fn update_password(&self, dto: UserUpdateDTO, oper_user_name: &str) -> Result<u64> {
         let user_id = dto.user_id.clone().unwrap_or_default();
         self.check_user_allowed(&user_id).await?;
-        let new_password = Some(PasswordEncoder::encode(&dto.password.clone().unwrap()));
-        self.update_password_raw(&new_password.unwrap_or_default(), &user_id)
+        self.update_password_raw(&dto.password.clone().unwrap_or_default(), &user_id)
             .await
     }
     pub(crate) async fn update_password_raw(&self, new_password: &str, user_id: &str) -> Result<u64> {
@@ -210,7 +209,6 @@ impl SysUserService {
         if user_id.eq(ADMIN_USERID) {
             return Err(Error::from("不允许操作超级管理员用户"));
         }
-
         Ok(())
     }
 

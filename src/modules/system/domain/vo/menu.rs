@@ -20,6 +20,8 @@ pub struct SysMenuVO {
     pub component: Option<String>,
     /** 路由参数 */
     pub query: Option<String>,
+    /** 路由名称 */
+    pub route_name: Option<String>,
     /** 是否为外链（0是 1否） */
     pub is_frame: Option<char>,
     /** 是否缓存（0缓存 1不缓存） */
@@ -49,6 +51,7 @@ impl From<SysMenu> for SysMenuVO {
             path: arg.path,
             component: arg.component,
             query: arg.query,
+            route_name: arg.route_name,
             is_frame: arg.is_frame,
             is_cache: arg.is_cache,
             menu_type: arg.menu_type,

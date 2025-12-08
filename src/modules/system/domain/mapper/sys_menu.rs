@@ -30,12 +30,13 @@ pub struct SysMenu {
     //前端-菜单路径
     /** 路由地址 */
     pub path: Option<String>,
-    //组件路径
     /** 组件路径 */
     pub component: Option<String>,
-    //组件路径
+
     /** 路由参数 */
     pub query: Option<String>,
+    /** 路由名称 */
+    pub route_name: Option<String>,
     //是否为外链
     /** 是否为外链（0是 1否） */
     pub is_frame: Option<char>,

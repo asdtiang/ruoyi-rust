@@ -484,10 +484,8 @@ pub fn transactional(ident: TokenStream, item: TokenStream) -> TokenStream {
              let res = func().await;
             match res {
                 Ok(_)=>{
-                      println!("commit");
                     #ident.commit().await?;}
                 Err(_)=>{
-                      println!("rollback");
                     #ident.rollback().await?;}
             }
             res

@@ -10,7 +10,8 @@ use validator::Validate;
 #[derive(Serialize, Deserialize, Validate, Clone, Debug)]
 #[serde(rename_all = "camelCase")]
 pub struct UserAddDTO {
-    /** 部门ID */
+    /** 归属部门ID */
+    #[validate(custom(function = "crate::string_required", message = "归属部门不能为空"))]
     pub dept_id: Option<String>,
     #[validate(custom(function = "crate::xss_validator", message = "用户账号不能包含脚本字符"))]
     /** 用户账号 */
@@ -54,7 +55,7 @@ impl From<UserAddDTO> for SysUser {
             phonenumber: arg.phonenumber,
             sex: arg.sex,
             avatar: None,
-            password: PasswordEncoder::encode(&arg.password.unwrap_or_default()).into(),
+            password: arg.password,
             status: STATUS_NORMAL.into(),
             del_flag: DEL_FLAG_NORMAL.into(),
             login_ip: None,
