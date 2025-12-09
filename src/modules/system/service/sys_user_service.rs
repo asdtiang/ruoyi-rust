@@ -9,7 +9,7 @@ use crate::system::domain::vo::{SysDeptVO, SysUserVO};
 use crate::utils::password_encoder::PasswordEncoder;
 use crate::web::token::auth::UserCache;
 use crate::{check_unique, export_excel_service, pool};
-use macros::data_scope;
+use macros::{data_scope, transactional};
 use rbatis::page::{Page, PageRequest};
 use rbatis::{field_name, IPage};
 use rbs::to_value;
@@ -59,6 +59,7 @@ impl SysUserService {
             .ok_or_else(|| Error::from("找不到此用户"))
     }
 
+    #[transactional(tx)]
     pub async fn add(&self, dto: &UserAddDTO, create_by: String) -> Result<u64> {
         self.check_user_name_unique(&None, dto.user_name.clone().unwrap_or_default())
             .await?;
@@ -82,24 +83,24 @@ impl SysUserService {
         user.create_by = Some(create_by);
         user.create_time = Some(rbatis::rbdc::datetime::DateTime::now().set_nano(0).into());
         let user_id = user.user_id.clone().unwrap_or_default();
-        let res = SysUser::insert(pool!(), &user).await?;
+        let res = SysUser::insert(&tx, &user).await?;
         if res.rows_affected > 0 {
             if role_ids.len() > 0 {
                 CONTEXT
                     .sys_user_role_service
-                    .add_user_roles(&user_id, &role_ids)
+                    .add_user_roles_tx(&user_id, &role_ids,&tx)
                     .await?;
             }
             if post_ids.len() > 0 {
                 CONTEXT
                     .sys_user_post_service
-                    .add_user_posts(&user_id, &post_ids)
+                    .add_user_posts_tx(&user_id, &post_ids,&tx)
                     .await?;
             }
         }
         Ok(res.rows_affected)
     }
-
+    #[transactional(tx)]
     pub async fn update(&self, dto: UserUpdateDTO, user_: &crate::UserCache) -> Result<u64> {
         let user_id = dto.user_id.clone();
         self.check_phonenumber_unique(&user_id, dto.phonenumber.clone().unwrap_or_default())
@@ -116,16 +117,16 @@ impl SysUserService {
         if role_ids.is_some() {
             CONTEXT
                 .sys_user_role_service
-                .reset_through_user_id(&user_id, &role_ids.unwrap_or_default())
+                .reset_through_user_id_tx(&user_id, &role_ids.unwrap_or_default(),&tx)
                 .await?;
         }
         if post_ids.is_some() {
             CONTEXT
                 .sys_user_post_service
-                .reset_through_user_id(&user_id, &post_ids.unwrap_or_default())
+                .reset_through_user_id_tx(&user_id, &post_ids.unwrap_or_default(),&tx)
                 .await?;
         }
-        Ok(SysUser::update_by_column(pool!(), &user, "user_id")
+        Ok(SysUser::update_by_column(&tx, &user, "user_id")
             .await?
             .rows_affected)
     }
@@ -140,7 +141,7 @@ impl SysUserService {
             .await?
             .rows_affected)
     }
-
+    #[transactional(tx)]
     pub async fn remove(&self, user_id: &str, user_cache: &crate::UserCache) -> Result<u64> {
         if user_cache.user_id.eq(user_id) {
             return Err(Error::from("不能删除自己！"));
@@ -150,15 +151,15 @@ impl SysUserService {
         }
         self.check_user_allowed(user_id).await?;
         self.check_user_data_scope(user_id, user_cache).await?;
-        let r = pool!()
+        let r = &tx
             .exec(
                 "update sys_user set del_flag = '2' where user_id = ?",
                 vec![to_value!(user_id)],
             )
             .await?;
         if r.rows_affected > 0 {
-            CONTEXT.sys_user_role_service.remove_by_user_id(user_id).await?;
-            CONTEXT.sys_user_post_service.remove_by_user_id(user_id).await?;
+            CONTEXT.sys_user_role_service.remove_by_user_id_tx(user_id,&tx).await?;
+            CONTEXT.sys_user_post_service.remove_by_user_id_tx(user_id,&tx).await?;
         }
         Ok(r.rows_affected)
     }

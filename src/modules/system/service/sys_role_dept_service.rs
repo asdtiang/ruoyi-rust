@@ -1,3 +1,4 @@
+use macros::replace_pool;
 use crate::error::Result;
 use crate::pool;
 use crate::system::domain::mapper::sys_role_dept::SysRoleDept;
@@ -6,6 +7,7 @@ use crate::system::domain::mapper::sys_role_dept::SysRoleDept;
 pub struct SysRoleDeptService {}
 
 impl SysRoleDeptService {
+    #[replace_pool]
     pub async fn add_role_depts(&self, role_id: &str, dept_ids: &Vec<String>) -> Result<u64> {
         let mut sys_role_dept = vec![];
         for dept_id in dept_ids {
@@ -18,7 +20,7 @@ impl SysRoleDeptService {
             .await?
             .rows_affected)
     }
-
+    #[replace_pool]
     pub async fn add_roles_dept(&self, dept_id: &str, role_ids: Vec<String>) -> Result<u64> {
         let mut sys_role_depts = vec![];
         for role_id in role_ids {
@@ -32,12 +34,13 @@ impl SysRoleDeptService {
             .rows_affected)
     }
 
+    #[replace_pool]
     pub async fn remove_by_dept_id(&self, dept_id: &str) -> Result<u64> {
         Ok(SysRoleDept::delete_by_column(pool!(), "dept_id", dept_id)
             .await?
             .rows_affected)
     }
-
+    #[replace_pool]
     pub async fn remove_by_role_id(&self, role_id: &String) -> Result<u64> {
         Ok(SysRoleDept::delete_by_column(pool!(), "role_id", role_id)
             .await?

@@ -5,7 +5,7 @@ use crate::system::domain::dto::MenuPageDTO;
 use rbatis::field_name;
 use rbs::to_value;
 use std::collections::BTreeMap;
-
+use macros::transactional;
 use crate::context::CONTEXT;
 use crate::error::Error;
 use crate::error::Result;
@@ -76,11 +76,12 @@ impl SysMenuService {
         Ok(result.rows_affected)
     }
 
+    #[transactional(tx)]
     pub async fn remove(&self, id: &str) -> Result<u64> {
-        let trash = SysMenu::select_by_column(pool!(), "menu_id", id).await?;
+        let trash = SysMenu::select_by_column(&tx, "menu_id", id).await?;
 
         if trash.len() == 1 {
-            let count: u64 = pool!()
+            let count: u64 =tx
                 .query_decode(
                     "select count(1) as count from sys_menu where parent_id =?",
                     vec![to_value!(id)],
@@ -92,11 +93,11 @@ impl SysMenuService {
         } else {
             return Err(Error::from(format!("菜单id{}不存在！", id)));
         }
-        let num = SysMenu::delete_by_column(pool!(), "menu_id", id)
+        let num = SysMenu::delete_by_column(&tx, "menu_id", id)
             .await?
             .rows_affected;
 
-        CONTEXT.sys_role_menu_service.remove_by_menu_id(&id).await?;
+        CONTEXT.sys_role_menu_service.remove_by_menu_id_tx(&id,&tx).await?;
         
         CONTEXT.sys_trash_service.add("sys_menu", &trash).await?;
 

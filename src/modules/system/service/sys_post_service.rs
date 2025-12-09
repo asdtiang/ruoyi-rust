@@ -1,3 +1,4 @@
+use macros::replace_pool;
 use rbatis::{field_name, Page, PageRequest};
 
 use crate::context::CONTEXT;
@@ -8,18 +9,13 @@ use crate::system::domain::mapper;
 use crate::system::domain::mapper::sys_post::SysPost;
 use crate::system::domain::mapper::sys_user_post::SysUserPost;
 use crate::system::domain::vo::SysPostVO;
-use crate::{export_excel_service, pool, remove_batch};
+use crate::{export_excel_service, pool, remove_batch_tx};
 
 pub struct SysPostService {}
 
 impl SysPostService {
     pub async fn page(&self, arg: &PostPageDTO) -> Result<Page<SysPostVO>> {
-        let data = SysPost::select_page(
-            pool!(),
-            &PageRequest::from(arg),
-            arg
-        )
-            .await?;
+        let data = SysPost::select_page(pool!(), &PageRequest::from(arg), arg).await?;
         let page = Page::<SysPostVO>::from(data);
 
         Ok(page)
@@ -37,7 +33,8 @@ impl SysPostService {
         let post = SysPost::select_by_column(pool!(), field_name!(SysPost.post_id), post_id)
             .await?
             .into_iter()
-            .next().ok_or_else(|| Error::from(format!("不存在:{:?} 不存在！", post_id)))?;
+            .next()
+            .ok_or_else(|| Error::from(format!("不存在:{:?} 不存在！", post_id)))?;
         let post_vo = SysPostVO::from(post);
         return Ok(post_vo);
     }
@@ -51,7 +48,7 @@ impl SysPostService {
         let result = SysPost::update_by_column(pool!(), &data, "post_id").await;
         Ok(result?.rows_affected)
     }
-
+    #[replace_pool]
     pub async fn remove(&self, post_id: &str) -> Result<u64> {
         let targets = SysPost::select_by_column(pool!(), "post_id", post_id).await?;
 
@@ -59,26 +56,25 @@ impl SysPostService {
         if r.rows_affected > 0 {
             //copy data to trash
             CONTEXT.sys_trash_service.add("sys_post", &targets).await?;
-            CONTEXT.sys_user_post_service.remove_by_post_id(post_id).await?;
+            CONTEXT.sys_user_post_service.remove_by_post_id_tx(post_id,tx).await?;
         }
         Ok(r.rows_affected)
     }
     pub async fn finds_post_ids_by_user_id(&self, user_id: &str) -> Result<Vec<String>> {
         let user_posts = SysUserPost::select_by_column(pool!(), "user_id", user_id).await?;
-       let ids=user_posts.into_iter()
-            .map(|r| r.post_id.unwrap_or_default())
-            .collect();
+        let ids = user_posts.into_iter().map(|r| r.post_id.unwrap_or_default()).collect();
 
         Ok(ids)
     }
     pub async fn select_post_names_by_user_name(&self, user_name: &str) -> Result<Vec<String>> {
-        let user_posts =mapper::sys_post::select_posts_by_user_name(pool!(), user_name).await?;
-        let ids=user_posts.into_iter()
+        let user_posts = mapper::sys_post::select_posts_by_user_name(pool!(), user_name).await?;
+        let ids = user_posts
+            .into_iter()
             .map(|r| r.post_name.unwrap_or_default())
             .collect();
 
         Ok(ids)
     }
-    remove_batch!(post_ids);
-    export_excel_service!(PostPageDTO, SysPostVO,SysPost::select_page);
+    remove_batch_tx!(post_ids);
+    export_excel_service!(PostPageDTO, SysPostVO, SysPost::select_page);
 }

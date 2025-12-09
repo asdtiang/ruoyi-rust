@@ -1,3 +1,4 @@
+use macros::replace_pool;
 use crate::context::CONTEXT;
 use crate::error::Error;
 use crate::error::Result;
@@ -5,7 +6,7 @@ use crate::modules::system::constants::SYS_YES;
 use crate::system::domain::dto::ConfigPageDTO;
 use crate::system::domain::mapper::sys_config::SysConfig;
 use crate::system::domain::vo::SysConfigVO;
-use crate::{check_unique, export_excel_service, pool, remove_batch};
+use crate::{check_unique, export_excel_service, pool, remove_batch, remove_batch_tx};
 use rbatis::{field_name, Page, PageRequest};
 use rbs::to_value;
 
@@ -52,8 +53,9 @@ impl SysConfigService {
         Ok(result)
     }
 
-    remove_batch!(config_ids);
+    remove_batch_tx!(config_ids);
 
+    #[replace_pool(tx)]
     pub async fn remove(&self, config_id: &str) -> Result<u64> {
         let targets = SysConfig::select_by_column(pool!(), "config_id", config_id)
             .await?

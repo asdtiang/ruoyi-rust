@@ -1,3 +1,4 @@
+use macros::replace_pool;
 use crate::error::Result;
 use crate::pool;
 use crate::system::domain::mapper::sys_role_menu::SysRoleMenu;
@@ -6,6 +7,7 @@ use crate::system::domain::mapper::sys_role_menu::SysRoleMenu;
 pub struct SysRoleMenuService {}
 
 impl SysRoleMenuService {
+    #[replace_pool]
     pub async fn add_role_menus(&self, role_id: String, menu_ids: Vec<String>) -> Result<u64> {
         let mut sys_role_menu = vec![];
         for menu_id in menu_ids {
@@ -18,7 +20,7 @@ impl SysRoleMenuService {
             .await?
             .rows_affected)
     }
-
+    #[replace_pool]
     pub async fn add_roles_menu(&self, menu_id: &str, role_ids: Vec<String>) -> Result<u64> {
         let mut sys_role_menus = vec![];
         for role_id in role_ids {
@@ -32,12 +34,13 @@ impl SysRoleMenuService {
             .rows_affected)
     }
 
+    #[replace_pool]
     pub async fn remove_by_menu_id(&self, menu_id: &str) -> Result<u64> {
         Ok(SysRoleMenu::delete_by_column(pool!(), "menu_id", menu_id)
             .await?
             .rows_affected)
     }
-
+    #[replace_pool]
     pub async fn remove_by_role_id(&self, role_id: &str) -> Result<u64> {
         Ok(SysRoleMenu::delete_by_column(pool!(), "role_id", role_id)
             .await?

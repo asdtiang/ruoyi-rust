@@ -17,12 +17,8 @@ mod test {
 
     #[test]
     fn test_encode() {
-        let s = PasswordEncoder::encode("123456");
-        println!("{}", s);
-        assert_eq!(
-            PasswordEncoder::encode("123456"),
-            PasswordEncoder::encode("123456")
-        )
+let s=PasswordEncoder::encode("123456");
+        assert!( PasswordEncoder::verify(&s,"123456"));
     }
 
     #[test]

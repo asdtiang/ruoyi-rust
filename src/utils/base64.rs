@@ -213,7 +213,7 @@ mod tests {
 }
 
 // 使用示例
-fn main() {
+fn test() {
     println!("=== Base64 编码解码示例 ===");
 
     // 基本示例

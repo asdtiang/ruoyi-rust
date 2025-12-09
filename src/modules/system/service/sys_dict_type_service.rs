@@ -1,3 +1,4 @@
+use macros::{replace_pool, transactional};
 use rbatis::{field_name, Page, PageRequest};
 use rbs::to_value;
 
@@ -7,7 +8,7 @@ use crate::error::Result;
 use crate::system::domain::dto::DictTypePageDTO;
 use crate::system::domain::mapper::sys_dict_type::SysDictType;
 use crate::system::domain::vo::SysDictTypeVO;
-use crate::{check_unique, export_excel_service, pool, remove_batch};
+use crate::{check_unique, export_excel_service, pool, remove_batch, remove_batch_tx};
 
 pub struct SysDictTypeService {}
 
@@ -23,12 +24,11 @@ impl SysDictTypeService {
         Ok(res)
     }
     pub async fn detail(&self, dict_id: &str) -> Result<SysDictTypeVO> {
-        let dict_type =
-            SysDictType::select_by_column(pool!(), field_name!(SysDictType.dict_id), dict_id)
-                .await?
-                .into_iter()
-                .next()
-                .ok_or_else(|| Error::from(format!("不存在:{:?} 不存在！", dict_id)))?;
+        let dict_type = SysDictType::select_by_column(pool!(), field_name!(SysDictType.dict_id), dict_id)
+            .await?
+            .into_iter()
+            .next()
+            .ok_or_else(|| Error::from(format!("不存在:{:?} 不存在！", dict_id)))?;
         let dict_type_vo = SysDictTypeVO::from(dict_type);
         Ok(dict_type_vo)
     }
@@ -39,19 +39,32 @@ impl SysDictTypeService {
         let _ = CONTEXT.sys_dict_data_service.update_cache().await;
         result
     }
-
+    #[transactional(tx)]
     pub async fn update(&self, data: SysDictType) -> Result<u64> {
-        self.check_dict_type_unique(&data.dict_id,data.dict_type.clone().unwrap_or_default())
+        self.check_dict_type_unique(&data.dict_id, data.dict_type.clone().unwrap_or_default())
             .await?;
-        let result = SysDictType::update_by_column(pool!(), &data, "dict_id").await;
-        //todo 需要同时更改dict_data中的dict_type
+
+        let result = SysDictType::update_by_column(&tx, &data, "dict_id").await;
         if result.is_ok() {
             //更新dict_data
             CONTEXT.sys_dict_data_service.update_cache().await?;
+
+            let dict_type_in_db = self.detail(&data.dict_id.clone().unwrap_or_default()).await?;
+            if !data.dict_type.eq(&dict_type_in_db.dict_type) {
+                let r = &tx
+                    .exec(
+                        "update sys_dict_data set dict_type = '?' where dict_type = ?",
+                        vec![
+                            rbs::to_value!(data.dict_type),
+                            rbs::to_value!(dict_type_in_db.dict_type),
+                        ],
+                    )
+                    .await?;
+            }
         }
         Ok(result?.rows_affected)
     }
-
+  #[replace_pool]
     pub async fn remove(&self, dict_id: &str) -> Result<u64> {
         let targets = SysDictType::select_by_column(pool!(), "dict_id", dict_id).await?;
         if targets.len() == 1 {
@@ -73,10 +86,7 @@ impl SysDictTypeService {
         if r.rows_affected > 0 {
             CONTEXT.sys_dict_data_service.update_cache().await?;
             //copy data to trash
-            CONTEXT
-                .sys_trash_service
-                .add("sys_dict_type", &targets)
-                .await?;
+            CONTEXT.sys_trash_service.add("sys_dict_type", &targets).await?;
         }
         Ok(r.rows_affected)
     }
@@ -87,6 +97,6 @@ impl SysDictTypeService {
         dict_type,
         "字典已存在"
     );
-    remove_batch!(dict_type_ids);
-    export_excel_service!(DictTypePageDTO, SysDictTypeVO,SysDictType::select_page);
+    remove_batch_tx!(dict_type_ids);
+    export_excel_service!(DictTypePageDTO, SysDictTypeVO, SysDictType::select_page);
 }

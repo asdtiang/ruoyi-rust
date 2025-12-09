@@ -8,7 +8,7 @@ use crate::system::domain::mapper::sys_dept;
 use crate::system::domain::mapper::sys_dept::SysDept;
 use crate::system::domain::vo::{DeptTreeVO, SysDeptVO};
 use crate::{pool, UserCache};
-use macros::data_scope;
+use macros::{data_scope, replace_pool, transactional};
 use rbatis::field_name;
 use rbs::to_value;
 pub struct SysDeptService {}
@@ -27,12 +27,8 @@ impl SysDeptService {
     }
 
     pub async fn add(&self, dept: SysDept) -> Result<u64> {
-        self.check_dept_name_unique(
-            &&None,
-            &dept.dept_name,
-            &dept.parent_id,
-        )
-        .await?;
+        self.check_dept_name_unique(&&None, &dept.dept_name, &dept.parent_id)
+            .await?;
 
         let parent = self.get_dept_by_id(&dept.parent_id.clone().unwrap()).await?;
         if parent.status.unwrap_or_default() != DEPT_NORMAL {
@@ -41,6 +37,7 @@ impl SysDeptService {
         Ok(SysDept::insert(pool!(), &dept).await?.rows_affected)
     }
     //加入事务
+    #[transactional(tx)]
     pub async fn update(&self, dto: SysDept) -> Result<u64> {
         let mut dept = SysDept::from(dto);
         let dept_name = dept.dept_name.clone().unwrap_or_default();
@@ -68,26 +65,24 @@ impl SysDeptService {
         );
         let old_ancestors = old_dept.ancestors.unwrap_or_default();
         dept.ancestors = Some(new_ancestors.clone());
-        self.update_dept_children(&dept_id, &new_ancestors, &old_ancestors)
+        self.update_dept_children_tx(&dept_id, &new_ancestors, &old_ancestors, &tx)
             .await?;
-        let result = SysDept::update_by_column(pool!(), &dept, "dept_id").await?;
+        let result = SysDept::update_by_column(&tx, &dept, "dept_id").await?;
         Ok(result.rows_affected)
     }
-
+    #[transactional(tx)]
     pub async fn remove(&self, dept_id: &str) -> Result<u64> {
         if self.has_child_by_dept_id(dept_id).await? {
             return Err(Error::from("存在下级部门,不允许删除"));
         }
         self.check_dept_exist_user(dept_id).await?;
-        let tx = pool!().acquire_begin().await?;
-        let res = pool!()
+        let res = tx
             .exec(
                 "update sys_dept set del_flag = '2' where dept_id = ?",
                 vec![to_value!(dept_id)],
             )
             .await?;
-        CONTEXT.sys_role_dept_service.remove_by_dept_id(dept_id).await?;
-        tx.commit().await?;
+        CONTEXT.sys_role_dept_service.remove_by_dept_id_tx(dept_id, &tx).await?;
         Ok(res.rows_affected)
     }
     //根据user id获得本单位及下属单位部门列表 todo
@@ -163,7 +158,6 @@ impl SysDeptService {
             .await?;
         Ok(count > 0)
     }
-
     //根据ID查询所有子部门
     async fn select_children_dept_by_id(&self, dept_id: &str) -> Result<Vec<SysDept>> {
         let res: Option<Vec<SysDept>> = pool!()
@@ -188,23 +182,29 @@ impl SysDeptService {
 
     //  校验当前部门名称是否唯一
 
-    pub async fn check_dept_name_unique(&self, dept_id: &Option<String>, dept_name:  &Option<String>, parent_id:  &Option<String>) -> Result<()> {
-                let old_id: Option<String> = pool!()
-                    .query_decode("select dept_id as count from sys_dept where dept_name=? and parent_id = ? and del_flag = '0'",
-                                  vec![to_value!(dept_name), to_value!(parent_id)])
-                    .await?;
-        if old_id.is_none()||old_id.eq(dept_id) {
-                    Ok(())
-                } else {
-                    Err(Error::from("部门名称已存在"))
-                }
-            }
-
+    pub async fn check_dept_name_unique(
+        &self,
+        dept_id: &Option<String>,
+        dept_name: &Option<String>,
+        parent_id: &Option<String>,
+    ) -> Result<()> {
+        let old_id: Option<String> = pool!()
+            .query_decode(
+                "select dept_id as count from sys_dept where dept_name=? and parent_id = ? and del_flag = '0'",
+                vec![to_value!(dept_name), to_value!(parent_id)],
+            )
+            .await?;
+        if old_id.is_none() || old_id.eq(dept_id) {
+            Ok(())
+        } else {
+            Err(Error::from("部门名称已存在"))
+        }
+    }
 
     /**
-    * 修改子元素关系
-
-    */
+     * 修改子元素关系
+     */
+    #[replace_pool]
     async fn update_dept_children(&self, dept_id: &str, new_ancestors: &str, old_ancestors: &str) -> Result<()> {
         let mut children = self.select_children_dept_by_id(dept_id).await?;
         children.iter_mut().for_each(|child| {

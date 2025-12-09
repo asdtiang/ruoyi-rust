@@ -1,3 +1,5 @@
+mod trans;
+
 use proc_macro::TokenStream;
 use proc_macro2::Ident;
 use quote::{quote, ToTokens};
@@ -476,6 +478,9 @@ pub fn transactional(ident: TokenStream, item: TokenStream) -> TokenStream {
     let func_decl = &func.sig; // 函数申明
 
     let func_attrs = &func.attrs;
+
+    let mut has_pool_st =trans::HasPoolSt{};
+    syn::visit::visit_block(&mut has_pool_st, & func_block);
     let expanded = quote! { // 重新构建函数执行
         #(#func_attrs)*
         #func_vis #func_decl{
@@ -684,4 +689,93 @@ fn to_camel_case(text: &str) -> String {
             }
         })
         .collect()
+}
+
+//将pool()!替换为tx_expr,默认不保留原先，
+#[proc_macro_attribute]
+pub fn replace_pool(attr: TokenStream, item: TokenStream) -> TokenStream {
+
+    let parser = |input: syn::parse::ParseStream| {
+        let mut keep_old = None;
+        let mut tx_ident = None;
+
+        while !input.is_empty() {
+            if input.peek(syn::LitBool) {
+                // 解析权限字符串
+                keep_old = Some(input.parse::<syn::LitBool>()?);
+            } else if input.peek(syn::Ident) {
+                tx_ident = Some(input.parse::<syn::Ident>()?);
+            } else if input.peek(syn::Token![,]) {
+                input.parse::<syn::Token![,]>()?;
+            }
+        }
+        Ok((keep_old, tx_ident))
+    };
+    let ( keep_old, tx_ident) = match parser.parse(attr) {
+        Ok(attr) => attr,
+        Err(e) => return e.to_compile_error().into(),
+    };
+    let keep_old= keep_old.is_some_and(|b|b.value);
+    // 添加 tx 参数
+    // let tx_param: FnArg = syn::parse_quote! {
+    //     #ident: &rbatis::RBatis
+    // };
+    // input_fn.sig.inputs.push( tx_param);
+    // 创建 AST 遍历器
+    let tx_ident = tx_ident.unwrap_or(parse_quote!(tx));
+
+
+
+
+    let old_fun=if keep_old {item.clone().into()}else{quote! { }};
+
+    let mut visitor = crate::trans::ReplacePoolSt {
+        tx: tx_ident.clone(),
+    };
+
+
+    let mut input_fn = parse_macro_input!(item as ItemFn);
+
+    // 遍历并替换函数体中的所有pool()!表达式
+    syn::visit_mut::visit_block_mut(&mut visitor, &mut input_fn.block);
+
+    let func_vis = &input_fn.vis; // pub
+    let func_block = &input_fn.block; //.stmts.iter().map(|r|r.to_token_stream().to_string()).collect::<Vec<_>>().join("\n"); // 函数主体实现部分{}
+
+    let func_decl = &input_fn.sig; // 函数申明
+
+  //  let func_attrs = &input_fn.attrs;
+    let func_name = &func_decl.ident; // 函数名
+    let func_asyncness = &func_decl.asyncness; // 函数名
+    let func_generics = &func_decl.generics; // 函数泛型
+    let func_inputs = &func_decl.inputs; // 函数输入参数
+    let func_output = &func_decl.output;
+
+
+    let tx_func_name = quote::format_ident!("{}_tx", func_name);
+
+    // let mut arg_names = Vec::new();
+    //
+    // for arg in func_inputs.iter() {
+    //     match arg {
+    //         syn::FnArg::Typed(pat_type) => {
+    //             if let syn::Pat::Ident(pat_ident) = &*pat_type.pat {
+    //                 arg_names.push(&pat_ident.ident);
+    //             }
+    //         }
+    //         syn::FnArg::Receiver(_) => {
+    //         }
+    //     }
+    // }
+
+
+    let output=quote! {
+
+        #old_fun
+        #func_vis #func_asyncness fn #tx_func_name #func_generics(#func_inputs,#tx_ident:& rbatis :: executor::RBatisTxExecutor) #func_output
+         #func_block
+
+    };
+    println!("output: {}", output.to_string());
+    output.into()
 }

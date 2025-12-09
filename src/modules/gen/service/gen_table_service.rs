@@ -7,9 +7,8 @@ use crate::gen::service::{gen_constants, gen_utils, jinja_utils};
 use crate::gen::GEN_CONTEXT;
 use crate::utils::file_utils::find_files_with_extension;
 use crate::utils::string::substring_unicode;
-use crate::{pool, remove_batch};
-use futures_util::StreamExt;
-use macros::transactional;
+use crate::{pool, remove_batch_tx};
+use macros::{replace_pool, transactional};
 use minijinja::syntax::SyntaxConfig;
 use rbatis::object_id::ObjectId;
 use rbatis::rbdc::DateTime;
@@ -61,18 +60,17 @@ impl GenTableService {
         }
         Ok(result.rows_affected)
     }
-
-    #[transactional(tx)]
+    #[replace_pool]
     pub async fn remove(&self, table_id: &str) -> Result<u64> {
         // let targets = GenTable::select_by_column(&tx, "table_id", table_id).await?;
 
-        let r = GenTable::delete_by_column(&tx, "table_id", table_id).await?;
+        let r = GenTable::delete_by_column(tx, "table_id", table_id).await?;
         if r.rows_affected > 0 {
-            GenTableColumn::delete_by_column(&tx, "table_id", table_id).await?;
+            GenTableColumn::delete_by_column(tx, "table_id", table_id).await?;
         }
         Ok(r.rows_affected)
     }
-    remove_batch!(table_ids);
+    remove_batch_tx!(table_ids);
 
     #[transactional(tx)]
     pub async fn import_gen_table(&self, table_name_list: Vec<&str>, oper_user_name: &str) -> Result<u64> {
@@ -108,22 +106,20 @@ impl GenTableService {
         }
         Ok(())
     }
-    pub async fn preview_code(&self, table_id: &str) -> Result<HashMap<String,String>> {
+    pub async fn preview_code(&self, table_id: &str) -> Result<HashMap<String, String>> {
         let table = GenTable::select_by_column(pool!(), field_name!(GenTable.table_id), table_id)
             .await?
             .into_iter()
             .next();
         if let Some(t) = table {
             let code_map = self.generate(&t).await?;
-            let mut res =HashMap::new();
-             code_map
-                .iter()
-                .for_each(|(path, v)| {
-                    let name=path.to_str().unwrap().to_string();
-                    let name=name.replace(&t.gen_path_back.clone().unwrap_or_default(),"");
-                    let name=name.replace(&t.gen_path_front.clone().unwrap_or_default(),"");
-                    res.insert(name, v.to_string());
-                });
+            let mut res = HashMap::new();
+            code_map.iter().for_each(|(path, v)| {
+                let name = path.to_str().unwrap().to_string();
+                let name = name.replace(&t.gen_path_back.clone().unwrap_or_default(), "");
+                let name = name.replace(&t.gen_path_front.clone().unwrap_or_default(), "");
+                res.insert(name, v.to_string());
+            });
             Ok(res)
         } else {
             Err(Error::from("错误id"))
@@ -420,10 +416,10 @@ impl GenTableService {
                     column.dict_type = prev_column.dict_type.clone();
                     column.query_type = prev_column.query_type.clone();
                 }
-                column.is_edit= prev_column.is_edit.clone();
-                column.is_insert= prev_column.is_insert.clone();
-                column.is_detail= prev_column.is_detail.clone();
-                column.is_export= prev_column.is_export.clone();
+                column.is_edit = prev_column.is_edit.clone();
+                column.is_insert = prev_column.is_insert.clone();
+                column.is_detail = prev_column.is_detail.clone();
+                column.is_export = prev_column.is_export.clone();
 
                 column.more = prev_column.more.clone();
                 GenTableColumn::update_by_column(pool!(), &column, "column_id").await?;

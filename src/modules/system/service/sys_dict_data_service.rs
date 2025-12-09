@@ -6,10 +6,11 @@ use crate::system::domain::mapper::sys_dict_data::SysDictData;
 use crate::system::domain::vo::{SysDictDataSimpleVO, SysDictDataVO};
 use crate::system::service::dict_utils;
 use crate::system::service::dict_utils::get_dict_redis_key;
-use crate::{check_unique, export_excel_service, pool, remove_batch};
+use crate::{check_unique, export_excel_service, pool, remove_batch, remove_batch_tx};
 use rbatis::{field_name, Page, PageRequest};
 use rbs::to_value;
 use std::collections::HashMap;
+use macros::replace_pool;
 
 pub struct SysDictDataService {}
 
@@ -55,6 +56,7 @@ impl SysDictDataService {
         Ok(result?.rows_affected)
     }
 
+    #[replace_pool]
     pub async fn remove(&self, dict_code: &str) -> Result<u64> {
         let targets = SysDictData::select_by_column(pool!(), "dict_code", dict_code).await?;
 
@@ -90,7 +92,7 @@ impl SysDictDataService {
 
 
     check_unique!(check_dict_value_unique,"sys_dict_data",dict_code, dict_type, dict_value,"字典数据键值已存在");
-    remove_batch!(dict_data_ids);
+    remove_batch_tx!(dict_data_ids);
 
     export_excel_service!(DictDataPageDTO, SysDictDataVO,SysDictData::select_page);
 }

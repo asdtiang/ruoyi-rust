@@ -7,8 +7,8 @@ use crate::system::domain::mapper::sys_user;
 use crate::system::domain::mapper::sys_user::SysUser;
 use crate::system::domain::mapper::sys_user_role::SysUserRole;
 use crate::system::domain::vo::{SysRoleVO, SysUserVO};
-use crate::{export_excel_service, pool, remove_batch};
-use macros::data_scope;
+use crate::{export_excel_service, pool, remove_batch_tx};
+use macros::{data_scope, replace_pool, transactional};
 use rbatis::{field_name, Page, PageRequest};
 use rbs::to_value;
 
@@ -40,30 +40,31 @@ impl SysRoleService {
         Ok(all)
     }
 
+    #[transactional(tx)]
     pub async fn add(&self, role: SysRole, menu_ids: Vec<String>) -> Result<u64> {
-        let result = SysRole::insert(pool!(), &role).await?.rows_affected;
+        let result = SysRole::insert(&tx, &role).await?.rows_affected;
 
         if result > 0 && !menu_ids.is_empty() {
             CONTEXT
                 .sys_role_menu_service
-                .add_role_menus(role.role_id.unwrap(), menu_ids)
+                .add_role_menus_tx(role.role_id.unwrap_or_default(), menu_ids,&tx)
                 .await?;
         }
         self.update_cache().await?;
         Ok(result)
     }
-
+    #[transactional(tx)]
     pub async fn update(&self, role: SysRole, menu_ids: Vec<String>) -> Result<u64> {
         self.check_role_allowed(&role).await?;
 
-        let result = SysRole::update_by_column(pool!(), &role, field_name!(SysRole.role_id))
+        let result = SysRole::update_by_column(&tx, &role, field_name!(SysRole.role_id))
             .await?
             .rows_affected;
         if result > 0 {
             let role_id = role.role_id.clone().unwrap();
-            CONTEXT.sys_role_menu_service.remove_by_role_id(&role_id).await?;
+            CONTEXT.sys_role_menu_service.remove_by_role_id_tx(&role_id,&tx).await?;
             if !menu_ids.is_empty() {
-                CONTEXT.sys_role_menu_service.add_role_menus(role_id, menu_ids).await?;
+                CONTEXT.sys_role_menu_service.add_role_menus_tx(role_id, menu_ids,&tx).await?;
             }
         }
         self.update_cache().await?;
@@ -84,13 +85,15 @@ impl SysRoleService {
         self.update_cache().await?;
         Ok(res.rows_affected)
     }
+
+    #[replace_pool]
     pub async fn remove(&self, id: &str) -> Result<u64> {
         let trash = SysRole::select_by_column(pool!(), field_name!(SysRole.role_id), id).await?;
         let result = SysRole::delete_by_column(pool!(), field_name!(SysRole.role_id), id)
             .await?
             .rows_affected;
         if result > 0 {
-            CONTEXT.sys_role_menu_service.remove_by_role_id(id).await?;
+            CONTEXT.sys_role_menu_service.remove_by_role_id_tx(id,tx).await?;
         }
         CONTEXT.sys_trash_service.add("sys_role", &trash).await?;
         self.update_cache().await?;
@@ -197,19 +200,20 @@ impl SysRoleService {
         }
         Ok(true)
     }
+    #[transactional(tx)]
     pub async fn auth_data_scope(&self, role: &SysRole, dept_ids: &Vec<String>,user: &crate::UserCache) -> Result<bool> {
         self.check_role_allowed(role).await?;
         let role_id = role.role_id.clone().unwrap_or_default();
         self.check_role_data_scope(&role_id, user).await?;
-        SysRole::update_by_column(pool!(), &role, field_name!(SysRole.role_id))
+        SysRole::update_by_column(&tx, &role, field_name!(SysRole.role_id))
             .await?;
-        CONTEXT.sys_role_dept_service.remove_by_role_id(&role_id).await?;
+        CONTEXT.sys_role_dept_service.remove_by_role_id_tx(&role_id,&tx).await?;
         if !dept_ids.is_empty() {
-            CONTEXT.sys_role_dept_service.add_role_depts(&role_id, dept_ids).await?;
+            CONTEXT.sys_role_dept_service.add_role_depts_tx(&role_id, dept_ids,&tx).await?;
         }
 
         Ok(true)
     }
-    remove_batch!(role_ids);
+    remove_batch_tx!(role_ids);
     export_excel_service!(RolePageDTO, SysRoleVO, SysRole::select_page);
 }

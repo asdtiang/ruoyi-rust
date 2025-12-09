@@ -1,3 +1,5 @@
+use macros::transactional;
+
 #[macro_export]
 macro_rules! check_unique {
     ($func_name:ident, $table:expr, $id_col:ident, $key_col:ident,$hint:expr) => {
@@ -89,10 +91,10 @@ macro_rules! get_config_value {
     };
 }
 #[macro_export]
+#[deprecated]
 macro_rules! remove_batch {
     ($ids:ident) => {
         pub async fn remove_batch(&self, $ids: &str) -> Result<u64> {
-            //fixme 是否要加入事务
             let $ids = $ids.split(",").collect::<Vec<&str>>();
             for id in $ids {
                 self.remove(id).await?;
@@ -106,6 +108,30 @@ macro_rules! remove_batch {
             let $ids = $ids.split(",").collect::<Vec<&str>>();
             for id in $ids {
                 self.remove(id,$user_cache).await?;
+            }
+            Ok(1)
+        }
+    };
+}
+
+#[macro_export]
+macro_rules! remove_batch_tx {
+    ($ids:ident) => {
+        #[macros::transactional(tx)]
+        pub async fn remove_batch(&self, $ids: &str) -> Result<u64> {
+            let $ids = $ids.split(",").collect::<Vec<&str>>();
+            for id in $ids {
+                self.remove_tx(id,&tx).await?;
+            }
+            Ok(1)
+        }
+    };
+    ($ids:ident,$user_cache:ident) => {
+        #[macros::transactional(tx)]
+        pub async fn remove_batch(&self, $ids: &str,$user_cache:&UserCache) -> Result<u64> {
+            let $ids = $ids.split(",").collect::<Vec<&str>>();
+            for id in $ids {
+                self.remove_tx(id,$user_cache,&tx).await?;
             }
             Ok(1)
         }
