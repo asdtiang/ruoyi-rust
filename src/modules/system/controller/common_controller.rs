@@ -14,7 +14,7 @@ pub async fn upload(mut multipart: Multipart) -> impl IntoResponse {
        // let content_type = field.content_type().unwrap().to_string();
         let data = field.bytes().await.unwrap();
         let date = DateTime::now();
-        let new_file_name = format!("{}{}", uuid::Uuid::new_v4().to_string(), file_name);
+        let new_file_name = format!("{}_{}", uuid::Uuid::new_v4().to_string(), file_name);
         let path = PathBuf::from(&CONTEXT.config.upload_path)
             .join("profile")
             .join(date.year().to_string())

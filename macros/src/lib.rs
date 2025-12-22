@@ -776,6 +776,5 @@ pub fn replace_pool(attr: TokenStream, item: TokenStream) -> TokenStream {
          #func_block
 
     };
-    println!("output: {}", output.to_string());
     output.into()
 }

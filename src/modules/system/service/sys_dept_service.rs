@@ -242,9 +242,13 @@ impl SysDeptService {
             .await?
             .into_iter()
             .next()
-            .ok_or_else(|| Error::from(format!("不存在：{:?} ！", dept_id)))?;
+            .ok_or_else(|| Error::from(format!("不存在：{} ！", dept_id)))?;
         Ok(dept)
     }
 
+    pub(crate) async fn get_dept_list_by_ids(&self, dept_ids: &Vec<String>) -> Result<Vec<SysDept>> {
+        let res = sys_dept::select_dept_list_by_ids(pool!(), dept_ids).await?;
+        Ok(res)
+    }
     // export_excel_service!(DeptPageDTO, SysDeptVO,sys_dept::select_page);
 }

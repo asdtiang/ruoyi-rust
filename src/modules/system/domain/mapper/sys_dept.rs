@@ -2,6 +2,7 @@ use rbatis::executor::Executor;
 use rbatis::rbdc::DateTime;
 use rbatis::{crud, html_sql, py_sql};
 use rbs::Error;
+use crate::oa::domain::mapper::OaComplaint;
 
 crud!(SysDept {});
 #[derive(Clone, Debug, serde::Serialize, serde::Deserialize)]
@@ -86,5 +87,21 @@ pub async fn update_dept_children(
     rb: &dyn Executor,
     depts: Vec<SysDept>,
 ) -> Result<Option<u64>, Error> {
+    impled!()
+}
+
+
+#[html_sql(
+    r#"
+        <select id="select_dept_list_by_ids">  select * from sys_dept`
+        ` where dept_id in`
+        <foreach collection="ids" item="t" open="(" separator="," close=")">
+        ` #{t}`
+        </foreach></select>"#
+)]
+pub async fn select_dept_list_by_ids(
+    rb: &dyn Executor,
+    ids: &Vec<String>,
+) -> Result<Vec<SysDept>, Error> {
     impled!()
 }

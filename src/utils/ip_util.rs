@@ -13,13 +13,6 @@ fn is_ip_empty(ip: &Option<&HeaderValue>) -> bool {
  * @return IP地址
  */
 pub fn get_ip_addr(head: &HeaderMap) -> Option<String> {
-    head.into_iter().for_each(|(key, value)| {
-        println!("{}: {}", key.to_string(), value.to_str().unwrap());
-    });
-    // if (request == null)
-    // {
-    // return "unknown";
-    // }
     let mut ip = head.get("x-forwarded-for");
     if is_ip_empty(&ip) {
         ip = head.get("Proxy-Client-IP");

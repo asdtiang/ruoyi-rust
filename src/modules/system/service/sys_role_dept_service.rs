@@ -41,13 +41,13 @@ impl SysRoleDeptService {
             .rows_affected)
     }
     #[replace_pool]
-    pub async fn remove_by_role_id(&self, role_id: &String) -> Result<u64> {
+    pub async fn remove_by_role_id(&self, role_id: &str) -> Result<u64> {
         Ok(SysRoleDept::delete_by_column(pool!(), "role_id", role_id)
             .await?
             .rows_affected)
     }
 
-    pub async fn select_by_role_id(&self, role_id: &String) -> Result<Vec<SysRoleDept>> {
+    pub async fn select_by_role_id(&self, role_id: &str) -> Result<Vec<SysRoleDept>> {
         Ok(SysRoleDept::select_by_column(pool!(), "role_id", role_id)
             .await?)
     }

@@ -1,6 +1,7 @@
 use crate::system::domain::dto::RolePageDTO;
 use rbatis::rbdc::DateTime;
 use rbatis::{crud, impl_select_page};
+use crate::config::global_constants::ADMIN_ROLE_ID;
 
 crud!(SysRole {});
 impl_select_page!(SysRole{select_page(dto:&RolePageDTO)=>
@@ -51,6 +52,6 @@ pub struct SysRole {
 }
 impl SysRole {
     pub fn is_admin(&self) -> bool {
-        self.role_id.clone().unwrap() == "1"
+        self.role_id.clone().is_some_and(|id|id.eq(ADMIN_ROLE_ID))
     }
 }

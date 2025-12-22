@@ -14,3 +14,5 @@ pub const LOGIN_FAIL: char = '1';
 pub const ADMIN_NAME: &'static str = "admin";
 pub const ADMIN_USERID: &'static str = "1";
 pub const SUPER_DEPT_ID: &'static str = "100";//第一个单位
+
+pub const ADMIN_ROLE_ID: &'static str = "1";

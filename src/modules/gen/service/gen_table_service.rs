@@ -43,7 +43,7 @@ impl GenTableService {
             .await?
             .into_iter()
             .next()
-            .ok_or_else(|| Error::from(format!("不存在:{:?} ！", table_id)))?;
+            .ok_or_else(|| Error::from(format!("不存在:{} ！", table_id)))?;
         Ok(table)
     }
 

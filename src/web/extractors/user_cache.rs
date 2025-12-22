@@ -26,7 +26,6 @@ where
                     return Ok(u);
                 }
             }
-
             Err(RespVO::from_error_info(u16::from(StatusCode::UNAUTHORIZED), "未授权"))
         } else {
             Err(RespVO::from_error_info(u16::from(StatusCode::UNAUTHORIZED), "未授权"))

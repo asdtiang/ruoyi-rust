@@ -13,7 +13,8 @@ impl VisitMut for ReplacePoolSt {
         if let Expr::Macro(expr_macro) = node {
             if expr_macro.mac.path.is_ident("pool") {
                 // 替换节点
-                *node = parse_quote!(tx);
+                let tx=self.tx.clone();
+                *node = parse_quote!(#tx);
             }
         }
         // 继续正常遍历

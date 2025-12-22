@@ -22,7 +22,7 @@ impl SysNoticeService {
             .await?
             .into_iter()
             .next()
-            .ok_or_else(|| Error::from(format!("不存在:{:?} ！", notice_id)))?;
+            .ok_or_else(|| Error::from(format!("不存在:{} ！", notice_id)))?;
         Ok(notice)
     }
 

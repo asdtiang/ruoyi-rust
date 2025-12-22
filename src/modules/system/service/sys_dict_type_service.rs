@@ -51,7 +51,7 @@ impl SysDictTypeService {
 
             let dict_type_in_db = self.detail(&data.dict_id.clone().unwrap_or_default()).await?;
             if !data.dict_type.eq(&dict_type_in_db.dict_type) {
-                let r = &tx
+                let _ = &tx
                     .exec(
                         "update sys_dict_data set dict_type = '?' where dict_type = ?",
                         vec![

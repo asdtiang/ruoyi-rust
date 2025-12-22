@@ -43,6 +43,5 @@ pub async fn check_role(user_cache: &UserCache, role_str: &str) -> Option<RespVO
         msg: Some("无权限访问，请联系管理员".to_string()),
         data: None,
     };
-    log::info!("无角色：{}", role_str);
     Some(resp)
 }

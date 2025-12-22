@@ -11,6 +11,7 @@ use crate::{export_excel_service, pool, remove_batch_tx};
 use macros::{data_scope, replace_pool, transactional};
 use rbatis::{field_name, Page, PageRequest};
 use rbs::to_value;
+use crate::config::global_constants::ADMIN_ROLE_ID;
 
 const RES_KEY: &'static str = "sys_role:all";
 
@@ -88,12 +89,25 @@ impl SysRoleService {
 
     #[replace_pool]
     pub async fn remove(&self, id: &str) -> Result<u64> {
+        if id.eq(ADMIN_ROLE_ID) {
+            return Err(Error::from("不能删除管理员角色！"));
+        }
         let trash = SysRole::select_by_column(pool!(), field_name!(SysRole.role_id), id).await?;
+        let count: u64 =tx
+            .query_decode(
+                "select count(1) as count from sys_user_role where role_id = ?",
+                vec![to_value!(id)],
+            )
+            .await?;
+        if count > 0 {
+            return Err(Error::from("已分配用户,不允许删除！"));
+        }
         let result = SysRole::delete_by_column(pool!(), field_name!(SysRole.role_id), id)
             .await?
             .rows_affected;
         if result > 0 {
             CONTEXT.sys_role_menu_service.remove_by_role_id_tx(id,tx).await?;
+            CONTEXT.sys_role_dept_service.remove_by_role_id_tx(id,tx).await?;
         }
         CONTEXT.sys_trash_service.add("sys_role", &trash).await?;
         self.update_cache().await?;
@@ -176,7 +190,7 @@ impl SysRoleService {
     }
 
     pub async fn check_role_allowed(&self, role: &SysRole) -> Result<bool> {
-        if role.role_id.is_some() && role.is_admin() {
+        if role.is_admin() {
             Err(Error::from("不允许操作超级管理员角色"))
         } else {
             Ok(true)
