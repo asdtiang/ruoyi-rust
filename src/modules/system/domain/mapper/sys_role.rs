@@ -1,7 +1,7 @@
+use crate::config::global_constants::ADMIN_ROLE_ID;
 use crate::system::domain::dto::RolePageDTO;
 use rbatis::rbdc::DateTime;
 use rbatis::{crud, impl_select_page};
-use crate::config::global_constants::ADMIN_ROLE_ID;
 
 crud!(SysRole {});
 impl_select_page!(SysRole{select_page(dto:&RolePageDTO)=>

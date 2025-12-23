@@ -304,7 +304,7 @@ impl GenTableService {
                 json = Some(v.to_string());
             }
         });
-        let json_file = mod_rs_file.parent().unwrap().join("temp.json");
+       // let json_file = mod_rs_file.parent().unwrap().join("temp.json");
         if json.is_none() {
             return Ok(());
         }

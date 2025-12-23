@@ -2,7 +2,6 @@ use syn::visit::Visit;
 use syn::visit_mut::VisitMut;
 use syn::{parse_quote, visit, visit_mut, Expr};
 
-pub struct ReplacePoolVisitor;
 
 pub struct ReplacePoolSt {
     pub tx: syn::Ident,

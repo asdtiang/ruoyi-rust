@@ -8,7 +8,7 @@ use crate::error::Result;
 use crate::system::domain::dto::DictTypePageDTO;
 use crate::system::domain::mapper::sys_dict_type::SysDictType;
 use crate::system::domain::vo::SysDictTypeVO;
-use crate::{check_unique, export_excel_service, pool, remove_batch, remove_batch_tx};
+use crate::{check_unique, export_excel_service, pool, remove_batch_tx};
 
 pub struct SysDictTypeService {}
 

@@ -1,4 +1,3 @@
-use macros::replace_pool;
 use crate::context::CONTEXT;
 use crate::error::Error;
 use crate::error::Result;
@@ -6,9 +5,9 @@ use crate::modules::system::constants::SYS_YES;
 use crate::system::domain::dto::ConfigPageDTO;
 use crate::system::domain::mapper::sys_config::SysConfig;
 use crate::system::domain::vo::SysConfigVO;
-use crate::{check_unique, export_excel_service, pool, remove_batch, remove_batch_tx};
+use crate::{check_unique, export_excel_service, pool, remove_batch_tx};
+use macros::replace_pool;
 use rbatis::{field_name, Page, PageRequest};
-use rbs::to_value;
 
 const SYS_CONFIG_KEY: &'static str = "sys_config:";
 

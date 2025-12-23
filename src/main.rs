@@ -35,9 +35,12 @@ async fn main() -> std::io::Result<()> {
     let app = Router::new()
         .nest(
             &CONTEXT.config.base_api,
-            build_api().nest_service(
+            build_api().nest_service(//todo 加入验证
                 "/profile",
                 ServeDir::new(PathBuf::from(&CONTEXT.config.upload_path).join("profile")),
+            ).nest_service(
+                "/attach",
+                ServeDir::new(PathBuf::from(&CONTEXT.config.upload_path).join("attach")),
             ),
         )
         .layer(CompressionLayer::new().compress_when(SizeAbove::new(2048))) //启动压缩
@@ -54,7 +57,7 @@ async fn main() -> std::io::Result<()> {
                 .not_found_service(ServeFile::new("../dist/index.html")),
         );
 
-    log::info!(
+    println!(
         "[ruoyi_rust] http server listen on {}",
         CONTEXT.config.server_url
     );

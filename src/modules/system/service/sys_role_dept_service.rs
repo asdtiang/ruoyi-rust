@@ -1,7 +1,7 @@
-use macros::replace_pool;
 use crate::error::Result;
 use crate::pool;
 use crate::system::domain::mapper::sys_role_dept::SysRoleDept;
+use macros::replace_pool;
 
 /// Role Dept Service
 pub struct SysRoleDeptService {}

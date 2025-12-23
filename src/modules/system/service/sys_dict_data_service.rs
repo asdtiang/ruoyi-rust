@@ -6,11 +6,11 @@ use crate::system::domain::mapper::sys_dict_data::SysDictData;
 use crate::system::domain::vo::{SysDictDataSimpleVO, SysDictDataVO};
 use crate::system::service::dict_utils;
 use crate::system::service::dict_utils::get_dict_redis_key;
-use crate::{check_unique, export_excel_service, pool, remove_batch, remove_batch_tx};
+use crate::{check_unique, export_excel_service, pool, remove_batch_tx};
+use macros::replace_pool;
 use rbatis::{field_name, Page, PageRequest};
 use rbs::to_value;
 use std::collections::HashMap;
-use macros::replace_pool;
 
 pub struct SysDictDataService {}
 

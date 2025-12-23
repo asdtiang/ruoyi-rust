@@ -1,7 +1,6 @@
 use crate::config::global_constants::{DEL_FLAG_NORMAL, STATUS_NORMAL};
 use crate::system::domain::mapper::sys_user::SysUser;
 use crate::system::domain::mapper::sys_user_role::SysUserRole;
-use crate::utils::password_encoder::PasswordEncoder;
 use macros::page_request;
 use rbatis::object_id::ObjectId;
 use serde::{Deserialize, Serialize};

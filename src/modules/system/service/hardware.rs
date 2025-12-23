@@ -34,7 +34,7 @@ pub fn get_server_info() -> ServerVO {
         disks.push(disk);
     }
 
-    let networks = sysinfo::Networks::new_with_refreshed_list();
+    //let networks = sysinfo::Networks::new_with_refreshed_list();
     // for (interface_name, network) in &networks {
     //     println!("[{interface_name}]: {network:?}");
     // }

@@ -1,7 +1,6 @@
-use macros::replace_pool;
 use crate::error::Result;
-use crate::pool;
 use crate::system::domain::mapper::sys_user_post::SysUserPost;
+use macros::replace_pool;
 use rbatis::field_name;
 use rbs::to_value;
 

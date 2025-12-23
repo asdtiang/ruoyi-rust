@@ -1,3 +1,4 @@
+use crate::config::global_constants::ADMIN_ROLE_ID;
 use crate::context::CONTEXT;
 use crate::error::{Error, Result};
 use crate::system::domain::dto::{RoleAuthUserPageDTO, RolePageDTO};
@@ -11,7 +12,6 @@ use crate::{export_excel_service, pool, remove_batch_tx};
 use macros::{data_scope, replace_pool, transactional};
 use rbatis::{field_name, Page, PageRequest};
 use rbs::to_value;
-use crate::config::global_constants::ADMIN_ROLE_ID;
 
 const RES_KEY: &'static str = "sys_role:all";
 

@@ -2,7 +2,6 @@ use rbatis::executor::Executor;
 use rbatis::rbdc::DateTime;
 use rbatis::{crud, html_sql, py_sql};
 use rbs::Error;
-use crate::oa::domain::mapper::OaComplaint;
 
 crud!(SysDept {});
 #[derive(Clone, Debug, serde::Serialize, serde::Deserialize)]

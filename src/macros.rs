@@ -1,5 +1,3 @@
-use macros::transactional;
-
 #[macro_export]
 macro_rules! check_unique {
     ($func_name:ident, $table:expr, $id_col:ident, $key_col:ident,$hint:expr) => {

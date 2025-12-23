@@ -171,7 +171,7 @@ impl SysUserService {
             .await
     }
 
-    pub async fn update_password(&self, dto: UserUpdateDTO, oper_user_name: &str) -> Result<u64> {
+    pub async fn update_password(&self, dto: UserUpdateDTO, _oper_user_name: &str) -> Result<u64> {
         let user_id = dto.user_id.clone().unwrap_or_default();
         self.check_user_allowed(&user_id).await?;
         self.update_password_raw(&dto.password.clone().unwrap_or_default(), &user_id)

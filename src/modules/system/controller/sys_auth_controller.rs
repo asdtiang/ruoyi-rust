@@ -3,6 +3,7 @@ use crate::context::CONTEXT;
 use crate::system::domain::dto::SignInDTO;
 use crate::system::domain::vo::CommonUserVO;
 use crate::system::service::REDIS_UUID_CAPTCHA;
+use crate::utils::base64::Base64;
 use crate::{error_wrapper_unwrap, RespJson, RespVO, UserCache};
 use axum::http::HeaderMap;
 use axum::response::IntoResponse;
@@ -12,7 +13,6 @@ use captcha::Captcha;
 use macros::pre_authorize;
 use std::time::Duration;
 use uuid::Uuid;
-use crate::utils::base64::Base64;
 
 pub async fn login(header_map: HeaderMap, arg: Json<SignInDTO>) -> impl IntoResponse {
     error_wrapper_unwrap!(CONTEXT.sys_auth_service.login(&arg.0, &header_map), token);

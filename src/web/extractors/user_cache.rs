@@ -11,7 +11,7 @@ where
 {
     type Rejection = RespVO<u64>;
 
-    async fn from_request_parts(parts: &mut Parts, state: &S) -> Result<Self, Self::Rejection> {
+    async fn from_request_parts(parts: &mut Parts, _state: &S) -> Result<Self, Self::Rejection> {
         if let Some(header_value) = parts.headers.get("authorization") {
             let token = get_token(header_value);
             let claims = JwtClaims::verify(&CONTEXT.config.jwt_secret, &token);
