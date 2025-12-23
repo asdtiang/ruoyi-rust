@@ -4,7 +4,7 @@ use crate::${{moduleName}}::domain::dto::${{className}}PageDTO;
 use crate::${{moduleName}}::domain::mapper::${{moduleName}}_${{business_name}}::${{className}};
 use crate::error::Error;
 use crate::error::Result;
-use crate::{export_excel_service, pool, remove_batch};
+use crate::{export_excel_service, pool, remove_batch_tx};
 
 
 pub struct ${{className}}Service {}
@@ -36,6 +36,7 @@ impl ${{className}}Service {
         Ok(result?.rows_affected)
     }
 
+    #[macros::replace_pool]
     pub async fn remove(&self, ${{pkColumn.columnName}}: &str) -> Result<u64> {
         {% if tableOptions.softDelete %}
          let r = pool!()
@@ -59,6 +60,6 @@ impl ${{className}}Service {
         {% endif %}
         Ok(r.rows_affected)
     }
-    remove_batch!(${{pkColumn.columnName}}s);
+    remove_batch_tx!(${{pkColumn.columnName}}s);
     export_excel_service!(${{className}}PageDTO, ${{className}}VO, ${{className}}::select_page);
 }

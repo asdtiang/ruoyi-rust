@@ -88,29 +88,29 @@ macro_rules! get_config_value {
         $crate:::CONTEXT.sys_config_service.select_config_by_key($key).await.unwrap_or_default()
     };
 }
-#[macro_export]
-#[deprecated]
-macro_rules! remove_batch {
-    ($ids:ident) => {
-        pub async fn remove_batch(&self, $ids: &str) -> Result<u64> {
-            let $ids = $ids.split(",").collect::<Vec<&str>>();
-            for id in $ids {
-                self.remove(id).await?;
-            }
-            Ok(1)
-        }
-    };
-    ($ids:ident,$user_cache:ident) => {
-        pub async fn remove_batch(&self, $ids: &str,$user_cache:&UserCache) -> Result<u64> {
-            //fixme 是否要加入事务
-            let $ids = $ids.split(",").collect::<Vec<&str>>();
-            for id in $ids {
-                self.remove(id,$user_cache).await?;
-            }
-            Ok(1)
-        }
-    };
-}
+// #[macro_export]
+// #[deprecated]
+// macro_rules! remove_batch {
+//     ($ids:ident) => {
+//         pub async fn remove_batch(&self, $ids: &str) -> Result<u64> {
+//             let $ids = $ids.split(",").collect::<Vec<&str>>();
+//             for id in $ids {
+//                 self.remove(id).await?;
+//             }
+//             Ok(1)
+//         }
+//     };
+//     ($ids:ident,$user_cache:ident) => {
+//         pub async fn remove_batch(&self, $ids: &str,$user_cache:&UserCache) -> Result<u64> {
+//             //fixme 是否要加入事务
+//             let $ids = $ids.split(",").collect::<Vec<&str>>();
+//             for id in $ids {
+//                 self.remove(id,$user_cache).await?;
+//             }
+//             Ok(1)
+//         }
+//     };
+// }
 
 #[macro_export]
 macro_rules! remove_batch_tx {
