@@ -54,6 +54,8 @@ where
     //     dataScopeFilter(joinPoint, currentUser, controllerDataScope.deptAlias(),
     //                     controllerDataScope.userAlias(), permission);
     // }
+
+    //fixme 不能这样使用，每一种角色都有不同的对应的data_scope
     for role in user_cache.roles.iter() {
         let data_scope = role.data_scope.unwrap_or_default();
         if DATA_SCOPE_CUSTOM != data_scope && conditions.contains(&data_scope) {
