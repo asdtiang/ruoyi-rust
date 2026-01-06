@@ -3,6 +3,7 @@ pub use middleware::*;
 pub mod data_scope;
 pub mod token;
 pub mod extractors;
+pub mod log;
 
 pub use token::permit::check_permit;
 

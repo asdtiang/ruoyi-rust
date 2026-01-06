@@ -2,7 +2,7 @@ use crate::context::CONTEXT;
 use crate::system::domain::mapper::sys_oper_log::SysOperLog;
 use crate::utils::address_util;
 use crate::utils::ip_util::get_ip_addr;
-use axum::extract::{ConnectInfo, OriginalUri};
+use axum::extract::{ConnectInfo, OriginalUri, State};
 use axum::http::HeaderMap;
 use axum::{
     body::{Body, Bytes},
@@ -15,15 +15,19 @@ use http_body_util::BodyExt;
 use rbatis::object_id::ObjectId;
 use rbatis::rbdc::DateTime;
 use std::net::SocketAddr;
+use crate::{BusinessType, UserCache};
 
-pub async fn log_write(
+pub async fn log_write_state(
     ori_uri: OriginalUri,
     socket_addr: ConnectInfo<SocketAddr>,
     header_map: HeaderMap,
+    State(state): State<crate::OperState>,
+    user_cache: UserCache,
     req: Request,
     next: Next,
 ) -> Result<impl IntoResponse, (StatusCode, String)> {
-    let method = req.method().to_string().into();
+    let request_method = req.method().to_string().into();
+
     let (parts, body) = req.into_parts();
     let head_ip = get_ip_addr(&header_map);
     let ip = if head_ip.is_none() {
@@ -55,16 +59,15 @@ pub async fn log_write(
     let bytes = get_body_bytes(body).await?;
     let json_result = std::str::from_utf8(&bytes).ok().map(|x| x.to_string());
 
-    //todo 需要完善
     let sys_oper_log = SysOperLog {
         oper_id: ObjectId::new().to_string().into(),
-        title: String::new().into(),
-        business_type: 0.into(),
-        method,
-        request_method: String::new().into(),
-        operator_type: 0.into(),
-        oper_name: String::new().into(),
-        dept_name: String::new().into(),
+        title: state.title.into(),
+        business_type: Some(state.business_type as u16),
+        method:state.path.into(),
+        request_method,
+        operator_type: 0.into(),//todo
+        oper_name: user_cache.user_name.into(),
+        dept_name: user_cache.dept_name.into(),
         oper_url: url,
         oper_ip: ip,
         oper_location: address,
@@ -79,6 +82,69 @@ pub async fn log_write(
     let res = Response::from_parts(parts, Body::from(bytes));
     Ok(res)
 }
+// pub async fn log_write(
+//     ori_uri: OriginalUri,
+//     socket_addr: ConnectInfo<SocketAddr>,
+//     header_map: HeaderMap,
+//     req: Request,
+//     next: Next,
+// ) -> Result<impl IntoResponse, (StatusCode, String)> {
+//     let method = req.method().to_string().into();
+//     let (parts, body) = req.into_parts();
+//     let head_ip = get_ip_addr(&header_map);
+//     let ip = if head_ip.is_none() {
+//         socket_addr.0.ip().to_string().into()
+//     } else {
+//         head_ip
+//     };
+//
+//     let url = ori_uri.path_and_query().map(|x| x.to_string());
+//
+//     let address = if CONTEXT.config.address_enabled {
+//         match ip.clone() {
+//             Some(ip) => address_util::get_real_address_by_ip(&ip).await.ok(),
+//             None => None,
+//         }
+//     } else {
+//         None
+//     };
+//
+//     let bytes = get_body_bytes(body).await?;
+//     let oper_param = std::str::from_utf8(&bytes).ok().map(|x| x.to_string());
+//     let req = Request::from_parts(parts, Body::from(bytes));
+//
+//     let start = DateTime::now();
+//     let res = next.run(req).await;
+//     let cost_time = (DateTime::now().unix_timestamp_millis() - start.unix_timestamp_millis()) as u64;
+//
+//     let (parts, body) = res.into_parts();
+//     let bytes = get_body_bytes(body).await?;
+//     let json_result = std::str::from_utf8(&bytes).ok().map(|x| x.to_string());
+//
+//     //todo 需要完善
+//     let sys_oper_log = SysOperLog {
+//         oper_id: ObjectId::new().to_string().into(),
+//         title: String::new().into(),
+//         business_type: 0.into(),
+//         method,
+//         request_method: String::new().into(),
+//         operator_type: 0.into(),
+//         oper_name: String::new().into(),
+//         dept_name: String::new().into(),
+//         oper_url: url,
+//         oper_ip: ip,
+//         oper_location: address,
+//         oper_param,
+//         json_result,
+//         status: None,
+//         error_msg: None,
+//         oper_time: start.into(),
+//         cost_time: cost_time.into(),
+//     };
+//     let _ = CONTEXT.sys_oper_log_service.add_async(&sys_oper_log).await;
+//     let res = Response::from_parts(parts, Body::from(bytes));
+//     Ok(res)
+// }
 
 async fn get_body_bytes<B>(body: B) -> Result<Bytes, (StatusCode, String)>
 where

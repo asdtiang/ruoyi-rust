@@ -264,9 +264,22 @@ macro_rules! export_excel_service_self {
 }
 //简化一下middleware
 #[macro_export]
+#[deprecated]
 macro_rules! router_with_handler {
     ($method:ident,$func:path,$($middle_func_list:ident),*)=> {
        $method($func)$(.route_layer(middleware::from_fn($middle_func_list)))*
+    };
+}
+
+//简化一下middleware
+#[macro_export]
+macro_rules! router_log {
+    ($method:ident,$func:path,$title:expr,$business_type:ident)=> {
+       $method($func).route_layer(axum::middleware::from_fn_with_state(crate::OperState{
+            title:$title.to_string(),
+            path:stringify!($func).to_string(),
+            business_type: crate::BusinessType::$business_type
+        },crate::web::log_mw::log_write_state))
     };
 }
 

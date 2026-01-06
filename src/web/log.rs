@@ -1,59 +1,59 @@
-
-
-/**
- * 业务操作类型
- *
- * @author ruoyi
- */
-pub enum BusinessType
-{
+#[derive(Clone)]
+pub enum BusinessType {
     /**
      * 其它
      */
-    OTHER,
+    OTHER=0,
 
     /**
      * 新增
      */
-    INSERT,
+    INSERT=1,
 
     /**
      * 修改
      */
-    UPDATE,
+    UPDATE=2,
 
     /**
      * 删除
      */
-    DELETE,
+    DELETE=3,
 
     /**
      * 授权
      */
-    GRANT,
+    GRANT=4,
 
     /**
      * 导出
      */
-    EXPORT,
+    EXPORT=5,
 
     /**
      * 导入
      */
-    IMPORT,
+    IMPORT=6,
 
     /**
      * 强退
      */
-    FORCE,
+    FORCE=7,
 
     /**
      * 生成代码
      */
-    GENCODE,
+    GENCODE=8,
 
     /**
      * 清空数据
      */
-    CLEAN,
+    CLEAN=9,
+}
+
+#[derive(Clone)]
+pub struct OperState {
+    pub title: String,
+    pub path:String,
+    pub business_type: BusinessType,
 }
