@@ -1,9 +1,9 @@
-use crate::gen::domain::dto::{GenTableUpdateDTO, TableNamesDTO};
-use crate::gen::domain::mapper::gen_table::{GenTable, TablePageDTO};
-use crate::gen::domain::mapper::gen_table_column::GenTableColumn;
-use crate::gen::domain::vo::table::GenTableVO;
-use crate::gen::domain::vo::table_column::GenTableColumnVO;
-use crate::gen::GEN_CONTEXT;
+use crate::code_gen::domain::dto::{GenTableUpdateDTO, TableNamesDTO};
+use crate::code_gen::domain::mapper::gen_table::{GenTable, TablePageDTO};
+use crate::code_gen::domain::mapper::gen_table_column::GenTableColumn;
+use crate::code_gen::domain::vo::table::GenTableVO;
+use crate::code_gen::domain::vo::table_column::GenTableColumnVO;
+use crate::code_gen::GEN_CONTEXT;
 use crate::{update_marco, PageVO, RespJson, RespVO};
 use axum::extract::Path;
 use axum::response::IntoResponse;

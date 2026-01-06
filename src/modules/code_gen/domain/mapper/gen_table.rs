@@ -62,7 +62,8 @@ pub struct TablePageDTO {
 
 //fixme 未修正
 impl_select_page!(GenTable{select_page(dto: &TablePageDTO) =>
-    "`where 1=1`
+"trim start=' where ':
+    ` where `
     if dto.configName != '':
         ` and config_name like #{'%'+dto.configName+'%'}`
     if dto.configKey != '':
@@ -92,17 +93,6 @@ pysql_select_page!(select_db_table_list(dto:&TablePageDTO) -> GenTable =>
     if dto.params.endTime != '':
         ` AND date_format(create_time,'%y%m%d') <= date_format(#{dto.params.endTime},'%y%m%d')`
     ` order by create_time desc`"#);
-
-#[html_sql(r#"
-        <select id="select_gen_table_list_by_names">  select * from gen_table`
-        ` where table_name in`
-        <foreach collection="table_names" item="name" open="(" separator="," close=")">
-        ` #{name}`
-        </foreach></select>"#)]
-pub async fn select_gen_table_list_by_names(rb: &dyn Executor, table_names: &Vec<&str>) -> Result<Vec<GenTable>, Error> {
-    impled!()
-}
-
 
 
 #[html_sql(r#"

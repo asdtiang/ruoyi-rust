@@ -1,10 +1,10 @@
 use crate::error::Error;
 use crate::error::Result;
-use crate::gen::domain::mapper::gen_table;
-use crate::gen::domain::mapper::gen_table::{select_db_table_list, GenTable, TablePageDTO};
-use crate::gen::domain::mapper::gen_table_column::{select_db_table_columns_by_name, GenTableColumn};
-use crate::gen::service::{gen_constants, gen_utils, jinja_utils};
-use crate::gen::GEN_CONTEXT;
+use crate::code_gen::domain::mapper::gen_table;
+use crate::code_gen::domain::mapper::gen_table::{select_db_table_list, GenTable, TablePageDTO};
+use crate::code_gen::domain::mapper::gen_table_column::{select_db_table_columns_by_name, GenTableColumn};
+use crate::code_gen::service::{gen_constants, gen_utils, jinja_utils};
+use crate::code_gen::GEN_CONTEXT;
 use crate::utils::file_utils::find_files_with_extension;
 use crate::utils::string::substring_unicode;
 use crate::{pool, remove_batch_tx};
@@ -12,7 +12,7 @@ use macros::{replace_pool, transactional};
 use minijinja::syntax::SyntaxConfig;
 use rbatis::object_id::ObjectId;
 use rbatis::rbdc::DateTime;
-use rbatis::{field_name, Page, PageRequest};
+use rbatis::{Page, PageRequest};
 use serde_json::Value;
 use std::collections::HashMap;
 use std::fs;
@@ -39,7 +39,7 @@ impl GenTableService {
         Ok(data)
     }
     pub async fn detail(&self, table_id: &str) -> Result<GenTable> {
-        let table = GenTable::select_by_column(pool!(), field_name!(GenTable.table_id), table_id)
+        let table = GenTable::select_by_map(pool!(), rbs::value!{"table_id": table_id})
             .await?
             .into_iter()
             .next()
@@ -49,12 +49,12 @@ impl GenTableService {
 
     #[transactional(tx)]
     pub async fn update(&self, data: GenTable, columns: Option<Vec<GenTableColumn>>) -> Result<u64> {
-        let result = GenTable::update_by_column(&tx, &data, "table_id").await?;
+        let result = GenTable::update_by_map(&tx, &data, rbs::value!{"table_id": data.table_id.clone()}).await?;
         match columns {
             None => {}
             Some(list) => {
                 for column in list {
-                    GenTableColumn::update_by_column(&tx, &column, "column_id").await?;
+                    GenTableColumn::update_by_map(&tx, &column,rbs::value!{"column_id": column.column_id.clone()}).await?;
                 }
             }
         }
@@ -62,11 +62,11 @@ impl GenTableService {
     }
     #[replace_pool]
     pub async fn remove(&self, table_id: &str) -> Result<u64> {
-        // let targets = GenTable::select_by_column(&tx, "table_id", table_id).await?;
+        // let targets = GenTable::select_by_map(&tx, "table_id", table_id).await?;
 
-        let r = GenTable::delete_by_column(tx, "table_id", table_id).await?;
+        let r = GenTable::delete_by_map(tx, rbs::value!{"table_id": table_id}).await?;
         if r.rows_affected > 0 {
-            GenTableColumn::delete_by_column(tx, "table_id", table_id).await?;
+            GenTableColumn::delete_by_map(tx, rbs::value!{"table_id": table_id}).await?;
         }
         Ok(r.rows_affected)
     }
@@ -96,7 +96,7 @@ impl GenTableService {
     }
 
     pub async fn generate_code(&self, table_names: Vec<&str>) -> Result<()> {
-        let tables = gen_table::select_gen_table_list_by_names(pool!(), &table_names).await?;
+        let tables =GenTable::select_by_map(pool!(),rbs::value!{"table_name":table_names}).await?;
         for t in tables {
             let code_map = self.generate(&t).await?;
             for (path, v) in code_map {
@@ -107,7 +107,7 @@ impl GenTableService {
         Ok(())
     }
     pub async fn preview_code(&self, table_id: &str) -> Result<HashMap<String, String>> {
-        let table = GenTable::select_by_column(pool!(), field_name!(GenTable.table_id), table_id)
+        let table = GenTable::select_by_map(pool!(), rbs::value!{"table_id": table_id})
             .await?
             .into_iter()
             .next();
@@ -380,7 +380,7 @@ impl GenTableService {
     }
 
     pub async fn synch_db(&self, table_name: &str) -> Result<()> {
-        let table = GenTable::select_by_column(pool!(), field_name!(GenTable.table_name), table_name)
+        let table = GenTable::select_by_map(pool!(), rbs::value!{"table_name":table_name})
             .await?
             .into_iter()
             .next()
@@ -420,9 +420,8 @@ impl GenTableService {
                 column.is_insert = prev_column.is_insert.clone();
                 column.is_detail = prev_column.is_detail.clone();
                 column.is_export = prev_column.is_export.clone();
-
                 column.more = prev_column.more.clone();
-                GenTableColumn::update_by_column(pool!(), &column, "column_id").await?;
+                GenTableColumn::update_by_map(pool!(), &column, rbs::value!{"column_id":column.column_id.clone()}).await?;
             } else {
                 column.column_id = Some(ObjectId::new().to_string());
                 GenTableColumn::insert(pool!(), &column).await?;
@@ -430,7 +429,7 @@ impl GenTableService {
         }
         for column in old_table_columns {
             if !db_table_column_names.contains(&column.column_name.clone().unwrap_or_default()) {
-                GenTableColumn::delete_by_column(pool!(), "column_id", &column.column_id).await?;
+                GenTableColumn::delete_by_map(pool!(), rbs::value!{"column_id":column.column_id}).await?;
             }
         }
         Ok(())

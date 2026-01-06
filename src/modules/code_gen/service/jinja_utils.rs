@@ -1,7 +1,7 @@
-use crate::gen::domain::mapper::gen_table::GenTable;
-use crate::gen::domain::mapper::gen_table_column::GenTableColumn;
-use crate::gen::domain::vo::table_column::GenTableColumnGenVO;
-use crate::gen::service::{gen_constants, gen_utils};
+use crate::code_gen::domain::mapper::gen_table::GenTable;
+use crate::code_gen::domain::mapper::gen_table_column::GenTableColumn;
+use crate::code_gen::domain::vo::table_column::GenTableColumnGenVO;
+use crate::code_gen::service::{gen_constants, gen_utils};
 use crate::utils::string;
 use convert_case::{Case, Casing};
 use minijinja::context;

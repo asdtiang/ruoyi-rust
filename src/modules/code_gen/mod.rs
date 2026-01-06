@@ -5,7 +5,7 @@ pub mod controller;
 pub mod domain;
 pub mod service;
 
-use crate::gen::service::{GenTableColumnService, GenTableService};
+use crate::code_gen::service::{GenTableColumnService, GenTableService};
 pub use controller::*;
 
 pub(crate) fn build_gen_api() -> Router {

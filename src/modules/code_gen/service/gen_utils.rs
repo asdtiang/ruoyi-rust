@@ -1,7 +1,7 @@
-use crate::gen::domain::mapper::gen_table::GenTable;
-use crate::gen::domain::mapper::gen_table_column::GenTableColumn;
-use crate::gen::service::gen_constants;
-use crate::gen::GEN_CONTEXT;
+use crate::code_gen::domain::mapper::gen_table::GenTable;
+use crate::code_gen::domain::mapper::gen_table_column::GenTableColumn;
+use crate::code_gen::service::gen_constants;
+use crate::code_gen::GEN_CONTEXT;
 use crate::utils::string;
 use crate::utils::string::substring_unicode;
 use convert_case::{Case, Casing};

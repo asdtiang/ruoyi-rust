@@ -1,6 +1,6 @@
 use crate::context::CONTEXT;
 use crate::error::Result;
-use crate::gen::domain::mapper::gen_table_column::GenTableColumn;
+use crate::code_gen::domain::mapper::gen_table_column::GenTableColumn;
 use crate::{pool, remove_batch_tx};
 use macros::replace_pool;
 
@@ -14,9 +14,9 @@ impl GenTableColumnService {
     }
     #[replace_pool]
     pub async fn remove(&self, table_id: &str) -> Result<u64> {
-        let targets = GenTableColumn::select_by_column(pool!(), "table_id", table_id).await?;
+        let targets = GenTableColumn::select_by_map(pool!(), rbs::value!{"table_id": table_id}).await?;
 
-        let r = GenTableColumn::delete_by_column(pool!(), "table_id", table_id).await?;
+        let r = GenTableColumn::delete_by_map(pool!(), rbs::value!{"table_id": table_id}).await?;
         if r.rows_affected > 0 {
             //copy data to trash
             CONTEXT.sys_trash_service.add("sys_table", &targets).await?;
