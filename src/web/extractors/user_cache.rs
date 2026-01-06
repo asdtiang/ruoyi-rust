@@ -16,7 +16,10 @@ where
             let token = get_token(header_value);
             let claims = JwtClaims::verify(&CONTEXT.config.jwt_secret, &token);
             if let Ok(c) = claims {
-                let user_cache = CONTEXT.sys_user_service.get_user_cache_by_token(c.login_user_key).await;
+                let user_cache = CONTEXT
+                    .sys_user_online_service
+                    .get_user_cache_by_token(&c.login_user_key)
+                    .await;
                 if let Ok(u) = user_cache {
                     let key = u.token_key.clone();
                     let _ = CONTEXT

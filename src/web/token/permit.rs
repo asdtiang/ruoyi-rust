@@ -1,7 +1,6 @@
 use crate::web::token::auth::UserCache;
 use crate::RespVO;
 
-
 pub async fn check_permit(user_cache: &UserCache, permit_str: &str) -> Option<RespVO<u64>> {
     let permit_str = permit_str.replace("\"", "");
     if permit_str.len() == 0 {
@@ -10,7 +9,6 @@ pub async fn check_permit(user_cache: &UserCache, permit_str: &str) -> Option<Re
     if user_cache.is_admin() {
         return None;
     }
-
     if user_cache.permissions.contains(&permit_str) {
         return None;
     }
@@ -37,6 +35,7 @@ pub async fn check_role(user_cache: &UserCache, role_str: &str) -> Option<RespVO
             return None;
         }
     }
+    //todo 查询角色是否禁用
     //仅提示拦截
     let resp: RespVO<u64> = RespVO {
         code: 500,

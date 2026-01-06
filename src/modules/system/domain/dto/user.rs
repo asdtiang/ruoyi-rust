@@ -64,6 +64,7 @@ impl From<UserAddDTO> for SysUser {
             update_by: None,
             update_time: None,
             remark: arg.remark,
+            dept: None,
         }
     }
 }
@@ -120,6 +121,7 @@ impl From<UserUpdateDTO> for SysUser {
             update_by: None,
             update_time: None,
             remark: arg.remark,
+            dept: None,
         }
     }
 }

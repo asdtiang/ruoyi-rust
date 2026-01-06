@@ -2,18 +2,14 @@ use crate::config::global_constants::ADMIN_USERID;
 use crate::context::CONTEXT;
 use crate::error::Error;
 use crate::error::Result;
-use crate::system::domain::dto::{DeptQueryDTO, UserAddDTO, UserPageDTO, UserUpdateDTO};
+use crate::system::domain::dto::{UserPageDTO, UserUpdateDTO};
 use crate::system::domain::mapper::sys_user;
 use crate::system::domain::mapper::sys_user::SysUser;
-use crate::system::domain::vo::{SysDeptVO, SysUserVO};
+use crate::system::domain::vo::SysUserVO;
 use crate::utils::password_encoder::PasswordEncoder;
-use crate::web::token::auth::UserCache;
 use crate::{check_unique, export_excel_service, pool};
 use macros::{data_scope, transactional};
 use rbatis::page::{Page, PageRequest};
-use rbatis::{field_name, IPage};
-use rbs::to_value;
-use std::collections::HashMap;
 
 pub struct SysUserService {}
 
@@ -21,27 +17,8 @@ impl SysUserService {
     #[data_scope(deptAlias = "d", userAlias = "u", login_user_key)]
     pub async fn page(&self, dto: &UserPageDTO) -> Result<Page<SysUserVO>> {
         let sys_user_page: Page<SysUser> = sys_user::select_page(pool!(), &PageRequest::from(&dto), &dto).await?;
-        let mut page = Page::<SysUserVO>::from(sys_user_page);
+        let page = Page::<SysUserVO>::from(sys_user_page);
 
-        let all_depts = CONTEXT
-            .sys_dept_service
-            .list(&DeptQueryDTO::default(), login_user_key)
-            .await?;
-        let mut dept_map = HashMap::new();
-        all_depts.iter().for_each(|dept| {
-            dept_map.insert(dept.dept_id.clone().unwrap_or_default(), dept.clone());
-        });
-        let mut new_records = vec![];
-        for mut record in page.records().clone() {
-            let dept_id = &record.dept_id.clone().unwrap_or_default();
-            if dept_map.contains_key(dept_id) {
-                let dept = dept_map.get(dept_id).map(|r| r.clone());
-                record.dept = dept.map(|d| SysDeptVO::from(d));
-                new_records.push(record);
-            }
-        }
-
-        page.records = new_records;
         Ok(page)
     }
 
@@ -52,7 +29,7 @@ impl SysUserService {
     }
 
     pub async fn find_by_user_id(&self, user_id: &str) -> Result<SysUser> {
-        SysUser::select_by_column(pool!(), field_name!(SysUser.user_id), user_id)
+        SysUser::select_by_map(pool!(), rbs::value! {"user_id": user_id})
             .await?
             .into_iter()
             .next()
@@ -60,75 +37,61 @@ impl SysUserService {
     }
 
     #[transactional(tx)]
-    pub async fn add(&self, dto: &UserAddDTO, create_by: String) -> Result<u64> {
-        self.check_user_name_unique(&None, dto.user_name.clone().unwrap_or_default())
+    pub async fn add(&self, user: &SysUser, role_ids: &Vec<String>, post_ids: &Vec<String>) -> Result<u64> {
+        self.check_user_name_unique(&None, user.user_name.clone().unwrap_or_default())
             .await?;
-        self.check_phonenumber_unique(&None, dto.phonenumber.clone().unwrap_or_default())
+        self.check_phonenumber_unique(&None, user.phonenumber.clone().unwrap_or_default())
             .await?;
-        self.check_email_unique(&None, dto.email.clone().unwrap_or_default())
+        self.check_email_unique(&None, user.email.clone().unwrap_or_default())
             .await?;
 
-        let role_ids = dto.role_ids.clone().unwrap_or_default();
-        let post_ids = dto.post_ids.clone().unwrap_or_default();
-        let mut password = dto.password.clone().unwrap_or_default();
-        let mut user = SysUser::from(dto.clone());
-
-        //todo 检查密码安全性
-        if password.is_empty() {
-            //默认密码
-            password = "123456".to_string();
-        }
-
-        user.password = Some(PasswordEncoder::encode(&password));
-        user.create_by = Some(create_by);
-        user.create_time = Some(rbatis::rbdc::datetime::DateTime::now().set_nano(0).into());
         let user_id = user.user_id.clone().unwrap_or_default();
         let res = SysUser::insert(&tx, &user).await?;
         if res.rows_affected > 0 {
             if role_ids.len() > 0 {
                 CONTEXT
                     .sys_user_role_service
-                    .add_user_roles_tx(&user_id, &role_ids,&tx)
+                    .add_user_roles_tx(&user_id, &role_ids, &tx)
                     .await?;
             }
             if post_ids.len() > 0 {
                 CONTEXT
                     .sys_user_post_service
-                    .add_user_posts_tx(&user_id, &post_ids,&tx)
+                    .add_user_posts_tx(&user_id, &post_ids, &tx)
                     .await?;
             }
         }
         Ok(res.rows_affected)
     }
     #[transactional(tx)]
-    pub async fn update(&self, dto: UserUpdateDTO, user_: &crate::UserCache) -> Result<u64> {
-        let user_id = dto.user_id.clone();
-        self.check_phonenumber_unique(&user_id, dto.phonenumber.clone().unwrap_or_default())
+    pub async fn update(&self, user: &SysUser, role_ids: &Vec<String>, post_ids: &Vec<String>) -> Result<u64> {
+        let user_id = user.user_id.clone();
+        self.check_phonenumber_unique(&user_id, user.phonenumber.clone().unwrap_or_default())
             .await?;
         let user_id = user_id.unwrap_or_default();
         self.check_user_allowed(&user_id).await?;
-        self.check_user_data_scope(&user_id, user_).await?;
+        // fixme  self.check_user_data_scope(&user_id, user_).await?;
 
-        let role_ids = dto.role_ids.clone();
-        let post_ids = dto.post_ids.clone();
-        let mut user = SysUser::from(dto);
-        user.update_by = Some(user_.user_name());
-        user.update_time = Some(rbatis::rbdc::datetime::DateTime::now().set_nano(0).into());
-        if role_ids.is_some() {
-            CONTEXT
-                .sys_user_role_service
-                .reset_through_user_id_tx(&user_id, &role_ids.unwrap_or_default(),&tx)
-                .await?;
-        }
-        if post_ids.is_some() {
-            CONTEXT
-                .sys_user_post_service
-                .reset_through_user_id_tx(&user_id, &post_ids.unwrap_or_default(),&tx)
-                .await?;
-        }
-        Ok(SysUser::update_by_column(&tx, &user, "user_id")
+        CONTEXT
+            .sys_user_role_service
+            .reset_through_user_id_tx(&user_id, role_ids, &tx)
+            .await?;
+        CONTEXT
+            .sys_user_post_service
+            .reset_through_user_id_tx(&user_id, post_ids, &tx)
+            .await?;
+
+        let res = SysUser::update_by_map(&tx, &user, rbs::value! {"user_id": user_id.clone()})
             .await?
-            .rows_affected)
+            .rows_affected;
+        if res > 0 {
+            CONTEXT
+                .sys_user_online_service
+                .force_logout_by_user_id(&user_id)
+                .await?;
+        }
+
+        Ok(res)
     }
 
     pub async fn update_profile(&self, sys_user: SysUser) -> Result<u64> {
@@ -137,9 +100,11 @@ impl SysUserService {
             .await?;
         self.check_email_unique(&user_id, sys_user.phonenumber.clone().unwrap_or_default())
             .await?;
-        Ok(SysUser::update_by_column(pool!(), &sys_user, "user_id")
-            .await?
-            .rows_affected)
+        Ok(
+            SysUser::update_by_map(pool!(), &sys_user, rbs::value! {"user_id": user_id})
+                .await?
+                .rows_affected,
+        )
     }
     #[transactional(tx)]
     pub async fn remove(&self, user_id: &str, user_cache: &crate::UserCache) -> Result<u64> {
@@ -154,21 +119,16 @@ impl SysUserService {
         let r = &tx
             .exec(
                 "update sys_user set del_flag = '2' where user_id = ?",
-                vec![to_value!(user_id)],
+                vec![rbs::value!(user_id)],
             )
             .await?;
         if r.rows_affected > 0 {
-            CONTEXT.sys_user_role_service.remove_by_user_id_tx(user_id,&tx).await?;
-            CONTEXT.sys_user_post_service.remove_by_user_id_tx(user_id,&tx).await?;
+            CONTEXT.sys_user_role_service.remove_by_user_id_tx(user_id, &tx).await?;
+            CONTEXT.sys_user_post_service.remove_by_user_id_tx(user_id, &tx).await?;
+            CONTEXT.sys_user_online_service.force_logout_by_user_id(user_id).await?;
         }
-        Ok(r.rows_affected)
-    }
 
-    pub async fn get_user_cache_by_token(&self, login_user_key: String) -> Result<UserCache> {
-        CONTEXT
-            .cache_service
-            .get_json::<UserCache>(&crate::web::get_login_user_redis_key(login_user_key))
-            .await
+        Ok(r.rows_affected)
     }
 
     pub async fn update_password(&self, dto: UserUpdateDTO, _oper_user_name: &str) -> Result<u64> {
@@ -182,9 +142,10 @@ impl SysUserService {
         let res = pool!()
             .exec(
                 "update sys_user set password = ? where user_id = ?",
-                vec![to_value!(new_password), to_value!(user_id)],
+                vec![rbs::value!(new_password), rbs::value!(user_id)],
             )
             .await?;
+        CONTEXT.sys_user_online_service.force_logout_by_user_id(user_id).await?;
         Ok(res.rows_affected)
     }
 
@@ -195,8 +156,12 @@ impl SysUserService {
         let res = pool!()
             .exec(
                 "update sys_user set status = ? where user_id = ?",
-                vec![to_value!(status), to_value!(user_id)],
+                vec![rbs::value!(status), rbs::value!(user_id.clone())],
             )
+            .await?;
+        CONTEXT
+            .sys_user_online_service
+            .force_logout_by_user_id(&user_id)
             .await?;
         Ok(res.rows_affected)
     }
@@ -229,7 +194,7 @@ impl SysUserService {
     );
     check_unique!(check_email_unique, "sys_user", user_id, email, "邮箱账号已存在！");
     /**
-     * 校验用户是否有数据权限
+     * 校验用户是否有数据权限 fixme
      *
      * @param userId 用户id
      */
@@ -247,7 +212,7 @@ impl SysUserService {
         Ok(())
     }
     pub async fn check_user_exist(&self, user_id: &str) -> Result<SysUser> {
-        SysUser::select_by_column(pool!(), field_name!(SysUser.user_id), user_id)
+        SysUser::select_by_map(pool!(), rbs::value! {"user_id": user_id})
             .await?
             .into_iter()
             .next()

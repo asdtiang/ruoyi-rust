@@ -88,6 +88,7 @@ pub struct CommonDeptVO {
     pub dept_id: Option<String>,
     /** 部门名称 */
     pub dept_name: Option<String>,
+    pub leader: Option<String>,
 }
 
 impl From<SysDept> for CommonDeptVO {
@@ -95,6 +96,7 @@ impl From<SysDept> for CommonDeptVO {
         Self {
             dept_id: arg.dept_id,
             dept_name: arg.dept_name,
+            leader: arg.leader,
         }
     }
 }

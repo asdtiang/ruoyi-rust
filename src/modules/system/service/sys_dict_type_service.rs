@@ -1,6 +1,5 @@
 use macros::{replace_pool, transactional};
-use rbatis::{field_name, Page, PageRequest};
-use rbs::to_value;
+use rbatis::{Page, PageRequest};
 
 use crate::context::CONTEXT;
 use crate::error::Error;
@@ -24,7 +23,7 @@ impl SysDictTypeService {
         Ok(res)
     }
     pub async fn detail(&self, dict_id: &str) -> Result<SysDictTypeVO> {
-        let dict_type = SysDictType::select_by_column(pool!(), field_name!(SysDictType.dict_id), dict_id)
+        let dict_type = SysDictType::select_by_map(pool!(), rbs::value! {"dict_id": dict_id})
             .await?
             .into_iter()
             .next()
@@ -44,7 +43,7 @@ impl SysDictTypeService {
         self.check_dict_type_unique(&data.dict_id, data.dict_type.clone().unwrap_or_default())
             .await?;
 
-        let result = SysDictType::update_by_column(&tx, &data, "dict_id").await;
+        let result = SysDictType::update_by_map(&tx, &data, rbs::value! {"dict_id": data.dict_id.clone()}).await;
         if result.is_ok() {
             //更新dict_data
             CONTEXT.sys_dict_data_service.update_cache().await?;
@@ -55,8 +54,8 @@ impl SysDictTypeService {
                     .exec(
                         "update sys_dict_data set dict_type = '?' where dict_type = ?",
                         vec![
-                            rbs::to_value!(data.dict_type),
-                            rbs::to_value!(dict_type_in_db.dict_type),
+                            rbs::value!(data.dict_type),
+                            rbs::value!(dict_type_in_db.dict_type),
                         ],
                     )
                     .await?;
@@ -66,13 +65,13 @@ impl SysDictTypeService {
     }
   #[replace_pool]
     pub async fn remove(&self, dict_id: &str) -> Result<u64> {
-        let targets = SysDictType::select_by_column(pool!(), "dict_id", dict_id).await?;
+        let targets = SysDictType::select_by_map(pool!(), rbs::value! {"dict_id": dict_id}).await?;
         if targets.len() == 1 {
             let dict_type = targets.get(0).unwrap().dict_type.clone().unwrap();
             let count: u64 = pool!()
                 .query_decode(
                     "select count(1) as count from sys_dict_data where dict_type =?",
-                    vec![to_value!(dict_type)],
+                    vec![rbs::value!(dict_type)],
                 )
                 .await?;
             if count > 0 {
@@ -82,7 +81,7 @@ impl SysDictTypeService {
             return Err(Error::from(format!("字典id{}不存在！", dict_id)));
         }
 
-        let r = SysDictType::delete_by_column(pool!(), "dict_id", dict_id).await?;
+        let r = SysDictType::delete_by_map(pool!(), rbs::value! {"dict_id": dict_id}).await?;
         if r.rows_affected > 0 {
             CONTEXT.sys_dict_data_service.update_cache().await?;
             //copy data to trash

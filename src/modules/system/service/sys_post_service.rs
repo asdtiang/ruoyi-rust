@@ -1,5 +1,5 @@
 use macros::replace_pool;
-use rbatis::{field_name, Page, PageRequest};
+use rbatis::{Page, PageRequest};
 
 use crate::context::CONTEXT;
 use crate::error::Error;
@@ -30,7 +30,7 @@ impl SysPostService {
         Ok(post_vos)
     }
     pub async fn detail(&self, post_id: &str) -> Result<SysPostVO> {
-        let post = SysPost::select_by_column(pool!(), field_name!(SysPost.post_id), post_id)
+        let post = SysPost::select_by_map(pool!(), rbs::value! {"post_id": post_id} )
             .await?
             .into_iter()
             .next()
@@ -45,14 +45,14 @@ impl SysPostService {
     }
 
     pub async fn update(&self, data: SysPost) -> Result<u64> {
-        let result = SysPost::update_by_column(pool!(), &data, "post_id").await;
+        let result = SysPost::update_by_map(pool!(), &data, rbs::value! {"post_id":data. post_id.clone()}).await;
         Ok(result?.rows_affected)
     }
     #[replace_pool]
     pub async fn remove(&self, post_id: &str) -> Result<u64> {
-        let targets = SysPost::select_by_column(pool!(), "post_id", post_id).await?;
+        let targets = SysPost::select_by_map(pool!(), rbs::value! {"post_id": post_id}).await?;
 
-        let r = SysPost::delete_by_column(pool!(), "post_id", post_id).await?;
+        let r = SysPost::delete_by_map(pool!(), rbs::value! {"post_id": post_id}).await?;
         if r.rows_affected > 0 {
             //copy data to trash
             CONTEXT.sys_trash_service.add("sys_post", &targets).await?;
@@ -61,7 +61,7 @@ impl SysPostService {
         Ok(r.rows_affected)
     }
     pub async fn finds_post_ids_by_user_id(&self, user_id: &str) -> Result<Vec<String>> {
-        let user_posts = SysUserPost::select_by_column(pool!(), "user_id", user_id).await?;
+        let user_posts = SysUserPost::select_by_map(pool!(), rbs::value! {"user_id": user_id}).await?;
         let ids = user_posts.into_iter().map(|r| r.post_id.unwrap_or_default()).collect();
 
         Ok(ids)

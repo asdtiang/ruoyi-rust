@@ -7,7 +7,7 @@ use crate::system::domain::mapper::sys_config::SysConfig;
 use crate::system::domain::vo::SysConfigVO;
 use crate::{check_unique, export_excel_service, pool, remove_batch_tx};
 use macros::replace_pool;
-use rbatis::{field_name, Page, PageRequest};
+use rbatis::{Page, PageRequest};
 
 const SYS_CONFIG_KEY: &'static str = "sys_config:";
 
@@ -20,15 +20,13 @@ impl SysConfigService {
     }
 
     pub async fn detail(&self, config_id: &str) -> Result<SysConfig> {
-        let config =
-            SysConfig::select_by_column(pool!(), field_name!(SysConfig.config_id), config_id)
-                .await?
-                .into_iter()
-                .next()
-                .ok_or_else(|| Error::from(format!("不存在:{} ！", config_id)))?;
+        let config = SysConfig::select_by_map(pool!(), rbs::value! {"config_id": config_id})
+            .await?
+            .into_iter()
+            .next()
+            .ok_or_else(|| Error::from(format!("不存在:{} ！", config_id)))?;
         Ok(config)
     }
-
 
     pub async fn add(&self, config: SysConfig) -> Result<u64> {
         self.check_config_key_unique(&None, config.config_key.clone().unwrap_or_default())
@@ -43,7 +41,7 @@ impl SysConfigService {
     pub async fn update(&self, config: SysConfig) -> Result<u64> {
         self.check_config_key_unique(&None, config.config_key.clone().unwrap_or_default())
             .await?;
-        let result = SysConfig::update_by_column(pool!(), &config, "config_id")
+        let result = SysConfig::update_by_map(pool!(), &config, rbs::value!{"config_id":config.config_id.clone()})
             .await?
             .rows_affected;
         if result == 1 {
@@ -56,7 +54,7 @@ impl SysConfigService {
 
     #[replace_pool(tx)]
     pub async fn remove(&self, config_id: &str) -> Result<u64> {
-        let targets = SysConfig::select_by_column(pool!(), "config_id", config_id)
+        let targets = SysConfig::select_by_map(pool!(), rbs::value!{"config_id": config_id})
             .await?
             .into_iter()
             .next();
@@ -70,15 +68,12 @@ impl SysConfigService {
                     )));
                 }
 
-                let r = SysConfig::delete_by_column(pool!(), "config_id", config_id).await?;
+                let r = SysConfig::delete_by_map(pool!(), rbs::value!{"config_id": config_id}).await?;
                 if r.rows_affected > 0 {
                     //copy data to trash
                     let config_key = cf.config_key.clone().unwrap_or_default();
                     CONTEXT.sys_trash_service.add("sys_config", &[cf]).await?;
-                    let _ = CONTEXT
-                        .cache_service
-                        .del(&self.get_cache_key(&config_key))
-                        .await?;
+                    let _ = CONTEXT.cache_service.del(&self.get_cache_key(&config_key)).await?;
                 }
                 Ok(r.rows_affected)
             }
@@ -91,9 +86,7 @@ impl SysConfigService {
      * @return true开启，false关闭
      */
     pub async fn select_captcha_enabled(&self) -> Result<bool> {
-        let captcha_enabled = self
-            .select_config_by_key("sys.account.captchaEnabled")
-            .await;
+        let captcha_enabled = self.select_config_by_key("sys.account.captchaEnabled").await;
         Ok(captcha_enabled.map(|c| c.eq("true")).unwrap_or(false))
     }
 
@@ -109,11 +102,9 @@ impl SysConfigService {
         if !config_value.is_empty() {
             return Ok(config_value);
         }
-        let config = SysConfig::select_by_column(pool!(), "config_key", config_key).await?;
+        let config = SysConfig::select_by_map(pool!(), rbs::value! {"config_key": config_key}).await?;
         match config.into_iter().next() {
-            None => {
-                Err(Error::from(format!("未找到配置参数：{}",config_key)))
-            },
+            None => Err(Error::from(format!("未找到配置参数：{}", config_key))),
             Some(c) => {
                 let config_value = c.config_value.clone().unwrap_or_default();
                 self.save_to_cache(&c).await?;
@@ -168,5 +159,5 @@ impl SysConfigService {
         config_id,
         "参数键名重复"
     );
-    export_excel_service!(ConfigPageDTO, SysConfigVO,SysConfig::select_page);
+    export_excel_service!(ConfigPageDTO, SysConfigVO, SysConfig::select_page);
 }

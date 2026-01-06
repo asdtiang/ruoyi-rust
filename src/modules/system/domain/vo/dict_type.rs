@@ -40,5 +40,3 @@ impl From<SysDictType> for SysDictTypeVO {
         }
     }
 }
-
-impl SysDictTypeVO {}

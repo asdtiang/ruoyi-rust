@@ -40,7 +40,6 @@ pub async fn add(dto: crate::ValidatedForm<MenuAddDTO>) -> impl IntoResponse {
         data.path = Some("".to_string());
     }
     let data = CONTEXT.sys_menu_service.add(data).await;
-    let _=   CONTEXT.sys_menu_service.update_cache().await;
     RespVO::from_result(&data).into_response()
 }
 
@@ -74,7 +73,7 @@ pub async fn role_menu_treeselect( role_id: Path<String>) -> impl IntoResponse {
     let role_id = role_id.0;
 
     let menus = if user_cache.is_admin() {
-        CONTEXT.sys_menu_service.all().await
+        CONTEXT.sys_menu_service.get_normal_all().await
     } else {
         CONTEXT.sys_menu_service.get_menu_list_by_user_id(&user_cache.user_id).await
     };

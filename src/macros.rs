@@ -13,7 +13,7 @@ macro_rules! check_unique {
                         $table,
                         stringify!($key_col)
                     ),
-                    vec![rbs::to_value!($key_col)],
+                    vec![rbs::value!($key_col)],
                 )
                 .await?;
             //println!("old_id: {:?}, id_col  {:?}", old_id,$id_col);
@@ -38,7 +38,7 @@ macro_rules! check_unique {
                         stringify!($key_col1),
                         stringify!($key_col2)
                     ),
-                    vec![to_value!($key_col1), to_value!($key_col2)],
+                    vec![rbs::value!($key_col1), rbs::value!($key_col2)],
                 )
                 .await?;
             if old_id.is_none()||old_id.eq($id_col) {
@@ -57,7 +57,7 @@ macro_rules! check_unique {
 //             if $key_col.is_empty() {
 //                 return Ok(());
 //             }
-//             let old_id: Option<String> = pool!().query_decode($sql, vec![to_value!($key_col)]).await?;
+//             let old_id: Option<String> = pool!().query_decode($sql, vec![rbs::value!($key_col)]).await?;
 //            if old_id.is_none()||old_id.eq($id_col) {
 //                 Ok(())
 //             } else {
@@ -71,7 +71,7 @@ macro_rules! check_unique {
 //                 return Ok(());
 //             }
 //             let old_id: Option<String> = pool!()
-//                 .query_decode($sql, vec![to_value!($key_col1), to_value!($key_col2)])
+//                 .query_decode($sql, vec![rbs::value!($key_col1), rbs::value!($key_col2)])
 //                 .await?;
 //             if old_id.eq($id_col) {
 //                 Ok(())
@@ -292,9 +292,8 @@ macro_rules! update_marco {
 ///在controller中使用，简化判断Result，Err返回
 #[macro_export]
 macro_rules! error_wrapper {
-    ($fun:expr,$res:ident) => {
-        let $res = $fun.await;
-        if let Err(e) = $res {
+    ($fun:expr) => {
+        if let Err(e) = $fun.await {
             return RespVO::<u64>::from_error_info(500, &e.to_string()).into_response();
         }
     };
@@ -326,7 +325,7 @@ macro_rules! update_single_col {
                         stringify!($col_name),
                         stringify!($pk_col_name)
                     ),
-                    vec![to_value!($col_name), to_value!($pk_col_name)],
+                    vec![rbs::value!($col_name), rbs::value!($pk_col_name)],
                 )
                 .await?;
             Ok(res.rows_affected)
@@ -351,7 +350,7 @@ macro_rules! update_double_col {
                         stringify!($col_name2),
                         stringify!($pk_col_name)
                     ),
-                    vec![to_value!($col_name1), to_value!($col_name2), to_value!($pk_col_name)],
+                    vec![rbs::value!($col_name1), rbs::value!($col_name2), rbs::value!($pk_col_name)],
                 )
                 .await?;
             Ok(res.rows_affected)

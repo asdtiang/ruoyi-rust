@@ -1,6 +1,7 @@
 use crate::system::domain::dto::{RoleAuthUserPageDTO, UserPageDTO};
 use rbatis::rbdc::DateTime;
 use rbatis::{crud, impl_select, pysql_select_page};
+use crate::system::domain::mapper::sys_dept::SysDept;
 
 #[derive(Clone, Debug, serde::Serialize, serde::Deserialize)]
 pub struct SysUser {
@@ -36,13 +37,15 @@ pub struct SysUser {
     pub update_by: Option<String>,
     pub update_time: Option<DateTime>,
     pub remark: Option<String>,
-}
 
+    #[serde(flatten,skip_serializing)]
+    pub dept: Option<SysDept>,
+}
 
 crud!(SysUser {});
 
 pysql_select_page!(select_page(dto:&UserPageDTO) -> SysUser =>
-    r#"`select u.* from sys_user u left join sys_dept d on u.dept_id = d.dept_id where u.del_flag = '0'`
+    r#"`select u.*, d.dept_name, d.leader from sys_user u left join sys_dept d on u.dept_id = d.dept_id where u.del_flag = '0'`
     if dto.userId != '':
       ` and user_id = #{dto.userId}`
     if dto.userName != '':
@@ -50,11 +53,11 @@ pysql_select_page!(select_page(dto:&UserPageDTO) -> SysUser =>
     if dto.phonenumber != '':
       ` and phonenumber like #{'%'+dto.phonenumber+'%'}`
     if dto.status != '':
-      ` and status = #{dto.status}`
+      ` and u.status = #{dto.status}`
     if dto.params.beginTime != '':
-      ` and date_format(create_time,'%y%m%d') >= date_format(#{dto.params.beginTime},'%y%m%d')`
+      ` and date_format(u.create_time,'%y%m%d') >= date_format(#{dto.params.beginTime},'%y%m%d')`
     if dto.params.endTime != '':
-      ` and date_format(create_time,'%y%m%d') <= date_format(#{dto.params.endTime},'%y%m%d')`
+      ` and date_format(u.create_time,'%y%m%d') <= date_format(#{dto.params.endTime},'%y%m%d')`
     if dto.deptId != '':
       ` and (u.dept_id = #{dto.deptId} OR u.dept_id IN ( SELECT t.dept_id FROM sys_dept t WHERE find_in_set(#{dto.deptId}, ancestors)))`
     if dto.params.dataScope != '':

@@ -11,7 +11,7 @@ use macros::pre_authorize;
 
 #[pre_authorize("monitor:online:list", user_cache)]
 pub async fn list() -> impl IntoResponse {
-    error_wrapper_unwrap!(CONTEXT.cache_service.keys(&crate::web::get_login_user_redis_key("*".to_string())),keys);
+    error_wrapper_unwrap!(CONTEXT.cache_service.keys(&crate::web::get_login_user_redis_key("*")),keys);
 
     let mut user_online_list = vec![];
 
@@ -43,9 +43,9 @@ pub async fn list() -> impl IntoResponse {
 
 
 #[pre_authorize("system:online:force_logout")]
-pub async fn force_logout(token_id: Path<String>) -> impl IntoResponse {
-    error_wrapper_unwrap!(CONTEXT.cache_service.del(&crate::web::get_login_user_redis_key(token_id.0)),res);
-    if res {
+pub async fn force_logout(token: Path<String>) -> impl IntoResponse {
+ let res=   CONTEXT.sys_user_online_service.force_logout_by_token(&token.0).await;
+    if res.is_ok_and(|r|r) {
         RespVO::<u64>::from_success_info("强制成功！").into_response()
     } else {
         RespVO::<u64>::from_success_info("强制失败！").into_response()

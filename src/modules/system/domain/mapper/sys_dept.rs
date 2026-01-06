@@ -34,9 +34,9 @@ pub struct SysDept {
 
 #[py_sql(
     "`select d.* from sys_dept d where del_flag='0'`
-    if dto.dept_id != '':
+    if dto.deptId != '':
       ` and (dept_id = #{dto.deptId} or dept_id in ( select t.dept_id from sys_dept t where find_in_set(#{dto.deptId}, ancestors) ))`
-    if dto.parent_id != '':
+    if dto.parentId != '':
       ` and parent_id = #{dto.parent_id}`
     if dto.deptName != '':
       ` and dept_name like #{'%'+dto.deptName+'%'}`
@@ -86,21 +86,5 @@ pub async fn update_dept_children(
     rb: &dyn Executor,
     depts: Vec<SysDept>,
 ) -> Result<Option<u64>, Error> {
-    impled!()
-}
-
-
-#[html_sql(
-    r#"
-        <select id="select_dept_list_by_ids">  select * from sys_dept`
-        ` where dept_id in`
-        <foreach collection="ids" item="t" open="(" separator="," close=")">
-        ` #{t}`
-        </foreach></select>"#
-)]
-pub async fn select_dept_list_by_ids(
-    rb: &dyn Executor,
-    ids: &Vec<String>,
-) -> Result<Vec<SysDept>, Error> {
     impled!()
 }

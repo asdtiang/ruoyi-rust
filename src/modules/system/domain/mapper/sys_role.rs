@@ -6,12 +6,10 @@ use rbatis::{crud, impl_select_page};
 crud!(SysRole {});
 impl_select_page!(SysRole{select_page(dto:&RolePageDTO)=>
     "`where del_flag = '0'`
-    if dto.role_id != '':
-      ` and role_id = #{dto.role_id}`
-    if dto.role_name != '':
-      ` and role_name like #{'%'+dto.role_name+'%'}`
-    if dto.role_name != '':
-      ` and role_key like #{'%'+dto.role_name+'%'}`
+    if dto.roleName != '':
+      ` and role_name like #{'%'+dto.roleName+'%'}`
+    if dto.roleKey != '':
+      ` and role_key like #{'%'+dto.roleKey+'%'}`
     if dto.status != '':
       ` and status = #{dto.status}`
     if dto.params.beginTime != '':

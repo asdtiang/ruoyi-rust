@@ -25,7 +25,7 @@ impl SysOperLogService {
 
     #[replace_pool]
     pub async fn remove(&self, oper_id: &str) -> Result<u64> {
-        let r = SysOperLog::delete_by_column(pool!(), "oper_id", oper_id).await?;
+        let r = SysOperLog::delete_by_map(pool!(), rbs::value! {"oper_id": oper_id}).await?;
         Ok(r.rows_affected)
     }
     pub async fn clean(&self) -> Result<u64> {

@@ -7,6 +7,6 @@ pub mod extractors;
 pub use token::permit::check_permit;
 
 pub const LOGIN_TOKEN_KEY: &'static str = "login_tokens:";
-pub fn get_login_user_redis_key(login_user_key: String) -> String {
+pub fn get_login_user_redis_key(login_user_key: &str) -> String {
     format!("{}{}", LOGIN_TOKEN_KEY, login_user_key)
 }

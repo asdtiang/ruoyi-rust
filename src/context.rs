@@ -40,6 +40,7 @@ pub struct ServiceContext {
     pub sys_oper_log_service:  SysOperLogService,
     pub sys_post_service: SysPostService,
     pub sys_notice_service: SysNoticeService,
+    pub sys_user_online_service: SysUserOnlineService
 }
 
 impl ServiceContext {
@@ -99,6 +100,7 @@ impl Default for ServiceContext {
             sys_oper_log_service: SysOperLogService {},
             sys_post_service: SysPostService {},
             sys_notice_service: SysNoticeService{},
+            sys_user_online_service: SysUserOnlineService {},
             config,
         }
     }

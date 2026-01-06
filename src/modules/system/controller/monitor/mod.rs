@@ -31,7 +31,7 @@ fn logininfor_api() -> Router {
 fn online_api() -> Router {
     Router::new()
         .route("/list", get(sys_user_online_controller::list))
-        .route("/{token_id}", delete(sys_user_online_controller::force_logout))
+        .route("/{token}", delete(sys_user_online_controller::force_logout))
 }
 fn server_api() -> Router {
     Router::new()

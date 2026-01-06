@@ -23,6 +23,7 @@ pub async fn profile() -> impl IntoResponse {
     user.dept=Some(CommonDeptVO{
         dept_id: user_cache.dept_id.into(),
         dept_name:  user_cache.dept_name.into(),
+        leader:None
     });
     res.insert("data".to_string(), serde_json::json!(user));
     res.insert(
@@ -53,7 +54,7 @@ pub async fn update_profile(dto: Json<ProfileUpdateDTO>) -> impl IntoResponse {
     update_marco!(data, dto, user_cache, SysUser);
     data.user_id = user_cache.user_id.clone().into();
 
-    error_wrapper!(CONTEXT.sys_user_service.update_profile(data.clone()), res);
+    error_wrapper!(CONTEXT.sys_user_service.update_profile(data.clone()));
 
     let res = CONTEXT
         .cache_service

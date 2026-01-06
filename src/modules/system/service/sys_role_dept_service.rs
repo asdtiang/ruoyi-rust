@@ -36,19 +36,19 @@ impl SysRoleDeptService {
 
     #[replace_pool]
     pub async fn remove_by_dept_id(&self, dept_id: &str) -> Result<u64> {
-        Ok(SysRoleDept::delete_by_column(pool!(), "dept_id", dept_id)
+        Ok(SysRoleDept::delete_by_map(pool!(), rbs::value! {"dept_id": dept_id})
             .await?
             .rows_affected)
     }
     #[replace_pool]
     pub async fn remove_by_role_id(&self, role_id: &str) -> Result<u64> {
-        Ok(SysRoleDept::delete_by_column(pool!(), "role_id", role_id)
+        Ok(SysRoleDept::delete_by_map(pool!(),rbs::value! {"role_id": role_id} )
             .await?
             .rows_affected)
     }
 
     pub async fn select_by_role_id(&self, role_id: &str) -> Result<Vec<SysRoleDept>> {
-        Ok(SysRoleDept::select_by_column(pool!(), "role_id", role_id)
+        Ok(SysRoleDept::select_by_map(pool!(), rbs::value! {"role_id": role_id})
             .await?)
     }
 }

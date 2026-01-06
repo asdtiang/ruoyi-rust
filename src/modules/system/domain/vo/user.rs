@@ -1,6 +1,6 @@
 use crate::config::global_constants::ADMIN_NAME;
-use crate::system::domain::mapper::sys_user::SysUser;
-use crate::system::domain::vo::{CommonDeptVO, SysDeptVO, SysRoleVO};
+use crate::system::domain::mapper::sys_user::{ SysUser};
+use crate::system::domain::vo::{CommonDeptVO, SysRoleVO};
 use macros::Export;
 use rbatis::rbdc::datetime::DateTime;
 use serde::{Deserialize, Serialize};
@@ -52,9 +52,8 @@ pub struct SysUserVO {
     pub update_time: Option<DateTime>,
     pub remark: Option<String>,
     pub admin: bool,
-    //fixme 将移除，以提高性能
     /** 部门对象 */
-    pub dept: Option<SysDeptVO>,
+    pub dept: Option<CommonDeptVO>,
     /** 角色对象 */
     pub roles: Option<Vec<SysRoleVO>>,
 }
@@ -81,7 +80,7 @@ impl From<SysUser> for SysUserVO {
             update_time: arg.update_time,
             remark: arg.remark,
             admin: arg.user_name.unwrap_or_default().eq(ADMIN_NAME),
-            dept: None,
+            dept:arg.dept.map(|d|CommonDeptVO::from(d)),
             roles: None,
         }
     }
@@ -124,7 +123,7 @@ impl From<SysUser> for CommonUserVO {
             avatar: arg.avatar,
             sex: arg.sex,
             create_time: arg.create_time,
-            dept: None,
+            dept:arg.dept.map(|d|CommonDeptVO::from(d)),
         }
     }
 }

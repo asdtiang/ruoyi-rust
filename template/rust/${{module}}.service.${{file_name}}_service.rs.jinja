@@ -1,4 +1,4 @@
-use rbatis::{field_name, Page, PageRequest};
+use rbatis::{Page, PageRequest};
 use crate::${{moduleName}}::domain::vo::${{className}}VO;
 use crate::${{moduleName}}::domain::dto::${{className}}PageDTO;
 use crate::${{moduleName}}::domain::mapper::${{moduleName}}_${{business_name}}::${{className}};
@@ -18,7 +18,7 @@ impl ${{className}}Service {
 
     pub async fn detail(&self, ${{pkColumn.columnName}}: &str) -> Result<${{className}}> {
         let  ${{business_name}} =
-            ${{className}}::select_by_column(pool!(), field_name!(${{className}}.${{pkColumn.columnName}}), ${{pkColumn.columnName}})
+            ${{className}}::select_by_map(pool!(), rbs::value!{"${{pkColumn.columnName}}": ${{pkColumn.columnName}}})
                 .await?
                 .into_iter()
                 .next()
@@ -32,7 +32,7 @@ impl ${{className}}Service {
     }
 
     pub async fn update(&self, ${{business_name}}: ${{className}}) -> Result<u64> {
-        let result = ${{className}}::update_by_column(pool!(), &${{business_name}}, "${{pkColumn.columnName}}").await;
+        let result = ${{className}}::update_by_map(pool!(), &${{business_name}}, rbs::value!{"${{pkColumn.columnName}}": ${{business_name}}.${{pkColumn.columnName}}.clone()}).await;
         Ok(result?.rows_affected)
     }
 
@@ -42,12 +42,12 @@ impl ${{className}}Service {
          let r = pool!()
                     .exec(
                         "update ${{tableName}} set ${{tableOptions.softDeleteColumn}} = '2' where ${{pkColumn.columnName}} = ?",
-                        vec![rbs::to_value!(${{pkColumn.columnName}})],
+                        vec![rbs::value!(${{pkColumn.columnName}})],
                     )
                     .await?;
          {% else %}
-         let targets = ${{className}}::select_by_column(pool!(), "${{pkColumn.columnName}}", ${{pkColumn.columnName}}).await?;
-         let r = ${{className}}::delete_by_column(pool!(), "${{pkColumn.columnName}}", ${{pkColumn.columnName}}).await?;
+         let targets = ${{className}}::select_by_map(pool!(),  rbs::value!{"${{pkColumn.columnName}}": ${{pkColumn.columnName}}}).await?;
+         let r = ${{className}}::delete_by_map(pool!(),  rbs::value!{"${{pkColumn.columnName}}": ${{pkColumn.columnName}}}).await?;
          if r.rows_affected > 0 {
              //copy data to trash
              use crate::context::CONTEXT;

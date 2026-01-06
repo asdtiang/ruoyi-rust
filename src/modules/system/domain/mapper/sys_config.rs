@@ -23,18 +23,21 @@ crud!(SysConfig {});
 
 
 impl_select_page!(SysConfig{select_page(dto: &crate::system::domain::dto::ConfigPageDTO) =>
-    "`where 1=1`
-    if dto.configName != '':
-      ` and config_name like #{'%'+dto.configName+'%'}`
-    if dto.configKey != '':
-      ` and config_key like #{'%'+dto.configKey+'%'}`
-    if dto.configType != '':
-      ` and config_type = #{dto.configType}`
-    if dto.status != '':
-      ` and status = #{dto.status}`
-    if dto.params.beginTime != '':
-      ` and date_format(create_time,'%y%m%d') >= date_format(#{dto.params.beginTime},'%y%m%d')`
-    if dto.params.endTime != '':
-      ` and date_format(create_time,'%y%m%d') <= date_format(#{dto.params.endTime},'%y%m%d')`
-    ` order by create_time`"});
+  "
+  trim end=' where ':
+    ` where `
+    trim start=' and ':
+      if dto.configName != '':
+        ` and config_name like #{'%'+dto.configName+'%'}`
+      if dto.configKey != '':
+        ` and config_key like #{'%'+dto.configKey+'%'}`
+      if dto.configType != '':
+        ` and config_type = #{dto.configType}`
+      if dto.status != '':
+        ` and status = #{dto.status}`
+      if dto.params.beginTime != '':
+        ` and date_format(create_time,'%y%m%d') >= date_format(#{dto.params.beginTime},'%y%m%d')`
+      if dto.params.endTime != '':
+        ` and date_format(create_time,'%y%m%d') <= date_format(#{dto.params.endTime},'%y%m%d')`
+  ` order by create_time`"});
 

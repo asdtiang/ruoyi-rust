@@ -23,7 +23,7 @@ async fn main() -> std::io::Result<()> {
     }
     //database
     CONTEXT.init_database().await;
-    let _ = CONTEXT.sys_menu_service.update_cache().await;
+    let _ = CONTEXT.sys_menu_service.update_cache_return_normal_all().await;
     let _ = CONTEXT.sys_dict_data_service.update_cache().await;
     //table::sync_tables(&CONTEXT.rb).await;
     //  table::sync_tables_data(&CONTEXT.rb).await;

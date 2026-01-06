@@ -10,8 +10,7 @@ use crate::system::domain::mapper::sys_user_role::SysUserRole;
 use crate::system::domain::vo::{SysRoleVO, SysUserVO};
 use crate::{export_excel_service, pool, remove_batch_tx};
 use macros::{data_scope, replace_pool, transactional};
-use rbatis::{field_name, Page, PageRequest};
-use rbs::to_value;
+use rbatis::{Page, PageRequest};
 
 const RES_KEY: &'static str = "sys_role:all";
 
@@ -21,13 +20,14 @@ pub struct SysRoleService {}
 impl SysRoleService {
     #[data_scope(deptAlias = "d", userAlias = "u")]
     pub async fn page(&self, dto: &RolePageDTO) -> Result<Page<SysRoleVO>> {
+        println!("dto {:?}",dto);
         let data = SysRole::select_page(pool!(), &PageRequest::from(&dto), &dto).await?;
         let page = Page::<SysRoleVO>::from(data);
         Ok(page)
     }
     ///role details
     pub async fn detail(&self, role_id: &str) -> Result<SysRole> {
-        let role = SysRole::select_by_column(pool!(), field_name!(SysRole.role_id), role_id)
+        let role = SysRole::select_by_map(pool!(), rbs::value! {"role_id": role_id})
             .await?
             .into_iter()
             .next()
@@ -44,7 +44,6 @@ impl SysRoleService {
     #[transactional(tx)]
     pub async fn add(&self, role: SysRole, menu_ids: Vec<String>) -> Result<u64> {
         let result = SysRole::insert(&tx, &role).await?.rows_affected;
-
         if result > 0 && !menu_ids.is_empty() {
             CONTEXT
                 .sys_role_menu_service
@@ -52,13 +51,14 @@ impl SysRoleService {
                 .await?;
         }
         self.update_cache().await?;
+        CONTEXT.sys_user_online_service.refresh_all_user_cache().await?;
         Ok(result)
     }
     #[transactional(tx)]
     pub async fn update(&self, role: SysRole, menu_ids: Vec<String>) -> Result<u64> {
         self.check_role_allowed(&role).await?;
 
-        let result = SysRole::update_by_column(&tx, &role, field_name!(SysRole.role_id))
+        let result = SysRole::update_by_map(&tx, &role,rbs::value! {"role_id": role.role_id.clone()})
             .await?
             .rows_affected;
         if result > 0 {
@@ -69,6 +69,7 @@ impl SysRoleService {
             }
         }
         self.update_cache().await?;
+        CONTEXT.sys_user_online_service.refresh_all_user_cache().await?;
         Ok(result)
     }
 
@@ -80,45 +81,48 @@ impl SysRoleService {
         let res = pool!()
             .exec(
                 "update sys_role set status = ? where role_id = ?",
-                vec![to_value!(status), to_value!(role_id)],
+                vec![rbs::value!(status), rbs::value!(role_id)],
             )
             .await?;
         self.update_cache().await?;
+        CONTEXT.sys_user_online_service.refresh_all_user_cache().await?;
         Ok(res.rows_affected)
     }
 
     #[replace_pool]
-    pub async fn remove(&self, id: &str) -> Result<u64> {
-        if id.eq(ADMIN_ROLE_ID) {
+    pub async fn remove(&self, role_id: &str) -> Result<u64> {
+        if role_id.eq(ADMIN_ROLE_ID) {
             return Err(Error::from("不能删除管理员角色！"));
         }
-        let trash = SysRole::select_by_column(pool!(), field_name!(SysRole.role_id), id).await?;
+        let trash = SysRole::select_by_map(pool!(), rbs::value! {"role_id": role_id}).await?;
         let count: u64 =tx
             .query_decode(
                 "select count(1) as count from sys_user_role where role_id = ?",
-                vec![to_value!(id)],
+                vec![rbs::value!(role_id)],
             )
             .await?;
         if count > 0 {
             return Err(Error::from("已分配用户,不允许删除！"));
         }
-        let result = SysRole::delete_by_column(pool!(), field_name!(SysRole.role_id), id)
+        let result = SysRole::delete_by_map(pool!(), rbs::value! {"role_id": role_id})
             .await?
             .rows_affected;
         if result > 0 {
-            CONTEXT.sys_role_menu_service.remove_by_role_id_tx(id,tx).await?;
-            CONTEXT.sys_role_dept_service.remove_by_role_id_tx(id,tx).await?;
+            CONTEXT.sys_role_menu_service.remove_by_role_id_tx(role_id, tx).await?;
+            CONTEXT.sys_role_dept_service.remove_by_role_id_tx(role_id, tx).await?;
         }
         CONTEXT.sys_trash_service.add("sys_role", &trash).await?;
         self.update_cache().await?;
+        //fixme try better
+        CONTEXT.sys_user_online_service.refresh_all_user_cache().await?;
         Ok(result)
     }
 
-    pub async fn finds(&self, ids: &Vec<&String>) -> Result<Vec<SysRole>> {
-        if ids.is_empty() {
+    pub async fn finds(&self, role_ids: &Vec<String>) -> Result<Vec<SysRole>> {
+        if role_ids.is_empty() {
             return Ok(vec![]);
         }
-        Ok(SysRole::select_in_column(pool!(), "role_id", ids).await?)
+        Ok(SysRole::select_by_map(pool!(),rbs::value!{"role_id":role_ids}).await?)
     }
 
     pub async fn finds_all(&self) -> Result<Vec<SysRoleVO>> {
@@ -141,7 +145,7 @@ impl SysRoleService {
     pub async fn finds_roles_by_user_id(&self, user_id: &str) -> Result<Vec<SysRoleVO>> {
         let all = SysRole::select_all(pool!()).await?;
         let mut res = vec![];
-        let user_roles = SysUserRole::select_by_column(pool!(), "user_id", user_id).await?;
+        let user_roles = SysUserRole::select_by_map(pool!(), rbs::value! {"user_id": user_id} ).await?;
         for r in all {
             let mut r_vo = SysRoleVO::from(r);
 
@@ -159,7 +163,7 @@ impl SysRoleService {
         Ok(res)
     }
     pub async fn finds_role_ids_by_user_id(&self, user_id: &str) -> Result<Vec<String>> {
-        let user_roles = SysUserRole::select_by_column(pool!(), "user_id", user_id).await?;
+        let user_roles = SysUserRole::select_by_map(pool!(), rbs::value! {"user_id": user_id}).await?;
         let res = user_roles
             .into_iter()
             .map(|ur| ur.role_id.unwrap_or_default())
@@ -167,11 +171,11 @@ impl SysRoleService {
         Ok(res)
     }
 
-    pub async fn find_role_menu(&self, role_ids: &Vec<&String>) -> Result<Vec<SysRoleMenu>> {
+    pub async fn find_role_menu(&self, role_ids: &Vec<String>) -> Result<Vec<SysRoleMenu>> {
         if role_ids.is_empty() {
             return Ok(vec![]);
         }
-        Ok(SysRoleMenu::select_in_column(pool!(), "role_id", role_ids).await?)
+        Ok(SysRoleMenu::select_by_map(pool!(),rbs::value!{"role_id":role_ids}).await?)
     }
 
     #[data_scope(deptAlias = "d", userAlias = "u")]
@@ -219,13 +223,13 @@ impl SysRoleService {
         self.check_role_allowed(role).await?;
         let role_id = role.role_id.clone().unwrap_or_default();
         self.check_role_data_scope(&role_id, user).await?;
-        SysRole::update_by_column(&tx, &role, field_name!(SysRole.role_id))
+        SysRole::update_by_map(&tx, &role, rbs::value!{"role_id":role_id.clone()})
             .await?;
         CONTEXT.sys_role_dept_service.remove_by_role_id_tx(&role_id,&tx).await?;
         if !dept_ids.is_empty() {
             CONTEXT.sys_role_dept_service.add_role_depts_tx(&role_id, dept_ids,&tx).await?;
         }
-
+        CONTEXT.sys_user_online_service.refresh_all_user_cache().await?;
         Ok(true)
     }
     remove_batch_tx!(role_ids);

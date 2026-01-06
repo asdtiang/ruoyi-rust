@@ -1,5 +1,5 @@
 use super::super::mapper::gen_table_column::GenTableColumn;
-use crate::gen::service::gen_constants;
+use crate::code_gen::service::gen_constants;
 use crate::utils::string::substring_unicode;
 use convert_case::{Case, Casing};
 use rbatis::rbdc::DateTime;

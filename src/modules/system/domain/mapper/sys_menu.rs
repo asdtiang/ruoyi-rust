@@ -4,14 +4,18 @@ use rbatis::{crud, impl_select};
 //SysMenu
 crud!(SysMenu {});//如何去掉第一个AND
 impl_select!(SysMenu{query_menu(dto: &crate::system::domain::dto::MenuPageDTO) =>
-"`where 1=1`
-    if dto.menuName != '':
-      ` and menu_name like #{'%'+dto.menuName+'%'}`
-    if dto.status != '':
-      ` and status = #{dto.status}`
-    ` order by order_num`"});
-impl_select!(SysMenu{select_all_order_num() =>
-    "` order by order_num`"});
+  "
+  trim end=' where ':
+    ` where `
+    trim start=' and ':
+        if dto.menuName != '':
+          ` and menu_name like #{'%'+dto.menuName+'%'}`
+        if dto.status != '':
+          ` and status = #{dto.status}`
+  ` order by order_num`"});
+
+impl_select!(SysMenu{select_normal_all_order_num() =>
+    "`where status='0' order by order_num`"});
 
 
 ///Permission Menu Table

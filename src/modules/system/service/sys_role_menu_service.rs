@@ -36,19 +36,20 @@ impl SysRoleMenuService {
 
     #[replace_pool]
     pub async fn remove_by_menu_id(&self, menu_id: &str) -> Result<u64> {
-        Ok(SysRoleMenu::delete_by_column(pool!(), "menu_id", menu_id)
+        Ok(SysRoleMenu::delete_by_map(pool!(), rbs::value!({"menu_id": menu_id}))
             .await?
             .rows_affected)
     }
     #[replace_pool]
     pub async fn remove_by_role_id(&self, role_id: &str) -> Result<u64> {
-        Ok(SysRoleMenu::delete_by_column(pool!(), "role_id", role_id)
+        //todo 更改要删除
+        Ok(SysRoleMenu::delete_by_map(pool!(), rbs::value!({"role_id": role_id}))
             .await?
             .rows_affected)
     }
 
     pub async fn select_by_role_id(&self, role_id: &str) -> Result<Vec<SysRoleMenu>> {
-        Ok(SysRoleMenu::select_by_column(pool!(), "role_id", role_id)
+        Ok(SysRoleMenu::select_by_map(pool!(),rbs::value!({"role_id": role_id}))
             .await?)
     }
 }

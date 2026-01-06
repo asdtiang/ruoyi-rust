@@ -2,10 +2,9 @@ use crate::context::CONTEXT;
 use crate::error::Error;
 use crate::utils::ip_util::is_local_ip;
 
-
 #[derive(serde::Deserialize, Debug)]
-struct IpAddress{
-    addr:String
+struct IpAddress {
+    addr: String,
 }
 pub async fn get_real_address_by_ip(ip: &str) -> crate::error::Result<String> {
     // 内网不查询
@@ -13,25 +12,18 @@ pub async fn get_real_address_by_ip(ip: &str) -> crate::error::Result<String> {
         return Ok("内网IP".to_string());
     }
     if CONTEXT.config.address_enabled {
-        let body = reqwest::get(format!(
-            "http://whois.pconline.com.cn/ipJson.jsp?ip={}&json=true",
-            ip
-        ))
-        .await
-        .map_err(|e| Error::from(e.to_string()))?
-        .text()
-        .await
-        .map_err(|e| Error::from(e.to_string()))?;
-let body=body.trim();
-        let value=serde_json::from_str::<IpAddress>(&body);
+        let body = reqwest::get(format!("http://whois.pconline.com.cn/ipJson.jsp?ip={}&json=true", ip))
+            .await
+            .map_err(|e| Error::from(e.to_string()))?
+            .text()
+            .await
+            .map_err(|e| Error::from(e.to_string()))?;
+        let body = body.trim();
+        let value = serde_json::from_str::<IpAddress>(&body);
         return match value {
-            Ok(v) => {
-                Ok(v.addr)
-            }
-            Err(e) => {
-                Err(Error::from(e.to_string()))
-            }
-        }
+            Ok(v) => Ok(v.addr),
+            Err(e) => Err(Error::from(e.to_string())),
+        };
     }
     Ok(String::new())
 }

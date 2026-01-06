@@ -17,7 +17,7 @@ impl JwtClaims {
     /// create token_auth
     /// secret: your secret string
     pub fn create_token(&self, secret: &str) -> Result<String, Error> {
-        match encode(&Header::default(), self, &EncodingKey::from_secret(secret.as_ref())) {
+        match encode(&Header::default(), self, &EncodingKey::from_secret(secret.as_bytes())) {
             Ok(t) => Ok(t),
             Err(_) => Err(Error::from("JwtClaims encode fail!")), // in practice, you would return the error
         }
@@ -26,7 +26,7 @@ impl JwtClaims {
     /// secret: your secret string
     pub fn verify(secret: &str, token: &str) -> Result<JwtClaims, Error> {
         let validation = Validation::default();
-        match decode::<JwtClaims>(&token, &DecodingKey::from_secret(secret.as_ref()), &validation) {
+        match decode::<JwtClaims>(&token, &DecodingKey::from_secret(secret.as_bytes()), &validation) {
             Ok(c) => Ok(c.claims),
             Err(err) => match *err.kind() {
                 ErrorKind::InvalidToken => Err(Error::from("InvalidToken")), // Example on how to handle a specific error

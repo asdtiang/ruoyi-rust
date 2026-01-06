@@ -19,6 +19,7 @@ mod sys_user_role_service;
 mod sys_user_service;
 pub mod cache;
 pub mod dict_utils;
+pub mod sys_user_online_service;
 
 pub use sys_auth_service::*;
 pub use sys_config_service::*;
@@ -37,3 +38,4 @@ pub use sys_trash_service::*;
 pub use sys_user_post_service::*;
 pub use sys_user_role_service::*;
 pub use sys_user_service::*;
+pub use sys_user_online_service::*;

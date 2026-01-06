@@ -1,8 +1,8 @@
 [package]
 name = "ruoyi-rust"
-version = "0.3.0"
+version = "0.4.0"
 authors = ["2537660666@qq.com"]
-edition = "2021"
+edition = "2024"
 
 [features]
 #add this to enable storage_s3 or cache_redis
@@ -17,14 +17,14 @@ code-gen = ["minijinja"]
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 [dependencies]
-rbs = { version = "4.5" }
-rbatis = { version = "4.5", features = [] }
-rbdc-mysql = { version = "4.5" }
+rbs = { version = "4.6.2" }
+rbatis = { version = "4.6.14", features = [] }
+rbdc-mysql = { version = "4.6.2" }
 
 tokio = { version = "1", features = ["macros"] }
 #serde and json
-serde = { version = "1.0.219", features = ["derive"] }
-serde_json = "1.0.140"
+serde = { version = "1.0.228", features = ["derive"] }
+serde_json = "1.0.148"
 #log
 log = "0.4"
 #fast_log enable features = ["lz4", "zip", "gzip"], and edit src/config/log.rs fn choose_packer(),edit application.yml add log_pack_compress: "zip"
@@ -35,15 +35,15 @@ tower-http = { version = "0.6.6", features = ["fs", "cors", "compression-full", 
 #redis
 redis = { version = "1.0.2", features = ["tokio-comp"] }
 #jwt
-jsonwebtoken = "10.2.0"
+jsonwebtoken = { version = "10.2.0" ,features = ["default","rust_crypto"] }
 #captcha
 captcha = "1.0.0"
 #http client,use rust-tls replace to native tls
-reqwest = { version = "0.12", features = ["json"] }
+reqwest = { version = "0.13.0-rc.1", default-features = false, features = ["blocking"] }
 #image code
 futures-util = "0.3.21"
 parking_lot = "0.12.1"
-sqlparser = "0.58.0"
+sqlparser = "0.60.0"
 
 serde_yaml = "0.9.33"
 merge-yaml-hash = "0.4.0"
@@ -87,6 +87,7 @@ async-trait = "*"
 #prettify-js = "0.1.0"
 #prettyplease = "*"
 #tokio-util = "0.7.13"
+
 [build-dependencies]
 serde = { version = "1.0", features = ["derive"] }
 

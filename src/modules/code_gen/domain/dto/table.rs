@@ -1,5 +1,5 @@
-use crate::gen::domain::mapper::gen_table::GenTable;
-use crate::gen::domain::mapper::gen_table_column::GenTableColumn;
+use crate::code_gen::domain::mapper::gen_table::GenTable;
+use crate::code_gen::domain::mapper::gen_table_column::GenTableColumn;
 
 #[derive(serde :: Serialize, serde :: Deserialize, Clone, Debug)]
 #[serde(rename_all = "camelCase")]

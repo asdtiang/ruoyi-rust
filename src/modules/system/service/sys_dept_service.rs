@@ -2,15 +2,13 @@ use crate::context::CONTEXT;
 use crate::error::Error;
 use crate::error::Result;
 use crate::modules::system::constants::{DEPT_DISABLE, DEPT_NORMAL};
+use crate::pool;
 use crate::system::domain::dto::DeptQueryDTO;
 use crate::system::domain::mapper;
 use crate::system::domain::mapper::sys_dept;
 use crate::system::domain::mapper::sys_dept::SysDept;
 use crate::system::domain::vo::{DeptTreeVO, SysDeptVO};
-use crate::{pool, UserCache};
 use macros::{data_scope, replace_pool, transactional};
-use rbatis::field_name;
-use rbs::to_value;
 pub struct SysDeptService {}
 
 impl SysDeptService {
@@ -67,7 +65,7 @@ impl SysDeptService {
         dept.ancestors = Some(new_ancestors.clone());
         self.update_dept_children_tx(&dept_id, &new_ancestors, &old_ancestors, &tx)
             .await?;
-        let result = SysDept::update_by_column(&tx, &dept, "dept_id").await?;
+        let result = SysDept::update_by_map(&tx, &dept, rbs::value! {"dept_id": dept.dept_id.clone()}).await?;
         Ok(result.rows_affected)
     }
     #[transactional(tx)]
@@ -79,14 +77,14 @@ impl SysDeptService {
         let res = tx
             .exec(
                 "update sys_dept set del_flag = '2' where dept_id = ?",
-                vec![to_value!(dept_id)],
+                vec![rbs::value!(dept_id)],
             )
             .await?;
         CONTEXT.sys_role_dept_service.remove_by_dept_id_tx(dept_id, &tx).await?;
         Ok(res.rows_affected)
     }
     //根据user id获得本单位及下属单位部门列表 todo
-    pub async fn get_dept_tree(&self, user_cache: &UserCache) -> Result<Vec<DeptTreeVO>> {
+    pub async fn get_dept_tree(&self, user_cache: &crate::UserCache) -> Result<Vec<DeptTreeVO>> {
         let depts = self.list(&DeptQueryDTO::default(), user_cache).await?;
         let depts = depts.into_iter().map(|d| DeptTreeVO::from(d)).collect::<Vec<_>>();
         self.build_dept_tree(depts)
@@ -140,7 +138,7 @@ impl SysDeptService {
         let count: u64 = pool!()
             .query_decode(
                 "select count(1) from sys_user where dept_id = ? and del_flag = '0'",
-                vec![to_value!(dept_id)],
+                vec![rbs::value!(dept_id)],
             )
             .await?;
         if count > 0 {
@@ -153,17 +151,17 @@ impl SysDeptService {
         let count: u64 = pool!()
             .query_decode(
                 "select count(1) from sys_dept where del_flag = '0' and parent_id = ?",
-                vec![to_value!(dept_id)],
+                vec![rbs::value!(dept_id)],
             )
             .await?;
         Ok(count > 0)
     }
-    //根据ID查询所有子部门
+    //根据dept_id查询所有子部门
     async fn select_children_dept_by_id(&self, dept_id: &str) -> Result<Vec<SysDept>> {
         let res: Option<Vec<SysDept>> = pool!()
             .query_decode(
                 "select * from sys_dept where find_in_set(?, ancestors)",
-                vec![to_value!(dept_id)],
+                vec![rbs::value!(dept_id)],
             )
             .await?;
         Ok(res.unwrap_or_default())
@@ -174,7 +172,7 @@ impl SysDeptService {
         let count: u64 = pool!()
             .query_decode(
                 "select count(*) from sys_dept where status = 0 and del_flag = '0' and find_in_set(?, ancestors)",
-                vec![to_value!(dept_id)],
+                vec![rbs::value!(dept_id)],
             )
             .await?;
         Ok(count)
@@ -191,7 +189,7 @@ impl SysDeptService {
         let old_id: Option<String> = pool!()
             .query_decode(
                 "select dept_id as count from sys_dept where dept_name=? and parent_id = ? and del_flag = '0'",
-                vec![to_value!(dept_name), to_value!(parent_id)],
+                vec![rbs::value!(dept_name), rbs::value!(parent_id)],
             )
             .await?;
         if old_id.is_none() || old_id.eq(dept_id) {
@@ -221,16 +219,19 @@ impl SysDeptService {
     }
 
     /**
-     * 校验部门是否有数据权限，todo 重写
+     * 校验部门是否有数据权限
      *
      * @param dept_id 部门id
      */
     pub async fn check_dept_data_scope(&self, dept_id: &str, user_cache: &crate::UserCache) -> Result<()> {
         if !user_cache.is_admin() {
-            let mut dto = DeptQueryDTO::default();
-            dto.dept_id = Some(dept_id.to_string());
-            let res = self.list(&dto, &user_cache).await?; //todo 重写
-            if res.is_empty() {
+            let res: u64 = pool!()
+                .query_decode(
+                    "select count(*) from sys_dept where  dept_id=? and find_in_set(?, ancestors)",
+                    vec![rbs::value!(dept_id),rbs::value!(user_cache.dept_id())],
+                )
+                .await?;
+            if res == 0 {
                 return Err(Error::from("没有权限访问部门数据！"));
             }
         }
@@ -238,7 +239,7 @@ impl SysDeptService {
     }
 
     pub(crate) async fn get_dept_by_id(&self, dept_id: &str) -> Result<SysDept> {
-        let dept = SysDept::select_by_column(pool!(), field_name!(SysDept.dept_id), dept_id)
+        let dept = SysDept::select_by_map(pool!(), rbs::value! {"dept_id": dept_id})
             .await?
             .into_iter()
             .next()
@@ -247,7 +248,7 @@ impl SysDeptService {
     }
 
     pub(crate) async fn get_dept_list_by_ids(&self, dept_ids: &Vec<String>) -> Result<Vec<SysDept>> {
-        let res = sys_dept::select_dept_list_by_ids(pool!(), dept_ids).await?;
+        let res = SysDept::select_by_map(pool!(), rbs::value! {"dept_id":dept_ids}).await?;
         Ok(res)
     }
     // export_excel_service!(DeptPageDTO, SysDeptVO,sys_dept::select_page);

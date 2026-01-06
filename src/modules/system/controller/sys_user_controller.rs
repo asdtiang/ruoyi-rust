@@ -1,6 +1,8 @@
 use crate::context::CONTEXT;
 use crate::system::domain::dto::{UserAddDTO, UserPageDTO, UserRoleAuthQueryDTO, UserUpdateDTO};
+use crate::system::domain::mapper::sys_user::SysUser;
 use crate::system::domain::vo::SysUserVO;
+use crate::utils::password_encoder::PasswordEncoder;
 use crate::{error_wrapper, error_wrapper_unwrap, export_excel_controller, PageVO, RespJson, RespVO};
 use axum::extract::{Path, Query};
 use axum::response::IntoResponse;
@@ -15,7 +17,26 @@ pub async fn list(dto: Json<UserPageDTO>) -> impl IntoResponse {
 
 #[pre_authorize("system:user:add", user_cache)]
 pub async fn add(arg: crate::ValidatedForm<UserAddDTO>) -> impl IntoResponse {
-    let rows_affected = CONTEXT.sys_user_service.add(&arg.0, user_cache.user_name).await;
+    let data = arg.0;
+    let role_ids = data.role_ids.clone();
+    let post_ids = data.post_ids.clone();
+    let mut sys_user = SysUser::from(data);
+    sys_user.create_by = Some(user_cache.user_name());
+    sys_user.create_time = Some(rbatis::rbdc::datetime::DateTime::now().set_nano(0).into());
+    let mut password = sys_user.password.clone().unwrap_or_default();
+
+    //todo 检查密码安全性
+    if password.is_empty() {
+        //默认密码
+        password = "123456".to_string();
+    }
+
+    sys_user.password = Some(PasswordEncoder::encode(&password));
+
+    let rows_affected = CONTEXT
+        .sys_user_service
+        .add(&sys_user, &role_ids.unwrap_or_default(), &post_ids.unwrap_or_default())
+        .await;
     RespVO::from_result(&rows_affected).into_response()
 }
 
@@ -60,7 +81,15 @@ pub async fn detail(user_id: Option<Path<String>>) -> impl IntoResponse {
 
 #[pre_authorize("system:user:edit", user_cache)]
 pub async fn update(arg: crate::ValidatedForm<UserUpdateDTO>) -> impl IntoResponse {
-    let res = CONTEXT.sys_user_service.update(arg.0, &user_cache).await;
+    let data = arg.0;
+    let role_ids = data.role_ids.clone();
+    let post_ids = data.post_ids.clone();
+    let mut sys_user = SysUser::from(data);
+    sys_user.update_by = Some(user_cache.user_name());
+    sys_user.update_time = Some(rbatis::rbdc::datetime::DateTime::now().set_nano(0).into());
+
+
+    let res = CONTEXT.sys_user_service.update(&sys_user,&role_ids.unwrap_or_default(), &post_ids.unwrap_or_default()).await;
     RespVO::from_result(&res).into_response()
 }
 
@@ -70,7 +99,7 @@ pub async fn remove(user_id: Path<String>) -> impl IntoResponse {
     RespVO::<u64>::judge_result(rows_affected, "删除成功", "删除失败").into_response()
 }
 
-#[pre_authorize(user_cache)]//todo 需要加入权限？
+#[pre_authorize(user_cache)] //todo 需要加入权限？
 pub async fn get_dept_tree() -> impl IntoResponse {
     let dept_tree = CONTEXT.sys_dept_service.get_dept_tree(&user_cache).await;
     RespVO::from_result(&dept_tree).into_response()
@@ -124,8 +153,11 @@ pub async fn get_auth_roles(user_id: Path<String>) -> impl IntoResponse {
 #[pre_authorize("system:user:resetPwd", user_cache)]
 pub async fn reset_pwd(dto: Json<UserUpdateDTO>) -> impl IntoResponse {
     let user_id = dto.user_id.clone().unwrap_or_default();
-    error_wrapper!(CONTEXT.sys_user_service.check_user_data_scope(&user_id, &user_cache),res);
-    let res = CONTEXT.sys_user_service.update_password(dto.0, &user_cache.user_name).await;
+    error_wrapper!(CONTEXT.sys_user_service.check_user_data_scope(&user_id, &user_cache));
+    let res = CONTEXT
+        .sys_user_service
+        .update_password(dto.0, &user_cache.user_name)
+        .await;
     RespVO::<u64>::judge_result(res, "更新成功！", "").into_response()
 }
 

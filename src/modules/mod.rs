@@ -1,5 +1,5 @@
 #[cfg(feature = "code-gen")]
-pub mod gen;
+pub mod code_gen;
 pub mod oa;
 pub mod system;
 
@@ -16,7 +16,7 @@ pub fn build_api() -> Router {
     #[cfg(feature = "code-gen")]
     return Router::new()
         .merge(r)
-        .merge(Router::new().nest("/tool", gen::build_gen_api()));
+        .merge(Router::new().nest("/tool", code_gen::build_gen_api()));
 
     #[cfg(not(feature = "code-gen"))]
     return r;

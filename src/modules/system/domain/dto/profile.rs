@@ -48,6 +48,7 @@ impl From<ProfileUpdateDTO> for SysUser {
             update_by: None,
             update_time: None,
             remark: None,
+            dept: None,
         }
     }
 }

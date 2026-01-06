@@ -35,7 +35,7 @@ pub async fn logout(user: Option<axum::Extension<UserCache>>, header_map: Header
             .await;
         let _ = CONTEXT
             .cache_service
-            .del(&crate::web::get_login_user_redis_key(user.login_user_key))
+            .del(&crate::web::get_login_user_redis_key(&user.login_user_key))
             .await;
     }
     RespVO::<String>::from_success_info("退出成功!").into_response()

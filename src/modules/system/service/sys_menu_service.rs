@@ -1,4 +1,4 @@
-use crate::config::global_constants::CHAR_FALSE;
+use crate::config::global_constants::{CHAR_FALSE};
 use crate::context::CONTEXT;
 use crate::error::Error;
 use crate::error::Result;
@@ -7,11 +7,9 @@ use crate::pool;
 use crate::system::domain::dto::MenuPageDTO;
 use crate::system::domain::mapper::sys_menu::SysMenu;
 use crate::system::domain::vo::{MenuTreeSelectVO, MetaVO, RouterVO, SysMenuVO};
-use crate::utils::string::capitalize;
+use crate::utils::string::{capitalize};
 use crate::web::token::auth::UserCache;
 use macros::transactional;
-use rbatis::field_name;
-use rbs::to_value;
 use std::collections::BTreeMap;
 
 const RES_MENU_KEY: &'static str = "sys_menu:all";
@@ -28,34 +26,23 @@ impl SysMenuService {
             .collect();
         Ok(res)
     }
-    /// Find the menu array
-    pub async fn all(&self) -> Result<Vec<SysMenu>> {
-        let js = CONTEXT
+    /// Get all the normal menu array
+    pub async fn get_normal_all(&self) -> Result<Vec<SysMenu>> {
+        let sys_menus = CONTEXT
             .cache_service
             .get_json::<Option<Vec<SysMenu>>>(RES_MENU_KEY)
-            .await;
-        if js.is_err()
-            || js.as_ref().unwrap().is_none()
-            || js.as_ref().unwrap().as_ref().unwrap().is_empty()
-        {
-            let all = self.update_cache().await?;
+            .await?;
+        let res=sys_menus.unwrap_or_default();
+        if res.is_empty() {
+            let all = self.update_cache_return_normal_all().await?;
             return Ok(all);
         }
-        if CONTEXT.config.debug {
-            log::info!("[ruoyi_rust] get from redis:{}", RES_MENU_KEY);
-        }
-        let mut arr = vec![];
-        if let Ok(v) = js {
-            for x in v.unwrap_or(vec![]) {
-                arr.push(x.into());
-            }
-        }
-        Ok(arr)
+        Ok(res)
     }
 
     ///menu details
     pub async fn detail(&self, menu_id: &str) -> Result<SysMenu> {
-        let menu = SysMenu::select_by_column(pool!(), field_name!(SysMenu.menu_id), menu_id)
+        let menu = SysMenu::select_by_map(pool!(), rbs::value! {"menu_id": menu_id})
             .await?
             .into_iter()
             .next()
@@ -64,42 +51,43 @@ impl SysMenuService {
     }
     pub async fn add(&self, menu: SysMenu) -> Result<u64> {
         let result = Ok(SysMenu::insert(pool!(), &menu).await?.rows_affected);
-        self.update_cache().await?;
+        self.update_cache_return_normal_all().await?;
         result
     }
 
     pub async fn update(&self, menu: SysMenu) -> Result<u64> {
-        let result = SysMenu::update_by_column(pool!(), &menu, "menu_id").await?;
-        self.update_cache().await?;
+        let result = SysMenu::update_by_map(pool!(), &menu, rbs::value! {"menu_id": menu.menu_id.clone()}).await?;
+        self.update_cache_return_normal_all().await?;
+        CONTEXT.sys_user_online_service.refresh_all_user_cache().await?;
         Ok(result.rows_affected)
     }
 
     #[transactional(tx)]
-    pub async fn remove(&self, id: &str) -> Result<u64> {
-        let trash = SysMenu::select_by_column(&tx, "menu_id", id).await?;
-
+    pub async fn remove(&self, menu_id: &str) -> Result<u64> {
+        let trash = SysMenu::select_by_map(&tx, rbs::value! {"menu_id": menu_id}).await?;
         if trash.len() == 1 {
-            let count: u64 =tx
+            let count: u64 = tx
                 .query_decode(
                     "select count(1) as count from sys_menu where parent_id =?",
-                    vec![to_value!(id)],
+                    vec![rbs::value!(menu_id)],
                 )
                 .await?;
             if count > 0 {
                 return Err(Error::from("存在子菜单,不允许删除！"));
             }
         } else {
-            return Err(Error::from(format!("菜单id{}不存在！", id)));
+            return Err(Error::from(format!("菜单id{}不存在！", menu_id)));
         }
-        let num = SysMenu::delete_by_column(&tx, "menu_id", id)
+        let num = SysMenu::delete_by_map(&tx, rbs::value! {"menu_id": menu_id})
             .await?
             .rows_affected;
 
-        CONTEXT.sys_role_menu_service.remove_by_menu_id_tx(&id,&tx).await?;
-        
+        CONTEXT.sys_role_menu_service.remove_by_menu_id_tx(menu_id, &tx).await?;
+
         CONTEXT.sys_trash_service.add("sys_menu", &trash).await?;
 
-        self.update_cache().await?;
+        self.update_cache_return_normal_all().await?;
+        CONTEXT.sys_user_online_service.refresh_all_user_cache().await?;
         Ok(num)
     }
 
@@ -112,19 +100,19 @@ impl SysMenuService {
 		left join sys_role ro on ur.role_id = ro.role_id
 		where ur.user_id = ?
 		order by m.parent_id, m.order_num
-       ", vec![to_value!(user_id)])
+       ", vec![rbs::value!(user_id)])
             .await?;
         Ok(res.unwrap_or_default())
     }
 
-    pub async fn update_cache(&self) -> Result<Vec<SysMenu>> {
-        let all = SysMenu::select_all_order_num(pool!()).await?;
+    pub async fn update_cache_return_normal_all(&self) -> Result<Vec<SysMenu>> {
+        let all = SysMenu::select_normal_all_order_num(pool!()).await?;
         CONTEXT.cache_service.set_json(RES_MENU_KEY, &all).await?;
         Ok(all)
     }
 
     pub async fn finds_all_map(&self) -> Result<BTreeMap<String, SysMenu>> {
-        let all = self.all().await?;
+        let all = self.get_normal_all().await?;
         let mut result = BTreeMap::new();
         for x in all {
             result.insert(x.menu_id.clone().unwrap_or_default(), x);
@@ -132,11 +120,7 @@ impl SysMenuService {
         Ok(result)
     }
 
-    pub fn finds_menu(
-        &self,
-        ids: &Vec<String>,
-        all_menus: &BTreeMap<String, SysMenu>,
-    ) -> Vec<SysMenu> {
+    pub fn finds_menu(&self, ids: &Vec<String>, all_menus: &BTreeMap<String, SysMenu>) -> Vec<SysMenu> {
         let mut res = vec![];
         //filter res id
         for (k, v) in all_menus {
@@ -151,9 +135,9 @@ impl SysMenuService {
     }
 
     //变成id 和label
-    pub async fn tree_select(&self,user_cache:&UserCache) -> Result<Vec<MenuTreeSelectVO>> {
+    pub async fn tree_select(&self, user_cache: &UserCache) -> Result<Vec<MenuTreeSelectVO>> {
         let menus = if user_cache.is_admin() {
-            CONTEXT.sys_menu_service.all().await?
+            CONTEXT.sys_menu_service.get_normal_all().await?
         } else {
             CONTEXT
                 .sys_menu_service
@@ -162,15 +146,16 @@ impl SysMenuService {
         };
 
         let menu_tree = CONTEXT.sys_menu_service.build_menu_tree(menus)?;
-
-
         Ok(self.build_tree_left_id_label(&menu_tree)?)
     }
     //只剩下id 和label
-    pub fn build_tree_left_id_label(&self,menu_tree: &Vec<SysMenuVO>) -> Result<Vec<MenuTreeSelectVO>> {
+    pub fn build_tree_left_id_label(&self, menu_tree: &Vec<SysMenuVO>) -> Result<Vec<MenuTreeSelectVO>> {
         let mut d = vec![];
         for SysMenuVO {
-            menu_id, menu_name,children, ..
+            menu_id,
+            menu_name,
+            children,
+            ..
         } in menu_tree
         {
             let mut t = MenuTreeSelectVO {
@@ -187,12 +172,14 @@ impl SysMenuService {
     }
     ///An menus array with a hierarchy
     pub fn build_menu_tree(&self, all_menus: Vec<SysMenu>) -> Result<Vec<SysMenuVO>> {
-
-        let all_menus=all_menus.into_iter().map(|m|SysMenuVO::from(m)).collect::<Vec<SysMenuVO>>();
+        let all_menus = all_menus
+            .into_iter()
+            .map(|m| SysMenuVO::from(m))
+            .collect::<Vec<SysMenuVO>>();
         //find tops
         let mut parents = vec![];
         for item in &all_menus {
-            let item=item.clone();
+            let item = item.clone();
             if item.is_parent() {
                 parents.push(item);
             }
@@ -206,11 +193,11 @@ impl SysMenuService {
     }
 
     ///Loop to find the parent-child associative relation array
-     fn loop_find_children(&self, parent: &mut SysMenuVO, all_menus: &Vec<SysMenuVO>) {
+    fn loop_find_children(&self, parent: &mut SysMenuVO, all_menus: &Vec<SysMenuVO>) {
         let mut children = vec![];
         for item in all_menus {
             if !item.is_parent() && item.parent_id == parent.menu_id {
-                let mut parent_ =item.clone();
+                let mut parent_ = item.clone();
                 self.loop_find_children(&mut parent_, all_menus);
                 children.push(parent_);
             }
@@ -223,7 +210,7 @@ impl SysMenuService {
 
     ///生成菜单
     pub async fn get_routers(&self, user_cache: &UserCache) -> Result<Vec<RouterVO>> {
-        let all_menus = self.all().await?;
+        let all_menus = self.get_normal_all().await?;
         let filtered_menus = if user_cache.is_admin() {
             all_menus
         } else {
@@ -353,10 +340,7 @@ impl SysMenuService {
         }
         // 非外链并且是一级目录（类型为目录）
 
-        if menu.is_parent()
-            && menu.menu_type.clone().unwrap() == TYPE_DIR
-            && menu.is_frame.unwrap() == CHAR_FALSE
-        {
+        if menu.is_parent() && menu.menu_type.clone().unwrap() == TYPE_DIR && menu.is_frame.unwrap() == CHAR_FALSE {
             router_path = "/".to_string() + &router_path;
         }
         // 非外链并且是一级目录（类型为菜单）

@@ -49,6 +49,7 @@ pub async fn update(dto: crate::ValidatedForm<RoleUpdateDTO>) -> impl IntoRespon
 pub async fn remove(role_id: Path<String>) -> impl IntoResponse {
     let role_id = role_id.0;
     let rows_affected = CONTEXT.sys_role_service.remove_batch(&role_id).await;
+
     RespVO::<u64>::judge_result(rows_affected, "", "更新失败！").into_response()
 }
 
@@ -129,8 +130,9 @@ pub async fn get_dept_tree_by_role_id(role_id: Path<String>) -> impl IntoRespons
 
 #[pre_authorize("system:role:edit", user_cache)]
 pub async fn data_scope(dto: Json<RoleUpdateDTO>) -> impl IntoResponse {
-    let dept_ids = dto.0.dept_ids.clone().unwrap_or_default();
-    let role = SysRole::from(dto.0);
+    let data=dto.0;
+    let dept_ids = data.dept_ids.clone().unwrap_or_default();
+    let role = SysRole::from(data);
 
     let r = CONTEXT
         .sys_role_service
