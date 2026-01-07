@@ -55,6 +55,9 @@ pub async fn info() -> impl IntoResponse {
         "roles".to_string(),
         serde_json::json!(rbatis::table_field_vec!(&user_cache.roles, role_key)),
     );
+    if user_cache.need_chn_pwd {
+        res.insert("needToChnPwd".to_string(), serde_json::json!(true));
+    }
     res.into_response()
 }
 

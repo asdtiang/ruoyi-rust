@@ -64,6 +64,7 @@ unicode-segmentation = "*"
 
 # enc passowrd, like springboot secutiry
 bcrypt = "0.17.1"
+zxcvbn = "2" #密码强度检测
 base64 = "0.22.1"
 macros = { path = "macros" }
 

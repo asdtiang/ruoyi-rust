@@ -1,10 +1,13 @@
 use crate::system::domain::mapper::sys_user::SysUser;
 use serde::{Deserialize, Serialize};
 
-#[derive(Serialize, Deserialize, Clone, Debug)]
+#[derive(Serialize, Deserialize,validator::Validate, Clone, Debug)]
 #[serde(rename_all = "camelCase")]
 pub struct PasswordUpdateDTO {
+    #[validate(custom(function = "crate::string_required", message = "旧密码不能为空"))]
     pub old_password: Option<String>,
+    #[validate(custom(function = "crate::string_required", message = "新密码不能为空"))]
+    #[validate(custom(function = "crate::password_score", message = "密码强度过弱"))]
     pub new_password: Option<String>
 }
 
@@ -41,6 +44,7 @@ impl From<ProfileUpdateDTO> for SysUser {
             password: None,
             status: None,
             del_flag: None,
+            last_chn_pwd_time: None,
             login_ip: None,
             login_date: None,
             create_by: None,

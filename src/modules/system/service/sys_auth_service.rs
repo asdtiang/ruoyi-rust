@@ -138,7 +138,7 @@ impl SysAuthService {
     }
     //返回token
     async fn add_to_cache_and_build_token(&self, user: SysUser, login_user_key: &str) -> Result<String> {
-        let SysUser { user_id, user_name, .. } = user;
+        let SysUser { user_id, user_name,last_chn_pwd_time, .. } = user;
         let user_id = user_id.ok_or_else(|| Error::from("错误的用户数据，id为空!"))?;
         let user_name = user_name.ok_or_else(|| Error::from("错误的用户数据，用户名为空!"))?;
 
@@ -146,7 +146,14 @@ impl SysAuthService {
 
         let dept = CONTEXT.sys_dept_service.get_dept_by_id(&dept_id).await?;
 
-        let (permissions, menu_ids, roles) = self.load_menu_role_by_user_id(&user_id).await?;
+        let mut need_chn_pwd = false;
+        let (permissions, menu_ids, roles) =
+            if last_chn_pwd_time.is_none_or(|d| d.add(Duration::from_hours(180 * 24)).before(&DateTime::now())) {
+                need_chn_pwd = true;
+                (vec![], vec![], vec![])
+            } else {
+                self.load_menu_role_by_user_id(&user_id).await?
+            };
         let user_cache = UserCache {
             user_id: user_id.clone(),
             user_name,
@@ -158,6 +165,7 @@ impl SysAuthService {
             login_time: DateTime::now().set_nano(0),
             login_user_key: login_user_key.to_string(),
             token_key: crate::web::get_login_user_redis_key(login_user_key),
+            need_chn_pwd,
         };
         let jwt_token = JwtClaims {
             login_user_key: login_user_key.to_string(),
@@ -215,7 +223,6 @@ impl SysAuthService {
 
         Ok((permissions, menu_ids, roles))
     }
-
 }
 
 pub const REDIS_UUID_CAPTCHA: &'static str = "login_captcha:";

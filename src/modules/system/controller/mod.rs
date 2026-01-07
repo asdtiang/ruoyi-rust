@@ -54,11 +54,12 @@ fn user_api() -> Router {
         .route("/resetPwd", put(sys_user_controller::reset_pwd))
         .route("/authRole", put(sys_user_controller::set_auth_roles))
         .route("/authRole/{user_id}", get(sys_user_controller::get_auth_roles))
+        .route("/export", post(sys_user_controller::export_to_excel))
         //profile
         .route("/profile", get(sys_profile_controller::profile))
         .route("/profile", put(sys_profile_controller::update_profile))
-        .route("/updatePwd", put(sys_profile_controller::update_pwd))
-        .route("/export", post(sys_user_controller::export_to_excel))
+        .route("/profile/updatePwd", put(sys_profile_controller::update_pwd))
+
 }
 
 fn menu_api() -> Router {

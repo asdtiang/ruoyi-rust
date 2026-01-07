@@ -16,6 +16,7 @@ pub struct UserCache {
     pub login_time: DateTime,
     pub login_user_key: String,
     pub token_key: String,
+    pub need_chn_pwd: bool,
 }
 
 impl UserCache {

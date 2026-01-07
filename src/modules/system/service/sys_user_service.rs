@@ -2,7 +2,7 @@ use crate::config::global_constants::{ADMIN_USERID, STATUS_FORBIDDEN};
 use crate::context::CONTEXT;
 use crate::error::Error;
 use crate::error::Result;
-use crate::system::domain::dto::{UserPageDTO, UserUpdateDTO};
+use crate::system::domain::dto::UserPageDTO;
 use crate::system::domain::mapper::sys_user;
 use crate::system::domain::mapper::sys_user::SysUser;
 use crate::system::domain::vo::SysUserVO;
@@ -100,12 +100,14 @@ impl SysUserService {
             .await?;
         self.check_email_unique(&user_id, sys_user.phonenumber.clone().unwrap_or_default())
             .await?;
-        Ok(
-            SysUser::update_by_map(pool!(), &sys_user, rbs::value! {"user_id": user_id,
-                "column":vec!["nick_name","email","phonenumber","sex"]})
-                .await?
-                .rows_affected,
+        Ok(SysUser::update_by_map(
+            pool!(),
+            &sys_user,
+            rbs::value! {"user_id": user_id,
+            "column":vec!["nick_name","email","phonenumber","sex"]},
         )
+        .await?
+        .rows_affected)
     }
     #[transactional(tx)]
     pub async fn remove(&self, user_id: &str, user_cache: &crate::UserCache) -> Result<u64> {
@@ -132,25 +134,55 @@ impl SysUserService {
         Ok(r.rows_affected)
     }
 
-    pub async fn update_password(&self, dto: UserUpdateDTO, _oper_user_name: &str) -> Result<u64> {
-        let user_id = dto.user_id.clone().unwrap_or_default();
+    pub async fn reset_pwd(&self, user_id: &str, raw_pwd: &str, user_cache: &crate::UserCache) -> Result<u64> {
+        self.check_user_data_scope(user_id, &user_cache).await?;
         self.check_user_allowed(&user_id).await?;
-        self.update_password_raw(&dto.password.clone().unwrap_or_default(), &user_id)
-            .await
-    }
-    pub(crate) async fn update_password_raw(&self, new_password: &str, user_id: &str) -> Result<u64> {
-        let new_password = Some(PasswordEncoder::encode(&new_password));
+        let new_password_enc = Some(PasswordEncoder::encode(&raw_pwd));
         let res = pool!()
             .exec(
-                "update sys_user set password = ? where user_id = ?",
-                vec![rbs::value!(new_password), rbs::value!(user_id)],
+                "update sys_user set password = ?,last_chn_pwd_time=null where user_id = ?",
+                vec![rbs::value!(new_password_enc), rbs::value!(user_id)],
             )
-            .await?;
-        CONTEXT.sys_user_online_service.force_logout_by_user_id(user_id).await?;
-        Ok(res.rows_affected)
+            .await?
+            .rows_affected;
+        if res > 0 {
+            CONTEXT.sys_user_online_service.force_logout_by_user_id(user_id).await?;
+        }
+        Ok(res)
+    }
+    pub async fn change_pwd(
+        &self,
+        new_password: &str,
+        old_password: &str,
+        user_cache: &crate::UserCache,
+    ) -> Result<u64> {
+        if new_password.eq(old_password) {
+            return Err(Error::from("新密码不能与旧密码相同"));
+        }
+        let user_id = &user_cache.user_id;
+        let user = CONTEXT.sys_user_service.find_by_user_id(user_id).await?;
+
+        if !PasswordEncoder::verify(&user.password.unwrap_or_default(), &old_password) {
+            return Err(Error::from("修改密码失败，旧密码错误"));
+        }
+        let new_password_enc = Some(PasswordEncoder::encode(new_password));
+        let res = pool!()
+            .exec(
+                "update sys_user set password = ?,last_chn_pwd_time=NOW() where user_id = ?",
+                vec![rbs::value!(new_password_enc), rbs::value!(user_id.clone())],
+            )
+            .await?
+            .rows_affected;
+        if res > 0 {
+            CONTEXT
+                .sys_user_online_service
+                .force_logout_by_user_id(&user_id)
+                .await?;
+        }
+        Ok(res)
     }
 
-    pub async fn update_status(&self, user_id:&str,status:char) -> Result<u64> {
+    pub async fn update_status(&self, user_id: &str, status: char) -> Result<u64> {
         self.check_user_allowed(user_id).await?;
         let res = pool!()
             .exec(
@@ -158,11 +190,8 @@ impl SysUserService {
                 vec![rbs::value!(status), rbs::value!(user_id)],
             )
             .await?;
-        if status==STATUS_FORBIDDEN {
-            CONTEXT
-                .sys_user_online_service
-                .force_logout_by_user_id(user_id)
-                .await?;
+        if status == STATUS_FORBIDDEN {
+            CONTEXT.sys_user_online_service.force_logout_by_user_id(user_id).await?;
         }
         Ok(res.rows_affected)
     }

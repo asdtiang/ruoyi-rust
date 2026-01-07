@@ -3,7 +3,7 @@ use crate::system::domain::dto::{UserAddDTO, UserPageDTO, UserRoleAuthQueryDTO, 
 use crate::system::domain::mapper::sys_user::SysUser;
 use crate::system::domain::vo::SysUserVO;
 use crate::utils::password_encoder::PasswordEncoder;
-use crate::{error_wrapper, error_wrapper_unwrap, export_excel_controller, PageVO, RespJson, RespVO};
+use crate::{error_wrapper_unwrap, export_excel_controller, PageVO, RespJson, RespVO};
 use axum::extract::{Path, Query};
 use axum::response::IntoResponse;
 use axum::Json;
@@ -154,13 +154,12 @@ pub async fn get_auth_roles(user_id: Path<String>) -> impl IntoResponse {
 
 #[pre_authorize("system:user:resetPwd", user_cache)]
 pub async fn reset_pwd(dto: Json<UserUpdateDTO>) -> impl IntoResponse {
-    let user_id = dto.user_id.clone().unwrap_or_default();
-    error_wrapper!(CONTEXT.sys_user_service.check_user_data_scope(&user_id, &user_cache));
+    let UserUpdateDTO { user_id, password, .. } = dto.0;
     let res = CONTEXT
         .sys_user_service
-        .update_password(dto.0, &user_cache.user_name)
+        .reset_pwd(&user_id.unwrap_or_default(), &password.unwrap_or_default(), &user_cache)
         .await;
-    RespVO::<u64>::judge_result(res, "更新成功！", "").into_response()
+    RespVO::<u64>::judge_result(res, "更新成功！", "更新失败").into_response()
 }
 
 //更改用户当前状态
@@ -172,7 +171,7 @@ pub async fn change_status(dto: Json<UserUpdateDTO>) -> impl IntoResponse {
         .sys_user_service
         .update_status(&user_id.unwrap_or_default(), status.unwrap_or_default())
         .await;
-    RespVO::<u64>::judge_result(res, "更新成功！", "").into_response()
+    RespVO::<u64>::judge_result(res, "更新成功！", "更新失败").into_response()
 }
 export_excel_controller!(
     "system:user:export",

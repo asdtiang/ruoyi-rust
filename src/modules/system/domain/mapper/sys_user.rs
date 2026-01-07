@@ -28,6 +28,8 @@ pub struct SysUser {
     pub status: Option<char>,
     /** 删除标志（0代表存在 2代表删除） */
     pub del_flag: Option<char>,
+    /** 最后更改密码时间 */
+    pub last_chn_pwd_time:Option<DateTime>,
     /** 最后登录IP */
     pub login_ip: Option<String>,
     /** 最后登录时间 */
