@@ -25,3 +25,13 @@ pub fn xss_validator(str: &&String) -> Result<(), ValidationError> {
 pub static NORMAL_NAME_REG: LazyLock<regex::Regex> = LazyLock::new(|| {
     regex::Regex::new(r"^[a-z][a-z0-9_]*$").unwrap()
 });
+
+//只能0和1
+pub fn status_char(ch: &&char) -> Result<(), ValidationError> {
+    let ch=**ch;
+    if ch=='0' ||ch=='1' {
+        Ok(())
+    } else {
+        Err(ValidationError::new("400"))
+    }
+}

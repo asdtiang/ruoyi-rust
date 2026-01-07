@@ -88,8 +88,10 @@ pub async fn update(arg: crate::ValidatedForm<UserUpdateDTO>) -> impl IntoRespon
     sys_user.update_by = Some(user_cache.user_name());
     sys_user.update_time = Some(rbatis::rbdc::datetime::DateTime::now().set_nano(0).into());
 
-
-    let res = CONTEXT.sys_user_service.update(&sys_user,&role_ids.unwrap_or_default(), &post_ids.unwrap_or_default()).await;
+    let res = CONTEXT
+        .sys_user_service
+        .update(&sys_user, &role_ids.unwrap_or_default(), &post_ids.unwrap_or_default())
+        .await;
     RespVO::from_result(&res).into_response()
 }
 
@@ -165,7 +167,11 @@ pub async fn reset_pwd(dto: Json<UserUpdateDTO>) -> impl IntoResponse {
 
 #[pre_authorize("system:user:edit")]
 pub async fn change_status(dto: Json<UserUpdateDTO>) -> impl IntoResponse {
-    let res = CONTEXT.sys_user_service.update_status(&dto.0).await;
+    let UserUpdateDTO { user_id, status, .. } = dto.0;
+    let res = CONTEXT
+        .sys_user_service
+        .update_status(&user_id.unwrap_or_default(), status.unwrap_or_default())
+        .await;
     RespVO::<u64>::judge_result(res, "更新成功！", "").into_response()
 }
 export_excel_controller!(

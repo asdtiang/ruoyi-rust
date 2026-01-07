@@ -10,6 +10,7 @@ pub struct ConfigPageDTO {
     pub config_name: Option<String>,
     pub config_key: Option<String>,
     pub config_type: Option<char>,
+    #[validate(custom(function = "crate::status_char", message = "状态错误"))]
     pub status: Option<char>,
 }
 

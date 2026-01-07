@@ -10,6 +10,7 @@ use serde::{Deserialize, Serialize};
 pub struct DictDataPageDTO {
     pub dict_type: Option<String>,
     pub dict_label: Option<String>,
+    #[validate(custom(function = "crate::status_char", message = "状态错误"))]
     pub status: Option<char>,
 }
 
@@ -38,6 +39,7 @@ pub struct DictDataAddDTO {
     /** 是否默认（Y是 N否） */
     pub is_default: Option<String>,
     /** 状态（0正常 1停用） */
+    #[validate(custom(function = "crate::status_char", message = "状态错误"))]
     pub status: Option<char>,
     pub create_by: Option<String>,
     pub create_time: Option<DateTime>,
@@ -91,6 +93,7 @@ pub struct DictDataUpdateDTO {
     /** 是否默认（Y是 N否） */
     pub is_default: Option<String>,
     /** 状态（0正常 1停用） */
+    #[validate(custom(function = "crate::status_char", message = "状态错误"))]
     pub status: Option<char>,
     pub update_by: Option<String>,
     pub update_time: Option<DateTime>,

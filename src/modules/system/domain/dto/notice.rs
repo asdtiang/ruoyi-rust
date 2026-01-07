@@ -26,6 +26,8 @@ pub struct NoticeAddDTO {
     /** 公告类型（1通知 2公告） */
     pub notice_type: Option<char>,
     /** 公告状态（0正常 1关闭） */
+
+    #[validate(custom(function = "crate::status_char", message = "状态错误"))]
     pub status: Option<char>,
     pub remark: Option<String>,
 }
@@ -62,6 +64,8 @@ pub struct NoticeUpdateDTO {
     /** 公告类型（1通知 2公告） */
     pub notice_type: Option<char>,
     /** 公告状态（0正常 1关闭） */
+
+    #[validate(custom(function = "crate::status_char", message = "状态错误"))]
     pub status: Option<char>,
     pub remark: Option<String>,
 }

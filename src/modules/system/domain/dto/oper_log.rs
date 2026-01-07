@@ -13,5 +13,6 @@ pub struct OperLogPageDTO {
     /** 业务类型（0其它 1新增 2修改 3删除） */
     pub business_type: Option<u16>,
     /** 操作状态（0正常 1异常） */
+    #[validate(custom(function = "crate::status_char", message = "状态错误"))]
     pub status: Option<char>
 }

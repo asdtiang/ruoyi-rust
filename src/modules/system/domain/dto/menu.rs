@@ -52,6 +52,7 @@ pub struct MenuAddDTO {
     /** 显示状态（0显示 1隐藏） */
     pub visible: Option<char>,
     /** 菜单状态（0正常 1停用） */
+    #[validate(custom(function = "crate::status_char", message = "状态错误"))]
     pub status: Option<char>,
     /** 权限字符串 */
     #[validate(length(max = 100, message = "权限标识长度不能超过100个字符"))]
@@ -124,6 +125,7 @@ pub struct MenuUpdateDTO {
     /** 显示状态（0显示 1隐藏） */
     pub visible: Option<char>,
     /** 菜单状态（0正常 1停用） */
+    #[validate(custom(function = "crate::status_char", message = "状态错误"))]
     pub status: Option<char>,
     /** 权限字符串 */
     #[validate(length(max = 100, message = "权限标识长度不能超过100个字符"))]

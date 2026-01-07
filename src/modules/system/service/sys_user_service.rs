@@ -1,4 +1,4 @@
-use crate::config::global_constants::ADMIN_USERID;
+use crate::config::global_constants::{ADMIN_USERID, STATUS_FORBIDDEN};
 use crate::context::CONTEXT;
 use crate::error::Error;
 use crate::error::Result;
@@ -101,7 +101,8 @@ impl SysUserService {
         self.check_email_unique(&user_id, sys_user.phonenumber.clone().unwrap_or_default())
             .await?;
         Ok(
-            SysUser::update_by_map(pool!(), &sys_user, rbs::value! {"user_id": user_id})
+            SysUser::update_by_map(pool!(), &sys_user, rbs::value! {"user_id": user_id,
+                "column":vec!["nick_name","email","phonenumber","sex"]})
                 .await?
                 .rows_affected,
         )
@@ -149,20 +150,20 @@ impl SysUserService {
         Ok(res.rows_affected)
     }
 
-    pub async fn update_status(&self, dto: &UserUpdateDTO) -> Result<u64> {
-        let user_id = dto.user_id.clone().unwrap_or_default();
-        self.check_user_allowed(&user_id).await?;
-        let status = dto.status.unwrap_or_default();
+    pub async fn update_status(&self, user_id:&str,status:char) -> Result<u64> {
+        self.check_user_allowed(user_id).await?;
         let res = pool!()
             .exec(
                 "update sys_user set status = ? where user_id = ?",
-                vec![rbs::value!(status), rbs::value!(user_id.clone())],
+                vec![rbs::value!(status), rbs::value!(user_id)],
             )
             .await?;
-        CONTEXT
-            .sys_user_online_service
-            .force_logout_by_user_id(&user_id)
-            .await?;
+        if status==STATUS_FORBIDDEN {
+            CONTEXT
+                .sys_user_online_service
+                .force_logout_by_user_id(user_id)
+                .await?;
+        }
         Ok(res.rows_affected)
     }
 

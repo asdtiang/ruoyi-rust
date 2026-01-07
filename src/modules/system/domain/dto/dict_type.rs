@@ -10,6 +10,7 @@ use serde::{Deserialize, Serialize};
 pub struct DictTypePageDTO {
     pub dict_name: Option<String>,
     pub dict_type: Option<String>,
+    #[validate(custom(function = "crate::status_char", message = "状态错误"))]
     pub status: Option<char>,
 }
 
@@ -26,6 +27,7 @@ pub struct DictTypeAddDTO {
     #[validate(regex(path =* crate::NORMAL_NAME_REG, message = "字典类型必须以字母开头，且只能为（小写字母，数字，下滑线）"))]
     pub dict_type: Option<String>,
     /** 状态（0正常 1停用） */
+    #[validate(custom(function = "crate::status_char", message = "状态错误"))]
     pub status: Option<char>,
     pub remark: Option<String>,
 }
@@ -61,6 +63,7 @@ pub struct DictTypeUpdateDTO {
     #[validate(regex(path =* crate::NORMAL_NAME_REG, message = "字典类型必须以字母开头，且只能为（小写字母，数字，下滑线）"))]
     pub dict_type: Option<String>,
     /** 状态（0正常 1停用） */
+    #[validate(custom(function = "crate::status_char", message = "状态错误"))]
     pub status: Option<char>,
     pub remark: Option<String>,
 }

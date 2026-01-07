@@ -12,6 +12,7 @@ pub struct DeptQueryDTO {
     pub dept_id: Option<String>,
     pub parent_id: Option<String>,
     pub dept_name: Option<String>,
+    #[validate(custom(function = "crate::status_char", message = "状态错误"))]
     pub status: Option<char>,
 }
 
@@ -89,6 +90,7 @@ pub struct DeptUpdateDTO {
     #[validate(length(max = 50, message = "邮箱长度不能超过50个字符"))]
     pub email: Option<String>,
     /** 部门状态:0正常,1停用 */
+    #[validate(custom(function = "crate::status_char", message = "状态错误"))]
     pub status: Option<char>,
     /** 删除标志（0代表存在 2代表删除） */
     pub del_flag: Option<char>,

@@ -73,6 +73,7 @@ impl From<UserAddDTO> for SysUser {
 #[serde(rename_all = "camelCase")]
 pub struct UserUpdateDTO {
     /** 用户ID */
+    #[validate(custom(function = "crate::string_required", message = "用户id不能为空"))]
     pub user_id: Option<String>,
     /** 部门ID */
     pub dept_id: Option<String>,
@@ -90,6 +91,7 @@ pub struct UserUpdateDTO {
     /** 用户性别 */
     pub sex: Option<char>,
     /** 帐号状态（0正常 1停用） */
+    #[validate(custom(function = "crate::status_char", message = "状态错误"))]
     pub status: Option<char>,
     pub remark: Option<String>,
     /** 密码 */

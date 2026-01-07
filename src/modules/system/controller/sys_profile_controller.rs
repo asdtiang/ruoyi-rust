@@ -51,21 +51,13 @@ pub async fn profile() -> impl IntoResponse {
 //todo 重新设计 用户自行修改用户信息
 #[pre_authorize(user_cache)]
 pub async fn update_profile(dto: Json<ProfileUpdateDTO>) -> impl IntoResponse {
+
     update_marco!(data, dto, user_cache, SysUser);
-    data.user_id = user_cache.user_id.clone().into();
 
-    error_wrapper!(CONTEXT.sys_user_service.update_profile(data.clone()));
+    let res=CONTEXT.sys_user_service.update_profile(data).await;
 
-    let res = CONTEXT
-        .cache_service
-        .set_string_ex(
-            &user_cache.token_key,
-            &user_cache.to_string(),
-            Some(Duration::from_secs(CONTEXT.config.token_expired_min * 60)),
-        )
-        .await;
 
-    RespVO::from_result(&res).into_response()
+    RespVO::<u64>::judge_result(res,"修改成功","修改失败").into_response()
 }
 
 //用户自行修改密码

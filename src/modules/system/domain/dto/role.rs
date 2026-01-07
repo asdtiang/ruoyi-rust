@@ -11,6 +11,7 @@ pub struct RolePageDTO {
     pub role_id: Option<String>,
     pub role_name: Option<String>,
     pub role_key: Option<String>,
+    #[validate(custom(function = "crate::status_char", message = "状态错误"))]
     pub status: Option<char>
 }
 
@@ -38,6 +39,7 @@ pub struct RoleAddDTO {
     /** 菜单组 */
     pub menu_ids: Option<Vec<String>>,
     /** 角色状态（0正常 1停用） */
+    #[validate(custom(function = "crate::status_char", message = "状态错误"))]
     pub status: Option<char>,
     pub remark: Option<String>,
 }
@@ -98,6 +100,7 @@ pub struct RoleUpdateDTO {
     /** 菜单组 */
     pub menu_ids: Option<Vec<String>>,
     /** 角色状态（0正常 1停用） */
+    #[validate(custom(function = "crate::status_char", message = "状态错误"))]
     pub status: Option<char>,
     pub remark: Option<String>,
 

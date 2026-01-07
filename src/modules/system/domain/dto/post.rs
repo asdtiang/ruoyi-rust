@@ -9,6 +9,7 @@ use serde::{Deserialize, Serialize};
 pub struct PostPageDTO {
     pub post_name: Option<String>,
     pub post_code: Option<String>,
+    #[validate(custom(function = "crate::status_char", message = "状态错误"))]
     pub status: Option<char>,
 }
 
@@ -27,6 +28,7 @@ pub struct PostAddDTO {
     #[validate(required(message = "显示顺序不能为空"))]
     pub post_sort: Option<u16>,
     /** 状态（0正常 1停用） */
+    #[validate(custom(function = "crate::status_char", message = "状态错误"))]
     pub status: Option<char>,
     pub remark: Option<String>,
 }
@@ -65,6 +67,7 @@ pub struct PostUpdateDTO {
     #[validate(required(message = "显示顺序不能为空"))]
     pub post_sort: Option<u16>,
     /** 状态（0正常 1停用） */
+    #[validate(custom(function = "crate::status_char", message = "状态错误"))]
     pub status: Option<char>,
     pub remark: Option<String>,
 }
