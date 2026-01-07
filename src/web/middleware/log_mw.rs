@@ -15,8 +15,9 @@ use http_body_util::BodyExt;
 use rbatis::object_id::ObjectId;
 use rbatis::rbdc::DateTime;
 use std::net::SocketAddr;
-use crate::{BusinessType, UserCache};
+use crate::{UserCache};
 
+///操作日志登记
 pub async fn log_write_state(
     ori_uri: OriginalUri,
     socket_addr: ConnectInfo<SocketAddr>,
@@ -37,15 +38,6 @@ pub async fn log_write_state(
     };
 
     let url = ori_uri.path_and_query().map(|x| x.to_string());
-
-    let address = if CONTEXT.config.address_enabled {
-        match ip.clone() {
-            Some(ip) => address_util::get_real_address_by_ip(&ip).await.ok(),
-            None => None,
-        }
-    } else {
-        None
-    };
 
     let bytes = get_body_bytes(body).await?;
     let oper_param = std::str::from_utf8(&bytes).ok().map(|x| x.to_string());
@@ -70,7 +62,7 @@ pub async fn log_write_state(
         dept_name: user_cache.dept_name.into(),
         oper_url: url,
         oper_ip: ip,
-        oper_location: address,
+        oper_location: None,
         oper_param,
         json_result,
         status: None,

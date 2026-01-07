@@ -5,6 +5,8 @@ use crate::system::domain::vo::SysOperLogVO;
 use crate::{export_excel_service, pool, remove_batch_tx};
 use macros::replace_pool;
 use rbatis::{Page, PageRequest};
+use crate::context::CONTEXT;
+use crate::utils::address_util;
 
 pub struct SysOperLogService {}
 
@@ -16,8 +18,19 @@ impl SysOperLogService {
 
     //异步加入日志
     pub async fn add_async(&self, arg: &SysOperLog) -> Result<u64> {
-        let info = arg.to_owned();
+        let mut info = arg.to_owned();
         tokio::spawn(async move {
+
+            let address = if CONTEXT.config.address_enabled {
+                match info.oper_id.clone() {
+                    Some(ip) => address_util::get_real_address_by_ip(&ip).await.ok(),
+                    None => None,
+                }
+            } else {
+                None
+            };
+            info.oper_location=address;
+            
             let _ = SysOperLog::insert(pool!(), &info).await;
         });
         Ok(1)
