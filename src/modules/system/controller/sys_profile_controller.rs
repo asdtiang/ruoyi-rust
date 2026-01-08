@@ -41,7 +41,7 @@ pub async fn profile() -> impl IntoResponse {
                 .roles
                 .clone()
                 .into_iter()
-                .map(|r| r.role_name.unwrap())
+                .map(|r| r.role_name.unwrap_or_default())
                 .collect::<Vec<_>>()
                 .join(",")
         ),
@@ -49,7 +49,6 @@ pub async fn profile() -> impl IntoResponse {
     res.into_response()
 }
 
-//todo 重新设计 用户自行修改用户信息
 #[pre_authorize(user_cache)]
 pub async fn update_profile(dto: Json<ProfileUpdateDTO>) -> impl IntoResponse {
     update_marco!(data, dto, user_cache, SysUser);

@@ -42,7 +42,6 @@ impl SysRoleMenuService {
     }
     #[replace_pool]
     pub async fn remove_by_role_id(&self, role_id: &str) -> Result<u64> {
-        //todo 更改要删除
         Ok(SysRoleMenu::delete_by_map(pool!(), rbs::value!({"role_id": role_id}))
             .await?
             .rows_affected)

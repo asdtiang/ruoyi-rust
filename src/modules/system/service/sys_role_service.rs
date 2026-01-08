@@ -20,7 +20,6 @@ pub struct SysRoleService {}
 impl SysRoleService {
     #[data_scope(deptAlias = "d", userAlias = "u")]
     pub async fn page(&self, dto: &RolePageDTO) -> Result<Page<SysRoleVO>> {
-        println!("dto {:?}",dto);
         let data = SysRole::select_page(pool!(), &PageRequest::from(&dto), &dto).await?;
         let page = Page::<SysRoleVO>::from(data);
         Ok(page)

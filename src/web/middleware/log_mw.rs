@@ -73,69 +73,7 @@ pub async fn log_write_state(
     let res = Response::from_parts(parts, Body::from(bytes));
     Ok(res)
 }
-// pub async fn log_write(
-//     ori_uri: OriginalUri,
-//     socket_addr: ConnectInfo<SocketAddr>,
-//     header_map: HeaderMap,
-//     req: Request,
-//     next: Next,
-// ) -> Result<impl IntoResponse, (StatusCode, String)> {
-//     let method = req.method().to_string().into();
-//     let (parts, body) = req.into_parts();
-//     let head_ip = get_ip_addr(&header_map);
-//     let ip = if head_ip.is_none() {
-//         socket_addr.0.ip().to_string().into()
-//     } else {
-//         head_ip
-//     };
-//
-//     let url = ori_uri.path_and_query().map(|x| x.to_string());
-//
-//     let address = if CONTEXT.config.address_enabled {
-//         match ip.clone() {
-//             Some(ip) => address_util::get_real_address_by_ip(&ip).await.ok(),
-//             None => None,
-//         }
-//     } else {
-//         None
-//     };
-//
-//     let bytes = get_body_bytes(body).await?;
-//     let oper_param = std::str::from_utf8(&bytes).ok().map(|x| x.to_string());
-//     let req = Request::from_parts(parts, Body::from(bytes));
-//
-//     let start = DateTime::now();
-//     let res = next.run(req).await;
-//     let cost_time = (DateTime::now().unix_timestamp_millis() - start.unix_timestamp_millis()) as u64;
-//
-//     let (parts, body) = res.into_parts();
-//     let bytes = get_body_bytes(body).await?;
-//     let json_result = std::str::from_utf8(&bytes).ok().map(|x| x.to_string());
-//
-//     //todo 需要完善
-//     let sys_oper_log = SysOperLog {
-//         oper_id: ObjectId::new().to_string().into(),
-//         title: String::new().into(),
-//         business_type: 0.into(),
-//         method,
-//         request_method: String::new().into(),
-//         operator_type: 0.into(),
-//         oper_name: String::new().into(),
-//         dept_name: String::new().into(),
-//         oper_url: url,
-//         oper_ip: ip,
-//         oper_location: address,
-//         oper_param,
-//         json_result,
-//         status: None,
-//         error_msg: None,
-//         oper_time: start.into(),
-//         cost_time: cost_time.into(),
-//     };
-//     let _ = CONTEXT.sys_oper_log_service.add_async(&sys_oper_log).await;
-//     let res = Response::from_parts(parts, Body::from(bytes));
-//     Ok(res)
-// }
+
 
 async fn get_body_bytes<B>(body: B) -> Result<Bytes, (StatusCode, String)>
 where

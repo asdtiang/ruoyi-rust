@@ -35,7 +35,6 @@ pub async fn check_role(user_cache: &UserCache, role_str: &str) -> Option<RespVO
             return None;
         }
     }
-    //todo 查询角色是否禁用
     //仅提示拦截
     let resp: RespVO<u64> = RespVO {
         code: 500,

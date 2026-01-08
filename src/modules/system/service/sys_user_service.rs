@@ -5,9 +5,9 @@ use crate::error::Result;
 use crate::system::domain::dto::UserPageDTO;
 use crate::system::domain::mapper::sys_user;
 use crate::system::domain::mapper::sys_user::SysUser;
-use crate::system::domain::vo::SysUserVO;
+use crate::system::domain::vo::{SysRoleVO, SysUserVO};
 use crate::utils::password_encoder::PasswordEncoder;
-use crate::{check_unique, export_excel_service, pool};
+use crate::{check_unique, export_excel_service, pool, UserCache};
 use macros::{data_scope, transactional};
 use rbatis::page::{Page, PageRequest};
 
@@ -64,13 +64,13 @@ impl SysUserService {
         Ok(res.rows_affected)
     }
     #[transactional(tx)]
-    pub async fn update(&self, user: &SysUser, role_ids: &Vec<String>, post_ids: &Vec<String>) -> Result<u64> {
+    pub async fn update(&self, user: &SysUser, role_ids: &Vec<String>, post_ids: &Vec<String>,user_cache: &UserCache) -> Result<u64> {
         let user_id = user.user_id.clone();
         self.check_phonenumber_unique(&user_id, user.phonenumber.clone().unwrap_or_default())
             .await?;
         let user_id = user_id.unwrap_or_default();
         self.check_user_allowed(&user_id).await?;
-        // fixme  self.check_user_data_scope(&user_id, user_).await?;
+        self.check_user_data_scope(&user_id, user_cache).await?;
 
         CONTEXT
             .sys_user_role_service
@@ -93,7 +93,18 @@ impl SysUserService {
 
         Ok(res)
     }
+    pub async fn get_auth_roles(&self, user_id: &str, user_cache: &UserCache) -> Result<(SysUserVO, Vec<SysRoleVO>)> {
+        let sys_user = self.detail(user_id).await?;
+        let user = SysUserVO::from(sys_user);
+        let roles = CONTEXT.sys_role_service.finds_roles_by_user_id(user_id).await?;
+        let filter_roles = if user_cache.is_admin() {
+            roles
+        } else {
+            roles.into_iter().filter(|r| !r.admin).collect::<Vec<_>>()
+        };
 
+        Ok((user, filter_roles))
+    }
     pub async fn update_profile(&self, sys_user: SysUser) -> Result<u64> {
         let user_id = sys_user.user_id.clone();
         self.check_phonenumber_unique(&user_id, sys_user.phonenumber.clone().unwrap_or_default())

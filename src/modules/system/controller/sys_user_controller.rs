@@ -25,7 +25,7 @@ pub async fn add(arg: crate::ValidatedForm<UserAddDTO>) -> impl IntoResponse {
     sys_user.create_time = Some(rbatis::rbdc::datetime::DateTime::now().set_nano(0).into());
     let mut password = sys_user.password.clone().unwrap_or_default();
 
-    //todo 检查密码安全性
+    //初始密码需要更改才能使用
     if password.is_empty() {
         //默认密码
         password = "123456".to_string();
@@ -90,7 +90,7 @@ pub async fn update(arg: crate::ValidatedForm<UserUpdateDTO>) -> impl IntoRespon
 
     let res = CONTEXT
         .sys_user_service
-        .update(&sys_user, &role_ids.unwrap_or_default(), &post_ids.unwrap_or_default())
+        .update(&sys_user, &role_ids.unwrap_or_default(), &post_ids.unwrap_or_default(),&user_cache)
         .await;
     RespVO::from_result(&res).into_response()
 }
@@ -121,28 +121,9 @@ pub async fn set_auth_roles(arg: Query<UserRoleAuthQueryDTO>) -> impl IntoRespon
 #[pre_authorize("system:user:query", user_cache)]
 pub async fn get_auth_roles(user_id: Path<String>) -> impl IntoResponse {
     let user_id = user_id.0;
-    let sys_user = CONTEXT.sys_user_service.detail(&user_id).await;
-    match sys_user {
-        Ok(user) => {
-            let mut user = SysUserVO::from(user);
-            user.roles = Some(
-                CONTEXT
-                    .sys_role_service
-                    .finds_roles_by_user_id(&user_id)
-                    .await
-                    .unwrap_or_default(),
-            );
-            let roles = CONTEXT
-                .sys_role_service
-                .finds_roles_by_user_id(&user_id)
-                .await
-                .unwrap_or_default();
-            let filter_roles = if user_cache.is_admin() {
-                roles
-            } else {
-                roles.into_iter().filter(|r| r.admin).collect::<Vec<_>>()
-            };
-
+    let res = CONTEXT.sys_user_service.get_auth_roles(&user_id, &user_cache).await;
+    match res {
+        Ok((user, filter_roles)) => {
             let mut res = RespJson::success_info("操作成功");
             res.insert("user".to_string(), serde_json::json!(user));
             res.insert("roles".to_string(), serde_json::json!(filter_roles));

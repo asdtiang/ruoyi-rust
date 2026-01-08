@@ -123,16 +123,4 @@ impl SysUserRoleService {
             .rows_affected;
         self.add_user_roles_tx(user_id, role_ids, tx).await
     }
-    // pub async fn find_roles_by_user_id(&self, user_id: &str) -> Result<Vec<SysRole>> {
-    //     if user_id.is_empty() {
-    //         return Ok(vec![]);
-    //     }
-    //
-    //     //todo 要不要变成关联查询
-    //     let user_roles = SysUserRole::select_by_map(pool!(), rbs::value! {"user_id": user_id}).await?;
-    //
-    //     let role_ids = &rbatis::table_field_vec!(&user_roles, role_id);
-    //     let roles = CONTEXT.sys_role_service.finds(role_ids).await?;
-    //     Ok(roles)
-    // }
 }
