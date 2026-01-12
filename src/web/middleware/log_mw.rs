@@ -44,7 +44,7 @@ pub async fn log_write_state(
     let sys_oper_log = SysOperLog {
         oper_id: ObjectId::new().to_string().into(),
         title: state.title.into(),
-        business_type: Some(state.business_type as u16),
+        business_type: Some(state.business_type),
         method:state.path.into(),
         request_method,
         operator_type: 0.into(),//todo

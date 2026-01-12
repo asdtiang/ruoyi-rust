@@ -274,11 +274,11 @@ macro_rules! router_with_handler {
 //简化一下middleware
 #[macro_export]
 macro_rules! router_log {
-    ($method:ident,$func:path,$title:expr,$business_type:ident)=> {
+    ($method:ident,$func:path,$title:expr,$business_type:expr)=> {
        $method($func).route_layer(axum::middleware::from_fn_with_state(crate::OperState{
             title:$title.to_string(),
             path:stringify!($func).to_string(),
-            business_type: crate::BusinessType::$business_type
+            business_type: $business_type.to_string()
         },crate::web::log_mw::log_write_state))
     };
 }

@@ -46,8 +46,8 @@ fn user_api() -> Router {
         //fixme 根据文档，为什么没有办法匹配/user/
         .route("/", get(sys_user_controller::detail))
         .route("/{user_id}", get(sys_user_controller::detail))
-        .route("/", router_log!(post, sys_user_controller::add, "用户管理", INSERT))
-        .route("/", router_log!(put, sys_user_controller::update, "用户管理", UPDATE))
+        .route("/", router_log!(post, sys_user_controller::add, "用户管理", "新增"))
+        .route("/", router_log!(put, sys_user_controller::update, "用户管理", "修改"))
         .route("/{user_id}", delete(sys_user_controller::remove))
         .route("/deptTree", get(sys_user_controller::get_dept_tree))
         .route("/changeStatus", put(sys_user_controller::change_status))
@@ -66,8 +66,8 @@ fn menu_api() -> Router {
     Router::new()
         .route("/list", post(sys_menu_controller::list_all))
         .route("/{menu_id}", get(sys_menu_controller::detail))
-        .route("/", router_log!(post, sys_menu_controller::add, "菜单管理", INSERT))
-        .route("/", router_log!(put, sys_menu_controller::update, "菜单管理", UPDATE))
+        .route("/", router_log!(post, sys_menu_controller::add, "菜单管理", "新增"))
+        .route("/", router_log!(put, sys_menu_controller::update, "菜单管理", "修改"))
         .route("/{menu_id}", delete(sys_menu_controller::remove))
         .route("/treeselect", get(sys_menu_controller::treeselect))
         .route(
@@ -81,8 +81,8 @@ fn dept_api() -> Router {
         .route("/list", post(sys_dept_controller::list))
         .route("/list/exclude/{dept_id}", get(sys_dept_controller::exclude_child))
         .route("/{dept_id}", get(sys_dept_controller::detail))
-        .route("/", router_log!(post, sys_dept_controller::add, "部门管理", INSERT))
-        .route("/", router_log!(put, sys_dept_controller::update, "部门管理", UPDATE))
+        .route("/", router_log!(post, sys_dept_controller::add, "部门管理", "新增"))
+        .route("/", router_log!(put, sys_dept_controller::update, "部门管理", "修改"))
         .route("/{dept_id}", delete(sys_dept_controller::remove))
 }
 
@@ -90,8 +90,8 @@ fn role_api() -> Router {
     Router::new()
         .route("/list", post(sys_role_controller::list))
         .route("/{role_id}", get(sys_role_controller::detail))
-        .route("/", router_log!(post, sys_role_controller::add, "角色管理", INSERT))
-        .route("/", router_log!(put, sys_role_controller::update, "角色管理", UPDATE))
+        .route("/", router_log!(post, sys_role_controller::add, "角色管理", "新增"))
+        .route("/", router_log!(put, sys_role_controller::update, "角色管理", "修改"))
         .route("/{role_id}", delete(sys_role_controller::remove))
         .route("/authUser/allocatedList", get(sys_role_controller::allocated_user_list))
         .route(
@@ -114,8 +114,8 @@ fn dict_type_api() -> Router {
         .route("/list", post(sys_dict_type_controller::list))
         .route("/optionselect", get(sys_dict_type_controller::optionselect))
         .route("/{dict_type_id}", get(sys_dict_type_controller::detail))
-        .route("/", router_log!(post, sys_dict_type_controller::add, "字典类型", INSERT))
-        .route("/", router_log!(put, sys_dict_type_controller::update, "字典类型", UPDATE))
+        .route("/", router_log!(post, sys_dict_type_controller::add, "字典类型", "新增"))
+        .route("/", router_log!(put, sys_dict_type_controller::update, "字典类型", "修改"))
         .route("/{dict_type_id}", delete(sys_dict_type_controller::remove))
         .route("/export", post(sys_dict_type_controller::export_to_excel))
 }
@@ -124,8 +124,8 @@ fn dict_data_api() -> Router {
     Router::new()
         .route("/list", post(sys_dict_data_controller::list))
         .route("/{dict_data_id}", get(sys_dict_data_controller::detail))
-        .route("/", router_log!(post, sys_dict_data_controller::add, "字典数据", INSERT))
-        .route("/", router_log!(put, sys_dict_data_controller::update, "字典数据", UPDATE))
+        .route("/", router_log!(post, sys_dict_data_controller::add, "字典数据", "新增"))
+        .route("/", router_log!(put, sys_dict_data_controller::update, "字典数据", "修改"))
         .route("/{dict_data_id}", delete(sys_dict_data_controller::remove))
         .route("/type/{dict_type}", get(sys_dict_data_controller::get_by_dict_type))
         .route("/export", post(sys_dict_data_controller::export_to_excel))
@@ -135,8 +135,8 @@ fn post_api() -> Router {
     Router::new()
         .route("/list", post(sys_post_controller::list))
         .route("/{post_id}", get(sys_post_controller::detail))
-        .route("/", router_log!(post, sys_post_controller::add, "岗位管理", INSERT))
-        .route("/", router_log!(put, sys_post_controller::update, "岗位管理", UPDATE))
+        .route("/", router_log!(post, sys_post_controller::add, "岗位管理", "新增"))
+        .route("/", router_log!(put, sys_post_controller::update, "岗位管理", "修改"))
         .route("/{post_id}", delete(sys_post_controller::remove))
         .route("/export", post(sys_post_controller::export_to_excel))
 }
@@ -144,8 +144,8 @@ fn post_api() -> Router {
 fn config_api() -> Router {
     Router::new()
         .route("/list", post(sys_config_controller::list))
-        .route("/", router_log!(post, sys_config_controller::add, "参数设置", INSERT))
-        .route("/", router_log!(put, sys_config_controller::update, "参数设置", UPDATE))
+        .route("/", router_log!(post, sys_config_controller::add, "参数设置", "新增"))
+        .route("/", router_log!(put, sys_config_controller::update, "参数设置", "修改"))
         .route("/{config_id}", get(sys_config_controller::detail))
         //fixme 根据文档，为什么没有办法匹配/user/
         .route("/refreshCache/", delete(sys_config_controller::refresh_cache))
@@ -157,8 +157,8 @@ fn notice_api() -> Router {
     Router::new()
         .route("/list", post(sys_notice_controller::list))
         .route("/{notice_id}", get(sys_notice_controller::detail))
-        .route("/", router_log!(post, sys_notice_controller::add, "通知公告", INSERT))
-        .route("/", router_log!(put, sys_notice_controller::update, "通知公告", UPDATE))
+        .route("/", router_log!(post, sys_notice_controller::add, "通知公告", "新增"))
+        .route("/", router_log!(put, sys_notice_controller::update, "通知公告", "修改"))
         .route("/{notice_id}", delete(sys_notice_controller::remove))
         .route("/export", post(sys_notice_controller::export_to_excel))
 }

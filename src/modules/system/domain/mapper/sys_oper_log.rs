@@ -14,8 +14,8 @@ pub struct SysOperLog {
     /** 操作模块 */
     pub title: Option<String>,
 
-    /** 业务类型（0其它 1新增 2修改 3删除） */
-    pub business_type: Option<u16>,
+    /** 业务类型 */
+    pub business_type: Option<String>,
 
     /** 业务类型数组 */
     //  pub Integer[] businessTypes:Option<String>,

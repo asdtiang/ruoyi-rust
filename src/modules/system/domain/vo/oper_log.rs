@@ -11,10 +11,9 @@ pub struct SysOperLogVO {
     /** 操作模块 */
     #[excel("操作模块")]
     pub title: Option<String>,
-    /** 业务类型（0其它 1新增 2修改 3删除） */
-    #[excel("业务类型",readConverterExp = "0=其它,1=新增,2=修改,3=删除,4=授权,5=导出,6=导入,7=强退,8=生成代码,9=清空数据"
-    )]
-    pub business_type: Option<u16>,
+    /** 业务类型 */
+    #[excel("业务类型" )]
+    pub business_type: Option<String>,
     /** 请求方法 */
     #[excel("请求方法")]
     pub method: Option<String>,
