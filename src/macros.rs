@@ -289,7 +289,7 @@ macro_rules! add_marco {
     ($data:ident,$dto:ident,$user:ident,$entity:ident) => {
         let mut $data = $entity::from($dto.0);
         $data.create_by = Some($user.user_name());
-        $data.create_time = Some(rbatis::rbdc::datetime::DateTime::now().set_nano(0).into());
+        $data.create_time = Some(crate::Now!().into());
     };
 }
 //简化一下update
@@ -298,7 +298,7 @@ macro_rules! update_marco {
     ($data:ident,$dto:ident,$user:ident,$entity:ident) => {
         let mut $data = $entity::from($dto.0);
         $data.update_by = Some($user.user_name());
-        $data.update_time = Some(rbatis::rbdc::datetime::DateTime::now().set_nano(0).into());
+        $data.update_time = Some(crate::Now!().into());
     };
 }
 
@@ -368,5 +368,11 @@ macro_rules! update_double_col {
                 .await?;
             Ok(res.rows_affected)
         }
+    };
+}
+#[macro_export]
+macro_rules! Now {
+    () => {
+        rbatis::rbdc::datetime::DateTime::now().set_nano(0)
     };
 }

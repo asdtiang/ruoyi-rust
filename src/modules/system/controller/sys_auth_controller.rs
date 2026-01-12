@@ -1,3 +1,4 @@
+use std::net::SocketAddr;
 use crate::config::global_constants::LOGIN_SUC;
 use crate::context::CONTEXT;
 use crate::system::domain::dto::SignInDTO;
@@ -11,27 +12,50 @@ use captcha::filters::{Dots, Noise, Wave};
 use captcha::Captcha;
 use macros::pre_authorize;
 use std::time::Duration;
+use axum::extract::ConnectInfo;
+use axum::http::header::USER_AGENT;
 use base64::Engine;
 use uuid::Uuid;
+use crate::utils::ip_util::get_ip_addr;
 
-pub async fn login(header_map: HeaderMap, arg: Json<SignInDTO>) -> impl IntoResponse {
-    error_wrapper_unwrap!(CONTEXT.sys_auth_service.login(&arg.0, &header_map), token);
+pub async fn login(header_map: HeaderMap, socket_addr: ConnectInfo<SocketAddr>, arg: Json<SignInDTO>) -> impl IntoResponse {
+    let head_ip = get_ip_addr(&header_map);
+    let ip = if head_ip.is_none() {
+        socket_addr.0.ip().to_string().into()
+    } else {
+        head_ip
+    };
+    let user_agent = match header_map.get(USER_AGENT) {
+        None => "",
+        Some(u) => u.to_str().unwrap_or(""),
+    };
+    error_wrapper_unwrap!(CONTEXT.sys_auth_service.login(&arg.0, ip.unwrap_or_default(),user_agent.to_string()), token);
     let mut res = RespJson::success();
     res.insert("token".to_string(), token.into());
     res.into_response()
 }
 
-pub async fn logout(user: Option<axum::Extension<UserCache>>, header_map: HeaderMap) -> impl IntoResponse {
+pub async fn logout(user: Option<axum::Extension<UserCache>>, header_map: HeaderMap, socket_addr: ConnectInfo<SocketAddr>) -> impl IntoResponse {
+    let head_ip = get_ip_addr(&header_map);
+    let ip = if head_ip.is_none() {
+        socket_addr.0.ip().to_string().into()
+    } else {
+        head_ip
+    };
+    let user_agent = match header_map.get(USER_AGENT) {
+        None => "",
+        Some(u) => u.to_str().unwrap_or(""),
+    };
     if let Some(user) = user {
         let user = user.0;
         let _ = CONTEXT
             .sys_logininfor_service
-            .add_async(&crate::utils::web_utils::build_logininfor(
-                &header_map,
+            .add_async(
+                ip.unwrap_or_default(),user_agent.to_string(),
                 user.user_name,
                 LOGIN_SUC,
                 "退出成功".to_string(),
-            ))
+            )
             .await;
         let _ = CONTEXT
             .cache_service

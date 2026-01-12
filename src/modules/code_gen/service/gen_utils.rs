@@ -5,7 +5,6 @@ use crate::code_gen::GEN_CONTEXT;
 use crate::utils::string;
 use crate::utils::string::substring_unicode;
 use convert_case::{Case, Casing};
-use rbatis::rbdc::DateTime;
 use serde_json::json;
 use std::collections::HashMap;
 
@@ -30,7 +29,7 @@ pub fn init_table(gen_table: &mut GenTable, oper_name: &str) {
     gen_table.function_author = GEN_CONTEXT.config.author.clone().into();
     gen_table.tpl_back_type=Some("rust".to_string());
     gen_table.create_by = oper_name.to_string().into();
-    gen_table.create_time = DateTime::now().set_nano(0).into();
+    gen_table.create_time =crate::Now!().into();
 }
 
 /**

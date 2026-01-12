@@ -63,7 +63,7 @@ pub async fn update(dto: Json<GenTableUpdateDTO>) -> impl IntoResponse {
             .map(|d| {
                 let mut col = GenTableColumn::from(d);
                 col.update_by = Some(user_cache.user_name());
-                col.update_time = Some(rbatis::rbdc::datetime::DateTime::now().set_nano(0).into());
+                col.update_time = Some(crate::Now!().into());
                 col
             })
             .collect::<Vec<_>>()

@@ -1,11 +1,11 @@
 use crate::error::Result;
 use crate::system::service::cache_service::ICacheService;
+use async_trait::async_trait;
 use parking_lot::Mutex;
 use std::collections::hash_map::RandomState;
 use std::collections::HashMap;
 use std::ops::Sub;
 use std::time::{Duration, Instant};
-use async_trait::async_trait;
 
 ///Memory Cache Service
 #[derive(Debug)]
@@ -34,18 +34,17 @@ impl Default for MemService {
 }
 #[async_trait]
 impl ICacheService for MemService {
-    async  fn set_string(&self, k: &str, v: &str) -> Result<String > {
+    async fn set_string(&self, k: &str, v: &str) -> Result<String> {
         self.recycling();
         let k = k.to_string();
         let v = v.to_string();
         let mut guard = self.cache.lock();
         guard.insert(k.to_string(), (v.clone(), None));
-      
-            return Ok(v.to_string())
-     
+
+        Ok(v.to_string())
     }
 
-    async fn get_string(&self, k: &str) -> Result<String > {
+    async fn get_string(&self, k: &str) -> Result<String> {
         self.recycling();
         let k = k.to_string();
         let guard = self.cache.lock();
@@ -56,7 +55,7 @@ impl ICacheService for MemService {
         Ok(v)
     }
 
-    async  fn set_string_ex(&self, k: &str, v: &str, t: Option<Duration>) -> Result<String > {
+    async fn set_string_ex(&self, k: &str, v: &str, t: Option<Duration>) -> Result<String> {
         self.recycling();
         let k = k.to_string();
         let v = v.to_string();
@@ -66,13 +65,15 @@ impl ICacheService for MemService {
             e = Some((Instant::now(), ex));
         }
         let inserted = locked.insert(k, (v.clone(), e));
-            if inserted.is_some() {
-                return Ok(v.to_string());
-            }
-            return Err(crate::error::Error::E("[ruoyi_rust][mem_service]insert fail!".to_string()));
+        if inserted.is_some() {
+            return Ok(v.to_string());
+        }
+        Err(crate::error::Error::E(
+            "[ruoyi_rust][mem_service]insert fail!".to_string(),
+        ))
     }
 
-    async   fn ttl(&self, k: &str) -> Result<i64 > {
+    async fn ttl(&self, k: &str) -> Result<i64> {
         self.recycling();
         let locked = self.cache.lock();
         let v = locked.get(k).cloned();
@@ -91,47 +92,44 @@ impl ICacheService for MemService {
                 }
             },
         };
-        Ok(v) 
+        Ok(v)
     }
 
-    async    fn del(&self, k: &str) -> Result<bool > {
+    async fn del(&self, k: &str) -> Result<bool> {
         self.recycling();
         let mut locked = self.cache.lock();
         let v = locked.remove(k);
         drop(locked);
         let v = match v {
             None => false,
-            Some((_,_)) => true,
+            Some((_, _)) => true,
         };
-        Ok(v) 
+        Ok(v)
     }
 
-    async  fn keys(&self, _k: &str) -> Result<Vec<String> > {
-            let locked = self.cache.lock();
-            let r = locked
-                .keys()
-                .map(|x| x.to_string())
-                .collect::<Vec<String>>();
-            Ok(r)
+    async fn keys(&self, _k: &str) -> Result<Vec<String>> {
+        let locked = self.cache.lock();
+        let r = locked.keys().map(|x| x.to_string()).collect::<Vec<String>>();
+        Ok(r)
     }
-    async  fn hgetall(&self, k: &str) -> Result<Vec<String> > {
+    async fn hgetall(&self, k: &str) -> Result<Vec<String>> {
         let k = k.to_string();
         let locked = self.hget_cache.lock();
         let r = locked.iter().find(|x| x.0 == &k);
         let r = r
             .map(|x| x.1.iter().map(|x| x.1.to_string()).collect::<Vec<String>>())
             .unwrap_or_default();
-        Ok(r) 
+        Ok(r)
     }
 
-    async   fn expire(&self, k: &str, _time_sec: i32) -> Result<bool > {
+    async fn expire(&self, k: &str, _time_sec: i32) -> Result<bool> {
         let k = k.to_string();
         let mut locked = self.cache.lock();
         locked.retain(|_, x| x.0 != k);
-        Ok(true) 
+        Ok(true)
     }
 
-    async fn hset(&self, k: &str, f: &str, v: &str) -> Result<u64 > {
+    async fn hset(&self, k: &str, f: &str, v: &str) -> Result<u64> {
         let k = k.to_string();
         let mut locked = self.hget_cache.lock();
         let mut r: Option<&mut HashMap<String, String>> = locked.get_mut(&k);
@@ -141,10 +139,10 @@ impl ICacheService for MemService {
         }
         let r = r.unwrap();
         r.insert(f.to_string(), v.to_string());
-        Ok(1) 
+        Ok(1)
     }
 
-    async  fn select(&self, _db: &str) -> Result<() > {
+    async fn select(&self, _db: &str) -> Result<()> {
         Ok(())
     }
 }

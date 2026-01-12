@@ -25,6 +25,8 @@ pub struct ApplicationConfig {
     pub captcha_expired_min: u64,
     pub token_expired_min: u64,
     pub address_enabled: bool,
+    pub apihz_id: String,
+    pub apihz_key: String,
     pub cache: String,
     pub storage: String,
     pub login_fail_retry: u64,
@@ -48,21 +50,19 @@ impl Default for ApplicationConfig {
 
         //自动识别，加载不同配置
         #[cfg(debug_assertions)]
-        let dev_or_release_yml="application-dev.yml";
+        let dev_or_release_yml = "application-dev.yml";
         #[cfg(not(debug_assertions))]
-        let dev_or_release_yml="application-prod.yml";
-
+        let dev_or_release_yml = "application-prod.yml";
 
         match fs::read_to_string(dev_or_release_yml) {
             Ok(s) => {
-                println!("loading profile {}",dev_or_release_yml);
+                println!("loading profile {}", dev_or_release_yml);
                 hash.merge(&s);
             }
             Err(_) => {
-                panic!("Can't load {}",dev_or_release_yml);
+                panic!("Can't load {}", dev_or_release_yml);
             }
         }
-
 
         //load config
         let result: ApplicationConfig = serde_yaml::from_str(&*hash.to_string()).expect("load config file fail");

@@ -1,6 +1,6 @@
 use std::sync::LazyLock;
 use validator::ValidationError;
-use zxcvbn::zxcvbn;
+use zxcvbn::{zxcvbn, Score};
 
 pub fn string_required(str: &&String) -> Result<(), ValidationError> {
     if str.len() > 0 {
@@ -10,8 +10,8 @@ pub fn string_required(str: &&String) -> Result<(), ValidationError> {
     }
 }
 pub fn password_score(str: &&String) -> Result<(), ValidationError> {
-    let estimate = zxcvbn(str, &[]).map_err(|_| ValidationError::new("400"))?;
-    if estimate.score() > 2 {
+    let estimate = zxcvbn(str, &[]);
+    if estimate.score().gt(&Score::Two) {
         Ok(())
     } else {
         Err(ValidationError::new("400"))

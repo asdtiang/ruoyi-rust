@@ -4,6 +4,8 @@ use crate::system::domain::mapper::sys_logininfor::SysLogininfor;
 use crate::system::domain::vo::SysLogininforVO;
 use crate::{export_excel_service, pool};
 use rbatis::{Page, PageRequest};
+use crate::context::CONTEXT;
+use crate::utils::address_util;
 
 pub struct SysLogininforService {}
 
@@ -14,9 +16,15 @@ impl SysLogininforService {
     }
 
     //异步加入日志
-    pub async fn add_async(&self, arg: &SysLogininfor) -> Result<u64> {
-        let info=arg.to_owned();
+    pub async fn add_async(&self, ip:String,user_agent: String, username: String, status: char, msg: String) -> Result<u64> {
         tokio::spawn(async move {
+            let address = if CONTEXT.config.address_enabled {
+                     address_util::get_real_address_by_ip(&ip).await.ok()
+            } else {
+                None
+            };
+            let mut info=crate::utils::web_utils::build_logininfor(ip, user_agent, username, status, msg);
+            info.login_location=address;
             let _=SysLogininfor::insert(pool!(), &info).await;
         });
         Ok(1)

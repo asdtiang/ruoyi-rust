@@ -26,9 +26,7 @@ pub fn get_server_info() -> ServerVO {
             used: ByteSize::b(d.total_space() - d.available_space()).to_string(),
             usage: format!(
                 "{:.1}",
-                100.0
-                    - 100.0 * (d.total_space() - d.available_space()) as f64
-                        / d.total_space() as f64
+                100.0 - 100.0 * d.available_space() as f64 / d.total_space() as f64
             ),
         };
         disks.push(disk);
@@ -39,12 +37,10 @@ pub fn get_server_info() -> ServerVO {
     //     println!("[{interface_name}]: {network:?}");
     // }
     for (interface_name, data) in &sysinfo::Networks::new_with_refreshed_list() {
-        println!(
-            "{}: {}/{} B",
-            interface_name,
-            data.received(),
-            data.transmitted());
-            data.ip_networks().iter().for_each(|network| {println!(" {:?}",network.addr.to_string());});
+        println!("{}: {}/{} B", interface_name, data.received(), data.transmitted());
+        data.ip_networks().iter().for_each(|network| {
+            println!(" {:?}", network.addr.to_string());
+        });
         // );
     }
 
@@ -92,5 +88,4 @@ pub fn get_server_info() -> ServerVO {
         sys: sys_vo,
         sys_files: disks,
     }
-
 }

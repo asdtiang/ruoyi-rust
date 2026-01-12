@@ -54,7 +54,7 @@ impl ICacheService for RedisService {
         let k = k.to_string();
         let v = v.to_string();
         let mut conn = self.get_conn().await?;
-        return if ex.is_none() {
+        if ex.is_none() {
             match redis::cmd("SET").arg(&[k, v]).query_async(&mut conn).await {
                 Ok(v) => Ok(v),
                 Err(e) => Err(Error::from(format!(
@@ -74,17 +74,17 @@ impl ICacheService for RedisService {
                     e.to_string()
                 ))),
             }
-        };
+        }
     }
 
     ///get time to live
     async fn ttl(&self, k: &str) -> Result<i64> {
         let k = k.to_string();
         let mut conn = self.get_conn().await?;
-        return match redis::cmd("TTL").arg(&[k]).query_async(&mut conn).await {
+        match redis::cmd("TTL").arg(&[k]).query_async(&mut conn).await {
             Ok(v) => Ok(v),
             Err(e) => Err(Error::from(format!("RedisService ttl fail:{}", e.to_string()))),
-        };
+        }
     }
     async fn del(&self, k: &str) -> Result<bool> {
         let k = k.to_string();

@@ -11,7 +11,6 @@ use crate::{pool, remove_batch_tx};
 use macros::{replace_pool, transactional};
 use minijinja::syntax::SyntaxConfig;
 use rbatis::object_id::ObjectId;
-use rbatis::rbdc::DateTime;
 use rbatis::{Page, PageRequest};
 use serde_json::Value;
 use std::collections::HashMap;
@@ -86,7 +85,7 @@ impl GenTableService {
                 for mut column in gen_table_columns {
                     column.column_id = Some(ObjectId::new().to_string());
                     column.create_by = oper_user_name.to_string().into();
-                    column.create_time = DateTime::now().set_nano(0).into();
+                    column.create_time = crate::Now!().into();
                     gen_utils::init_column_field(&mut column, &table);
                     GenTableColumn::insert(&tx, &column).await?;
                 }

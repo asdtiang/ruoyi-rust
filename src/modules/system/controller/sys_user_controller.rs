@@ -22,7 +22,7 @@ pub async fn add(arg: crate::ValidatedForm<UserAddDTO>) -> impl IntoResponse {
     let post_ids = data.post_ids.clone();
     let mut sys_user = SysUser::from(data);
     sys_user.create_by = Some(user_cache.user_name());
-    sys_user.create_time = Some(rbatis::rbdc::datetime::DateTime::now().set_nano(0).into());
+    sys_user.create_time = Some(crate::Now!().into());
     let mut password = sys_user.password.clone().unwrap_or_default();
 
     //初始密码需要更改才能使用
@@ -86,7 +86,7 @@ pub async fn update(arg: crate::ValidatedForm<UserUpdateDTO>) -> impl IntoRespon
     let post_ids = data.post_ids.clone();
     let mut sys_user = SysUser::from(data);
     sys_user.update_by = Some(user_cache.user_name());
-    sys_user.update_time = Some(rbatis::rbdc::datetime::DateTime::now().set_nano(0).into());
+    sys_user.update_time = Some(crate::Now!().into());
 
     let res = CONTEXT
         .sys_user_service

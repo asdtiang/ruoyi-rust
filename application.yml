@@ -13,17 +13,17 @@ cache: "redis://127.0.0.1:6379"
 #storage: "s3://{\"bucket\":\"test\",\"endpoint\":\"http://127.0.0.1:9000\",\"access_key\":\"minioadmin\",\"secret_key\":\"minioadmin\",\"region\":\"\"}",
 storage: "local"
 #后台用数据库地址
-db_url: "mysql://rouyi-rust:rust123456@127.0.0.1/rouyi-rust"
+db_url: "mysql://root:ruoyi-rust@127.0.0.1/rouyi-rust"
 #database pool len
 db_pool_len: 32
 #pool get timeout
 db_pool_timeout: 60
 #逻辑删除-字段
-logic_column: "del"
+#logic_column: "del"
 #逻辑删除-未删除标志
-logic_un_deleted: 0
+#logic_un_deleted: 0
 #逻辑删除-已删除标志
-logic_deleted: 1
+#logic_deleted: 1
 #rolling by LogFileSize use[1KB,1MB,1GB], rolling by date use ['hour','minute','day'],rolling by Duration use ['1hour','10minute','1day']
 log_rolling: "day"
 #日志文件存放目录
@@ -72,6 +72,10 @@ datetime_format: "YYYY-MM-DD hh:mm:ss"
 
 #根据ip查地址
 address_enabled: true
+
+#https://www.apihz.cn id和key,需要注册
+apihz_id: "*"
+apihz_key: "*"
 
 errors:
   '-1': 未知错误

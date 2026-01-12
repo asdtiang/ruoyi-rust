@@ -10,7 +10,6 @@ use crate::utils::password_encoder::PasswordEncoder;
 use crate::web::token::auth::UserCache;
 use crate::web::token::jwt::JwtClaims;
 use crate::{error_info, pool};
-use axum::http::HeaderMap;
 use rbatis::rbdc::DateTime;
 use std::time::Duration;
 use uuid::Uuid;
@@ -21,7 +20,7 @@ pub struct SysAuthService {}
 
 impl SysAuthService {
     //返回token
-    pub async fn login(&self, sign_in_dto: &SignInDTO, header_map: &HeaderMap) -> Result<String> {
+    pub async fn login(&self, sign_in_dto: &SignInDTO,ip:String, user_agent: String) -> Result<String> {
         self.is_need_wait_login_ex(&sign_in_dto.username).await?;
         let captcha_enabled = CONTEXT
             .sys_config_service
@@ -67,12 +66,12 @@ impl SysAuthService {
         if let Some(err) = error {
             let _ = CONTEXT
                 .sys_logininfor_service
-                .add_async(&crate::utils::web_utils::build_logininfor(
-                    header_map,
+                .add_async(
+                    ip,user_agent,
                     sign_in_dto.username.clone(),
                     LOGIN_FAIL,
                     err.to_string(),
-                ))
+                )
                 .await;
             self.add_retry_login_limit_num(&sign_in_dto.username).await?;
             return Err(err);
@@ -81,12 +80,12 @@ impl SysAuthService {
         let token = self.add_to_cache_and_build_token(user, &uuid).await;
         let _ = CONTEXT
             .sys_logininfor_service
-            .add_async(&crate::utils::web_utils::build_logininfor(
-                header_map,
+            .add_async(
+                ip,user_agent,
                 sign_in_dto.username.clone(),
                 LOGIN_SUC,
                 "成功".to_string(),
-            ))
+            )
             .await;
 
         token
@@ -162,14 +161,14 @@ impl SysAuthService {
             permissions,
             menu_ids,
             roles,
-            login_time: DateTime::now().set_nano(0),
+            login_time: crate::Now!(),
             login_user_key: login_user_key.to_string(),
             token_key: crate::web::get_login_user_redis_key(login_user_key),
             need_chn_pwd,
         };
         let jwt_token = JwtClaims {
             login_user_key: login_user_key.to_string(),
-            exp: DateTime::now().set_nano(0).unix_timestamp_millis() as usize,
+            exp: crate::Now!().unix_timestamp_millis() as usize,
         };
         let access_token = jwt_token.create_token(&CONTEXT.config.jwt_secret)?;
 
