@@ -2,15 +2,30 @@ use crate::context::CONTEXT;
 use crate::error::Error;
 use crate::utils::ip_util::is_local_ip;
 use std::fmt::Display;
+use serde::{Deserialize, Deserializer};
 
+fn null_to_default<'de, D, T>(deserializer: D) -> Result<T, D::Error>
+where
+    D: Deserializer<'de>,
+    T: Default + Deserialize<'de>,
+{
+    let opt = Option::deserialize(deserializer)?;
+    Ok(opt.unwrap_or_default())
+}
 #[derive(serde::Deserialize, Debug)]
 struct IpData {
+    #[serde(deserialize_with = "null_to_default")]
     guo: String,
+    #[serde(deserialize_with = "null_to_default")]
     sheng: String,
+    #[serde(deserialize_with = "null_to_default")]
     shi: String,
+    #[serde(deserialize_with = "null_to_default")]
     qu: String,
+    #[serde(deserialize_with = "null_to_default")]
     isp: String,
 }
+
 impl Display for IpData {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         write!(
@@ -26,8 +41,8 @@ pub async fn get_real_address_by_ip(ip: &str) -> crate::error::Result<String> {
         return Ok("内网IP".to_string());
     }
     if CONTEXT.config.address_enabled {
-        let id=&CONTEXT.config.apihz_id;
-        let key=&CONTEXT.config.apihz_key;
+        let id = &CONTEXT.config.apihz_id;
+        let key = &CONTEXT.config.apihz_key;
         let body = reqwest::Client::builder()
             .use_rustls_tls() // 显式使用 rustls
             .build()
@@ -47,32 +62,10 @@ pub async fn get_real_address_by_ip(ip: &str) -> crate::error::Result<String> {
     }
     Ok(String::new())
 }
-
-/*
-try
-{
-String rspStr = HttpUtils.sendGet(IP_URL, "ip=" + ip + "&json=true", Constants.GBK);
-if (StringUtils.isEmpty(rspStr))
-{
-log.error("获取地理位置异常 {}", ip);
-return UNKNOWN;
-}
-JSONObject obj = JSON.parseObject(rspStr);
-String region = obj.getString("pro");
-String city = obj.getString("city");
-return String.format("%s %s", region, city);
-}
-catch (Exception e)
-{
-log.error("获取地理位置异常 {}", ip);
-}
-}
-return UNKNOWN;
-}*/
 #[tokio::test]
 async fn test_get_real_address_by_ip() {
     //let a = get_real_address_by_ip("127.0.0.1").await;
     //println!("a = {:?}", a);
-    let a = get_real_address_by_ip("27.158.29.209").await;
+    let a = get_real_address_by_ip("218.86.30.32").await;
     println!("a = {:?}", a);
 }
