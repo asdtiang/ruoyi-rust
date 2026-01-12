@@ -40,6 +40,8 @@ jsonwebtoken = { version = "10.2.0" ,features = ["default","rust_crypto"] }
 captcha = "1.0.0"
 #http client,use rust-tls replace to native tls
 reqwest = { version = "0.13.1",features = ["rustls"] }
+dashmap = "6.1.0"
+once_cell = "0.2.4"
 #image code
 futures-util = "0.3.21"
 parking_lot = "0.12.1"
@@ -63,7 +65,7 @@ user-agent-parser = "0.3.4"
 unicode-segmentation = "*"
 
 # enc passowrd, like springboot secutiry
-bcrypt = "0.17.1"
+bcrypt = "0.18.0"
 zxcvbn = "3.1.0" #密码强度检测
 base64 = "0.22.1"
 macros = { path = "macros" }

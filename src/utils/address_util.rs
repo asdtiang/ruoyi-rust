@@ -2,6 +2,9 @@ use crate::context::CONTEXT;
 use crate::error::Error;
 use crate::utils::ip_util::is_local_ip;
 use std::fmt::Display;
+use std::sync::Arc;
+use dashmap::DashMap;
+use once_cell::sync::Lazy;
 use serde::{Deserialize, Deserializer};
 
 fn null_to_default<'de, D, T>(deserializer: D) -> Result<T, D::Error>
@@ -35,12 +38,19 @@ impl Display for IpData {
         )
     }
 }
+static GLOBAL_IP_MAP: Lazy<Arc<DashMap<String, String>>> = Lazy::new(|| {
+    Arc::new(DashMap::new())
+});
+
 pub async fn get_real_address_by_ip(ip: &str) -> crate::error::Result<String> {
     // 内网不查询
     if is_local_ip(ip) {
         return Ok("内网IP".to_string());
     }
     if CONTEXT.config.address_enabled {
+        if GLOBAL_IP_MAP.contains_key(ip) {
+          return  GLOBAL_IP_MAP.get(ip).map(|v| v.value().clone()).ok_or_else(|| Error::from("错误"));
+        }
         let id = &CONTEXT.config.apihz_id;
         let key = &CONTEXT.config.apihz_key;
         let body = reqwest::Client::builder()
@@ -64,7 +74,9 @@ pub async fn get_real_address_by_ip(ip: &str) -> crate::error::Result<String> {
         if value.isp .starts_with("中国"){
             value.isp= value.isp.replace("中国","");
         }
-        return Ok(value.to_string());
+        let location=value.to_string();
+        GLOBAL_IP_MAP.insert(ip.to_string(), location.clone());
+        return Ok(location);
     }
     Ok(String::new())
 }
@@ -72,6 +84,8 @@ pub async fn get_real_address_by_ip(ip: &str) -> crate::error::Result<String> {
 async fn test_get_real_address_by_ip() {
     //let a = get_real_address_by_ip("127.0.0.1").await;
     //println!("a = {:?}", a);
+    let a = get_real_address_by_ip("218.86.30.32").await;
+    println!("a = {:?}", a);
     let a = get_real_address_by_ip("218.86.30.32").await;
     println!("a = {:?}", a);
 }
