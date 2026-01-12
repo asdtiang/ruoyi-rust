@@ -5,25 +5,27 @@ use user_agent_parser::UserAgentParser;
 
 pub static USER_AGENT_PARSER: LazyLock<UserAgentParser> = LazyLock::new(||  UserAgentParser::from_path("./user_agent.yml").unwrap());
 
-pub fn build_logininfor(ip:String,user_agent: String, username: String, status: char, msg: String) -> SysLogininfor {
-
-    let product= USER_AGENT_PARSER.parse_product(&user_agent);
-    let browser = format!("{} {}",product.name.unwrap_or_default(),product.major.unwrap_or_default());
-    let os=USER_AGENT_PARSER.parse_os(&user_agent);
-    let os_str = format!("{} {}",os.name.unwrap_or_default(),os.major.unwrap_or_default());
+pub fn build_logininfor(ip:String,browser: String, os: String,username:String, status: char, msg: String) -> SysLogininfor {
     SysLogininfor {
         info_id: ObjectId::new().to_string().into(),
         user_name: Some(username),
         ipaddr: Some(ip),
         login_location: None,
         browser: Some(browser),
-        os: Some(os_str),
+        os: Some(os),
         status: Some(status),
         msg: Some(msg),
         login_time: crate::Now!().into(),
     }
 }
 
+pub fn parse_agent(user_agent: &str) -> (String, String) {
+    let product = USER_AGENT_PARSER.parse_product(&user_agent);
+    let browser = format!("{} {}", product.name.unwrap_or_default(), product.major.unwrap_or_default());
+    let os = USER_AGENT_PARSER.parse_os(&user_agent);
+    let os_str = format!("{} {}", os.name.unwrap_or_default(), os.major.unwrap_or_default());
+    (browser, os_str)
+}
 // pub(crate) fn timestamp() -> i64 {
 //     let start = SystemTime::now();
 //     let since_the_epoch = start

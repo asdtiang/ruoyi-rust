@@ -22,7 +22,7 @@ impl SysOperLogService {
         tokio::spawn(async move {
 
             let address = if CONTEXT.config.address_enabled {
-                match info.oper_id.clone() {
+                match info.oper_ip.clone() {
                     Some(ip) => address_util::get_real_address_by_ip(&ip).await.ok(),
                     None => None,
                 }

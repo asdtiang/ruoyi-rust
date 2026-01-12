@@ -1,8 +1,6 @@
 use crate::context::CONTEXT;
 use crate::system::domain::mapper::sys_oper_log::SysOperLog;
-use crate::utils::ip_util::get_ip_addr;
-use axum::extract::{ConnectInfo, OriginalUri, State};
-use axum::http::HeaderMap;
+use axum::extract::{ OriginalUri, State};
 use axum::{
     body::{Body, Bytes},
     extract::Request,
@@ -13,14 +11,13 @@ use axum::{
 use http_body_util::BodyExt;
 use rbatis::object_id::ObjectId;
 use rbatis::rbdc::DateTime;
-use std::net::SocketAddr;
 use crate::{UserCache};
+use crate::web::extractors::ip::ClientIp;
 
 ///操作日志登记
 pub async fn log_write_state(
     ori_uri: OriginalUri,
-    socket_addr: ConnectInfo<SocketAddr>,
-    header_map: HeaderMap,
+    ClientIp(ip): ClientIp,
     State(state): State<crate::OperState>,
     user_cache: UserCache,
     req: Request,
@@ -29,12 +26,6 @@ pub async fn log_write_state(
     let request_method = req.method().to_string().into();
 
     let (parts, body) = req.into_parts();
-    let head_ip = get_ip_addr(&header_map);
-    let ip = if head_ip.is_none() {
-        socket_addr.0.ip().to_string().into()
-    } else {
-        head_ip
-    };
 
     let url = ori_uri.path_and_query().map(|x| x.to_string());
 
@@ -60,7 +51,7 @@ pub async fn log_write_state(
         oper_name: user_cache.user_name.into(),
         dept_name: user_cache.dept_name.into(),
         oper_url: url,
-        oper_ip: ip,
+        oper_ip: Some(ip),
         oper_location: None,
         oper_param,
         json_result,

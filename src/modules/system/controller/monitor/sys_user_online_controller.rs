@@ -8,6 +8,7 @@ use crate::{error_wrapper_unwrap, RespJson, RespVO};
 use axum::extract::Path;
 use axum::response::IntoResponse;
 use macros::pre_authorize;
+use crate::utils::address_util::get_real_address_by_ip;
 
 #[pre_authorize("monitor:online:list", user_cache)]
 pub async fn list() -> impl IntoResponse {
@@ -19,15 +20,16 @@ pub async fn list() -> impl IntoResponse {
         let c: Result<UserCache, Error> = CONTEXT.cache_service.get_json(&k).await;
         match c {
             Ok(u) => {
+                let login_location=get_real_address_by_ip(&u.login_ip).await.ok();
                 let user_online = SysUserOnlineVO {
                     token_id: Some(u.token_key.trim_start_matches(LOGIN_TOKEN_KEY).to_string()),
-                    dept_name: None,
+                    dept_name: Some(u.dept_name),
                     user_name: Some(u.user_name),
-                    ipaddr: None,
-                    login_location: None,
+                    ipaddr: Some(u.login_ip),
+                    login_location,
                     phonenumber: None,
-                    browser: None,
-                    os: None,
+                    browser: Some(u.browser),
+                    os: Some(u.os),
                     login_time: Some(u.login_time),
                 };
                 user_online_list.push(user_online);

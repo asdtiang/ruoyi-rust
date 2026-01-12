@@ -7,6 +7,7 @@ use crate::system::domain::mapper::sys_user::SysUser;
 use crate::system::domain::mapper::sys_user_role::SysUserRole;
 use crate::system::domain::vo::CommonRoleVO;
 use crate::utils::password_encoder::PasswordEncoder;
+use crate::web::extractors::user_agent::UserAgent;
 use crate::web::token::auth::UserCache;
 use crate::web::token::jwt::JwtClaims;
 use crate::{error_info, pool};
@@ -20,7 +21,7 @@ pub struct SysAuthService {}
 
 impl SysAuthService {
     //返回token
-    pub async fn login(&self, sign_in_dto: &SignInDTO,ip:String, user_agent: String) -> Result<String> {
+    pub async fn login(&self, sign_in_dto: &SignInDTO, ip: String, user_agent: UserAgent) -> Result<String> {
         self.is_need_wait_login_ex(&sign_in_dto.username).await?;
         let captcha_enabled = CONTEXT
             .sys_config_service
@@ -67,7 +68,8 @@ impl SysAuthService {
             let _ = CONTEXT
                 .sys_logininfor_service
                 .add_async(
-                    ip,user_agent,
+                    ip,
+                    user_agent,
                     sign_in_dto.username.clone(),
                     LOGIN_FAIL,
                     err.to_string(),
@@ -77,11 +79,12 @@ impl SysAuthService {
             return Err(err);
         }
         let uuid = Uuid::new_v4().to_string();
-        let token = self.add_to_cache_and_build_token(user, &uuid).await;
+        let token = self.add_to_cache_and_build_token(user, &uuid, &ip,user_agent.clone()).await;
         let _ = CONTEXT
             .sys_logininfor_service
             .add_async(
-                ip,user_agent,
+                ip,
+                user_agent,
                 sign_in_dto.username.clone(),
                 LOGIN_SUC,
                 "成功".to_string(),
@@ -136,8 +139,19 @@ impl SysAuthService {
         Ok(())
     }
     //返回token
-    async fn add_to_cache_and_build_token(&self, user: SysUser, login_user_key: &str) -> Result<String> {
-        let SysUser { user_id, user_name,last_chn_pwd_time, .. } = user;
+    async fn add_to_cache_and_build_token(
+        &self,
+        user: SysUser,
+        login_user_key: &str,
+        ip: &str,
+        user_agent: UserAgent,
+    ) -> Result<String> {
+        let SysUser {
+            user_id,
+            user_name,
+            last_chn_pwd_time,
+            ..
+        } = user;
         let user_id = user_id.ok_or_else(|| Error::from("错误的用户数据，id为空!"))?;
         let user_name = user_name.ok_or_else(|| Error::from("错误的用户数据，用户名为空!"))?;
 
@@ -165,6 +179,9 @@ impl SysAuthService {
             login_user_key: login_user_key.to_string(),
             token_key: crate::web::get_login_user_redis_key(login_user_key),
             need_chn_pwd,
+            login_ip: ip.to_string(),
+            browser: user_agent.browser,
+            os: user_agent.os,
         };
         let jwt_token = JwtClaims {
             login_user_key: login_user_key.to_string(),

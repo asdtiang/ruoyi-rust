@@ -57,7 +57,13 @@ pub async fn get_real_address_by_ip(ip: &str) -> crate::error::Result<String> {
             .await
             .map_err(|e| Error::from(e.to_string()))?;
         let body = body.trim();
-        let value = serde_json::from_str::<IpData>(&body).map_err(|e| Error::from(e.to_string()))?;
+        let mut  value = serde_json::from_str::<IpData>(&body).map_err(|e| Error::from(e.to_string()))?;
+        if value.guo .eq("中国"){
+            value.guo=String::from("");
+        }
+        if value.isp .starts_with("中国"){
+            value.isp= value.isp.replace("中国","");
+        }
         return Ok(value.to_string());
     }
     Ok(String::new())

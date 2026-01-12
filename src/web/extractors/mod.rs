@@ -1,3 +1,4 @@
 pub mod user_cache;
 pub mod validator;
-//todo ip,extractors, 浏览类型
+pub mod user_agent;
+pub mod ip;

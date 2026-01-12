@@ -17,6 +17,9 @@ pub struct UserCache {
     pub login_user_key: String,
     pub token_key: String,
     pub need_chn_pwd: bool,
+    pub login_ip: String,
+    pub browser: String,
+    pub os:String,
 }
 
 impl UserCache {
