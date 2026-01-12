@@ -1,24 +1,30 @@
-use std::net::SocketAddr;
 use crate::config::global_constants::LOGIN_SUC;
 use crate::context::CONTEXT;
 use crate::system::domain::dto::SignInDTO;
 use crate::system::domain::vo::CommonUserVO;
 use crate::system::service::REDIS_UUID_CAPTCHA;
-use crate::{error_wrapper_unwrap, RespJson, RespVO, UserCache};
+use crate::utils::ip_util::get_ip_addr;
+use crate::web::extractors::user_cache::{get_token, get_user_cache_by_token};
+
+use crate::{error_wrapper_unwrap, RespJson, RespVO};
+use axum::extract::ConnectInfo;
+use axum::http::header::USER_AGENT;
 use axum::http::HeaderMap;
 use axum::response::IntoResponse;
 use axum::Json;
+use base64::Engine;
 use captcha::filters::{Dots, Noise, Wave};
 use captcha::Captcha;
 use macros::pre_authorize;
+use std::net::SocketAddr;
 use std::time::Duration;
-use axum::extract::ConnectInfo;
-use axum::http::header::USER_AGENT;
-use base64::Engine;
 use uuid::Uuid;
-use crate::utils::ip_util::get_ip_addr;
 
-pub async fn login(header_map: HeaderMap, socket_addr: ConnectInfo<SocketAddr>, arg: Json<SignInDTO>) -> impl IntoResponse {
+pub async fn login(
+    header_map: HeaderMap,
+    socket_addr: ConnectInfo<SocketAddr>,
+    arg: Json<SignInDTO>,
+) -> impl IntoResponse {
     let head_ip = get_ip_addr(&header_map);
     let ip = if head_ip.is_none() {
         socket_addr.0.ip().to_string().into()
@@ -29,13 +35,18 @@ pub async fn login(header_map: HeaderMap, socket_addr: ConnectInfo<SocketAddr>, 
         None => "",
         Some(u) => u.to_str().unwrap_or(""),
     };
-    error_wrapper_unwrap!(CONTEXT.sys_auth_service.login(&arg.0, ip.unwrap_or_default(),user_agent.to_string()), token);
+    error_wrapper_unwrap!(
+        CONTEXT
+            .sys_auth_service
+            .login(&arg.0, ip.unwrap_or_default(), user_agent.to_string()),
+        token
+    );
     let mut res = RespJson::success();
     res.insert("token".to_string(), token.into());
     res.into_response()
 }
 
-pub async fn logout(user: Option<axum::Extension<UserCache>>, header_map: HeaderMap, socket_addr: ConnectInfo<SocketAddr>) -> impl IntoResponse {
+pub async fn logout(header_map: HeaderMap, socket_addr: ConnectInfo<SocketAddr>) -> impl IntoResponse {
     let head_ip = get_ip_addr(&header_map);
     let ip = if head_ip.is_none() {
         socket_addr.0.ip().to_string().into()
@@ -46,21 +57,26 @@ pub async fn logout(user: Option<axum::Extension<UserCache>>, header_map: Header
         None => "",
         Some(u) => u.to_str().unwrap_or(""),
     };
-    if let Some(user) = user {
-        let user = user.0;
-        let _ = CONTEXT
-            .sys_logininfor_service
-            .add_async(
-                ip.unwrap_or_default(),user_agent.to_string(),
-                user.user_name,
-                LOGIN_SUC,
-                "退出成功".to_string(),
-            )
-            .await;
-        let _ = CONTEXT
-            .cache_service
-            .del(&crate::web::get_login_user_redis_key(&user.login_user_key))
-            .await;
+    if let Some(header_value) = header_map.get("authorization") {
+        let token = get_token(header_value);
+        let user_cache = get_user_cache_by_token(&token).await;
+
+        if let Some(user_cache) = user_cache {
+            let _ = CONTEXT
+                .sys_logininfor_service
+                .add_async(
+                    ip.unwrap_or_default(),
+                    user_agent.to_string(),
+                    user_cache.user_name,
+                    LOGIN_SUC,
+                    "退出成功".to_string(),
+                )
+                .await;
+            let _ = CONTEXT
+                .cache_service
+                .del(&crate::web::get_login_user_redis_key(&user_cache.login_user_key))
+                .await;
+        }
     }
     RespVO::<String>::from_success_info("退出成功!").into_response()
 }
@@ -69,12 +85,9 @@ pub async fn logout(user: Option<axum::Extension<UserCache>>, header_map: Header
 pub async fn info() -> impl IntoResponse {
     let mut res = RespJson::success();
     res.insert("permissions".to_string(), serde_json::json!(&user_cache.permissions));
-    error_wrapper_unwrap!(
-        CONTEXT.sys_user_service.detail(&user_cache.user_id),
-        user
-    );
-    let user=CommonUserVO::from(user);
-   res.insert("user".to_string(), serde_json::json!(&user));
+    error_wrapper_unwrap!(CONTEXT.sys_user_service.detail(&user_cache.user_id), user);
+    let user = CommonUserVO::from(user);
+    res.insert("user".to_string(), serde_json::json!(&user));
     res.insert(
         "roles".to_string(),
         serde_json::json!(rbatis::table_field_vec!(&user_cache.roles, role_key)),
@@ -114,7 +127,7 @@ pub async fn captcha() -> impl IntoResponse {
 
         json.insert("uuid".to_string(), uuid.to_string().into());
 
-        json.insert("img".to_string(),base64::prelude::BASE64_STANDARD.encode (&png).into());
+        json.insert("img".to_string(), base64::prelude::BASE64_STANDARD.encode(&png).into());
     }
     json.into_response()
 }
