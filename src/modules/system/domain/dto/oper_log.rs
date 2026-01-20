@@ -3,6 +3,7 @@ use serde::{Deserialize, Serialize};
 
 #[page_request(params)]
 #[derive(Serialize, Deserialize, Clone, Debug)]
+#[serde(rename_all = "camelCase")]
 pub struct OperLogPageDTO {
     /** 操作地址 */
     pub oper_ip: Option<String>,

@@ -4,7 +4,21 @@ use rbatis::{crud, impl_select_page};
 crud!(SysOperLog {});
 
 impl_select_page!( SysOperLog{select_page(dto: &crate::system::domain::dto::OperLogPageDTO) =>
-    "order by oper_time desc"});
+  "
+  trim end=' where ':
+    ` where `
+    trim start=' and ':
+        if dto.title != '':
+          ` and title like #{'%'+dto.title+'%'}`
+        if dto.operIp != '':
+          ` and oper_ip = #{dto.operIp}`
+        if dto.operName != '':
+          ` and oper_name = #{dto.operName}`
+        if dto.businessType != '':
+          ` and business_type = #{dto.businessType}`
+        if dto.status != '':
+          ` and status = #{dto.status}`
+  ` order by oper_time desc`"});
 
 #[derive(Clone, Debug, serde::Serialize, serde::Deserialize)]
 pub struct SysOperLog {

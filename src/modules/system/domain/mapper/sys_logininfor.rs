@@ -5,7 +5,23 @@ crud!(SysLogininfor {});
 
 
 impl_select_page!(SysLogininfor{select_page(dto: &crate::system::domain::dto::LogininforPageDTO) =>
-    " order by login_time desc"});
+  "
+  trim end=' where ':
+    ` where `
+    trim start=' and ':
+        if dto.loginLocation != '':
+          ` and login_location like #{'%'+dto.loginLocation+'%'}`
+        if dto.ipaddr != '':
+          ` and ipaddr = #{dto.ipaddr}`
+        if dto.userName != '':
+          ` and user_name = #{dto.userName}`
+        if dto.status != '':
+          ` and status = #{dto.status}`
+        if dto.params.beginTime != '':
+          ` and date_format(login_time,'%y%m%d') >= date_format(#{dto.params.beginTime},'%y%m%d')`
+        if dto.params.endTime != '':
+          ` and date_format(login_time,'%y%m%d') <= date_format(#{dto.params.endTime},'%y%m%d')`
+  `order by login_time desc`"});
 
 #[derive(Clone, Debug, serde::Serialize, serde::Deserialize)]
 pub struct SysLogininfor {

@@ -40,7 +40,8 @@ impl SysLogininforService {
     }
 
     pub async fn remove(&self, info_id: &str) -> Result<u64> {
-        let r = SysLogininfor::delete_by_map(pool!(), rbs::value! {"info_id": info_id}).await?;
+        let info_ids = info_id.split(",").collect::<Vec<&str>>();
+        let r = SysLogininfor::delete_by_map(pool!(), rbs::value! {"info_id": info_ids}).await?;
         Ok(r.rows_affected)
     }
     pub async fn clean(&self) -> Result<u64> {
