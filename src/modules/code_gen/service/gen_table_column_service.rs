@@ -8,10 +8,10 @@ use macros::replace_pool;
 pub struct GenTableColumnService {}
 
 impl GenTableColumnService {
-    pub async fn list_all(&self) -> Result<Vec<GenTableColumn>> {
-        let data = GenTableColumn::select_all(pool!()).await?;
-        Ok(data)
-    }
+    // pub async fn list_all(&self) -> Result<Vec<GenTableColumn>> {
+    //     let data = GenTableColumn::select_all(pool!()).await?;
+    //     Ok(data)
+    // }
     #[replace_pool]
     pub async fn remove(&self, table_id: &str) -> Result<u64> {
         let targets = GenTableColumn::select_by_map(pool!(), rbs::value!{"table_id": table_id}).await?;

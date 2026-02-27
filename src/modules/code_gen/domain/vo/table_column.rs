@@ -1,7 +1,6 @@
 use super::super::mapper::gen_table_column::GenTableColumn;
 use crate::code_gen::service::gen_constants;
-use crate::utils::string::substring_unicode;
-use convert_case::{Case, Casing};
+use crate::utils::string::{substring, substring_between};
 use rbatis::rbdc::DateTime;
 
 #[derive(Clone, Debug, serde :: Serialize, serde :: Deserialize)]
@@ -12,14 +11,16 @@ pub struct GenTableColumnVO {
     pub column_name: Option<String>,
     pub column_comment: Option<String>,
     pub column_type: Option<String>,
-    pub java_type: Option<String>,
-    pub java_field: Option<String>,
+    pub rust_type: Option<String>,
+    pub rust_field: Option<String>,
     pub is_pk: Option<char>,
     pub is_increment: Option<char>,
     pub is_required: Option<char>,
     pub is_insert: Option<char>,
     pub is_edit: Option<char>,
     pub is_list: Option<char>,
+    // 是否前台表格显示字段（1是）
+    pub is_table: Option<char>,
     pub is_detail: Option<char>,
     pub is_export: Option<char>,
     pub is_sortable: Option<char>,
@@ -46,14 +47,15 @@ impl From<GenTableColumn> for GenTableColumnVO {
             column_name,
             column_comment,
             column_type,
-            java_type,
-            java_field,
+            rust_type,
+            rust_field,
             is_pk,
             is_increment,
             is_required,
             is_insert,
             is_edit,
             is_list,
+            is_table,
             is_detail,
             is_export,
             is_sortable,
@@ -77,14 +79,15 @@ impl From<GenTableColumn> for GenTableColumnVO {
             column_name,
             column_comment,
             column_type,
-            java_type,
-            java_field,
+            rust_type,
+            rust_field,
             is_pk,
             is_increment,
             is_required,
             is_insert,
             is_edit,
             is_list,
+            is_table,
             is_detail,
             is_export,
             is_sortable,
@@ -112,15 +115,15 @@ pub struct GenTableColumnGenVO {
     pub comment: Option<String>,
     pub column_type: Option<String>,
     pub read_converter_exp: Option<String>,
-    pub java_type: Option<String>,
-    pub java_field: Option<String>,
-    pub java_field_cap: Option<String>,
+    pub rust_type: Option<String>,
+    pub rust_field: Option<String>,
     pub is_pk: bool,
     pub is_increment: bool,
     pub is_required: bool,
     pub is_insert: bool,
     pub is_edit: bool,
     pub is_list: bool,
+    pub is_table: bool,
     pub is_detail: bool,
     pub is_export: bool,
     pub is_sortable: bool,
@@ -145,14 +148,15 @@ impl From<GenTableColumn> for GenTableColumnGenVO {
             column_name,
             column_comment,
             column_type,
-            java_type,
-            java_field,
+            rust_type,
+            rust_field,
             is_pk,
             is_increment,
             is_required,
             is_insert,
             is_edit,
             is_list,
+            is_table,
             is_detail,
             is_export,
             is_sortable,
@@ -165,36 +169,43 @@ impl From<GenTableColumn> for GenTableColumnGenVO {
             def_val,
             ..
         } = arg;
-        let mut read_converter_exp =None;
+        let mut read_converter_exp=None;
         let comment = column_comment.clone();
         let comment = comment.map(|s| {
             let mut idx = s.find("(");
             if idx.is_none() {
                 idx = s.find("（");
             }
+            let mut r=substring_between(&s,"（","）");
+            if r.len()==0{
+                r=substring_between(&s,"(",")");
+            }
+            if r.len()>0{
+                read_converter_exp=Some(r)
+            }
             match idx {
-                None => s,
+                None => { s }
                 Some(idx) => {
-                    read_converter_exp=Some(substring_unicode(&s, idx+1, s.len()-1));
-                    substring_unicode(&s, 0, idx) },
+                    substring(&s, 0, idx)
+                }
             }
         });
-        let java_field_cap = java_field.clone().map(|s| s.to_case(Case::UpperCamel));
+
         Self {
             column_name:column_name.clone(),
             column_comment,
             comment,
             read_converter_exp,
             column_type,
-            java_type,
-            java_field,
-            java_field_cap,
+            rust_type,
+            rust_field,
             is_pk: is_pk.is_some_and(|b| b == gen_constants::REQUIRE),
             is_increment: is_increment.is_some_and(|b| b == gen_constants::REQUIRE),
             is_required: is_required.is_some_and(|b| b == gen_constants::REQUIRE),
             is_insert: is_insert.is_some_and(|b| b == gen_constants::REQUIRE),
             is_edit: is_edit.is_some_and(|b| b == gen_constants::REQUIRE),
             is_list: is_list.is_some_and(|b| b == gen_constants::REQUIRE),
+            is_table: is_table.is_some_and(|b| b == gen_constants::REQUIRE),
             is_detail: is_detail.is_some_and(|b| b == gen_constants::REQUIRE),
             is_export: is_export.is_some_and(|b| b == gen_constants::REQUIRE),
             is_sortable: is_sortable.is_some_and(|b| b == gen_constants::REQUIRE),

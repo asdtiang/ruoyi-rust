@@ -14,6 +14,7 @@ pub use utils::validate_utils::*;
 pub use web::extractors::validator::ValidatedForm;
 pub use web::token::auth::UserCache;
 pub use web::log::*;
+pub use utils::bool_or_int;
 pub trait DataScopeTrait {
     fn clear_data_scope_params(&mut self) ;
     fn set_data_scope_params(&mut self,value:&str) ;

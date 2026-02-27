@@ -15,10 +15,29 @@ pub const  TPL_CRUD :&'static str =  "crud";
 pub const  TPL_TREE :&'static str =  "tree";
 
 /**
- * 主子表（增删改查）
+ * 扩展表（增删改查）
  */
-pub const  TPL_SUB :&'static str =  "sub";
+pub const  TPL_O2O :&'static str =  "o2o";
 
+/**
+ * 主子表-1对多（增删改查）
+ */
+pub const TPL_O2M:&'static str =  "o2m";
+
+/**
+ * 主子表-多对多（增删改查）
+ */
+pub const TPL_M2M:&'static str =  "m2m";
+
+/**
+ * 多对多用到连接表（增删）
+ */
+pub const  TPL_JOIN :&'static str =  "join";
+
+/**
+ * 子表（增删改查）
+ */
+pub const  TPL_SUB :&'static str =  "subTable";
 /**
  * 树编码字段
  */
@@ -115,6 +134,11 @@ pub const  HTML_SELECT :&'static str =  "select";
  * 单选框
  */
 pub const  HTML_RADIO :&'static str =  "radio";
+
+/**
+ * 开关
+ */
+pub const  HTML_SWITCH :&'static str =  "switch";
 
 /**
  * 数字框

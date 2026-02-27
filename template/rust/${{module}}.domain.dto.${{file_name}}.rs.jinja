@@ -1,102 +1,129 @@
-use crate::${{moduleName}}::domain::mapper::${{moduleName}}_${{business_name}}::${{className}};
+use crate::${{ moduleName }}::domain::mapper::${{ moduleName }}_${{ business_name }}::${{ structName }};
 use macros::page_request;
 use rbatis::object_id::ObjectId;
 use serde::{Deserialize, Serialize};
-{% for use in useList %}
-use ${{use}};
+{% if isO2M or isO2O %}
+    use super::super::dto::${{ subTable.structName }}AddDTO;
+    use super::super::dto::${{ subTable.structName }}UpdateDTO;
+{% endif %}
+
+{% for use in useListMap["dto"] %}
+    use ${{ use }};
 {% endfor %}
 
 #[page_request(params)]
 #[derive(Serialize, Deserialize, Clone, Debug, Default)]
 #[serde(rename_all = "camelCase")]
-pub struct ${{className}}PageDTO {
+pub struct ${{ structName }}PageDTO {
 {% for column in columns %}
-{% if column.isList %}
-      // ${{column.columnComment}}
-    pub ${{column.columnName}}:Option<${{column.javaType}}>,
+    {% if column.isList %}
+        // ${{ column.comment }}
+        pub ${{ column.rustField }}:Option<${{ column.rustType }}>,
+    {% endif %}
+{% endfor %}
+}
+
+{% macro serial(column) -%}
+    {% if column.rustType == 'DateTime' %}
+        #[serde(with = "crate::utils::date_time_format")]
+    {% else %}
+
+    {% endif %}
+{%- endmacro %}
+#[derive(Serialize, Deserialize,validator::Validate, Clone, Debug)]
+#[serde(rename_all = "camelCase")]
+pub struct ${{ structName }}AddDTO {
+{% for column in columns %}
+    {% if column.isInsert and not column.isPk and not column.special %}
+        // ${{ column.comment }}
+        {% if column.isRequired %}
+            {% if column.rustType=="String" %}
+                #[validate(custom(function = "crate::string_required", message = "${{ column.comment }}不能为空"))]
+            {% else %}
+                #[validate(required(message = "${{ column.comment }}不能为空"))]
+            {% endif %}
+        {% endif %}
+        {% if column.rustType=="String" and column.more["checkLength"]=="1" and column.maxLength>0 %}
+            #[validate(length(max = ${{ column.maxLength }}, message = "${{ column.comment }}不能超过${{ column.maxLength }}个字符"))]
+        {% endif %}
+        ${{ serial(column) }}
+        pub ${{ column.rustField }}:Option<${{ column.rustType }}>,
+    {% endif %}
+{% endfor %}
+{% if isM2M %}
+    //${{ subTable.functionName }} 主键列表
+    pub ${{ subTable.pkColumn.rustField }}s:Option<Vec<String>>,
 {% endif %}
-{% endfor %}
+{% if isO2M %}
+    //${{ subTable.functionName }}列表
+    pub ${{ subTable.business_name }}s:Option
+    <Vec<${{ subTable.structName }}AddDTO>>,
+{% endif %}
+{% if isO2O %}
+    //${{ subTable.functionName }}
+    pub ${{ subTable.business_name }}:Option<${{ subTable.structName }}AddDTO>,
+{% endif %}
 }
 
-
-#[derive(Serialize, Deserialize,validator::Validate, Clone, Debug)]
-#[serde(rename_all = "camelCase")]
-pub struct ${{className}}AddDTO {
-{% for column in columns %}
-  {% if column.isInsert and not column.isPk and not column.special%}
-      // ${{column.columnComment}}
-    {% if column.isRequired %}
-      {% if column.javaType=="String" %}
-      #[validate(custom(function = "crate::string_required", message = "${{column.comment}}不能为空"))]
-      {% else %}
-      #[validate(required(message = "${{column.comment}}不能为空"))]
-      {% endif %}
-    {% endif %}
-    {% if column.javaType=="String" and column.more["checkLength"]=="1" and column.maxLength>0 %}
-  #[validate(length(max = ${{ column.maxLength}}, message = "${{column.comment}}不能超过${{column.maxLength}}个字符"))]
-    {% endif %}
-{#{% if column.javaType=="BigDecimal" %}#}
-{#    @Digits(integer = column.maxLength, fraction =column.precision, message = "${column.comment}输入错误，整数长度最长为column.maxLength{% if column.precision>0 %}，小数点长度最长为column.precision{% endif %}" %}#}
-{#{% elif column.max&&(column.javaType=="Integer"||column.javaType=="Long" %} %}#}
-{#    @Min(value = column.min,message =  "${column.comment}不能小于column.min" %}#}
-{#    @Max(value = ${column.max}{% if column.javaType=="Long" %}l{% endif %},message = "${column.comment}不能大于column.max" %}#}
-{#{% endif %}#}
-{#{% if column.more("pattern" %} %}#}
-{#    @Pattern(regexp = "column.more("pattern" %}.replace("\","\\" %}", message = "column.more("patternMessage" %}" %}#}
-{#{% endif %}#}
-    pub ${{column.columnName}}:Option<${{column.javaType}}>,
-  {% endif %}
-{% endfor %}
+impl From<${{ structName }}AddDTO> for ${{ structName }} {
+fn from(arg: ${{ structName }}AddDTO) -> Self {
+${{ structName }} {
+{% if pkColumn.isIncrement %}
+    ${{ pkColumn.rustField }}: None,
+{% elif pkColumn.rustType=="String" %}
+    ${{ pkColumn.rustField }}: ObjectId::new().to_string().into(),
+{% endif %}
+{% for column in columns %} {% if not column.isPk %} {% if column.isInsert and not column.special %} ${{ column.rustField }}: arg.${{ column.rustField }},  {% else %}${{ column.rustField }}: None,{% endif %}
+{% endif %} {% endfor %}
+{% if isSub %}${{ tableOptions.mainTableDisColName }}:None,{% endif %}
 }
-
-impl From<${{className}}AddDTO> for ${{className}} {
-    fn from(arg: ${{className}}AddDTO) -> Self {
-        ${{className}} {
-           {% if pkColumn.isIncrement %}
-           ${{pkColumn.columnName}}: None,
-           {% elif pkColumn.javaType=="String" %}
-           ${{pkColumn.columnName}}: ObjectId::new().to_string().into(),
-           {% endif %}
-            {% for column in columns %} {% if not column.isPk %} {% if column.isInsert and not column.special %} ${{column.columnName}}: arg.${{column.columnName}},  {% else %}${{column.columnName}}: None,{% endif %} {% endif %} {% endfor %}
-        }
-    }
+}
 }
 
 #[derive(Serialize, Deserialize,validator::Validate, Clone, Debug)]
 #[serde(rename_all = "camelCase")]
-pub struct ${{className}}UpdateDTO {
- pub ${{pkColumn.columnName}}:Option<${{pkColumn.javaType}}>,
+pub struct ${{ structName }}UpdateDTO {
+pub ${{ pkColumn.rustField }}:Option<${{ pkColumn.rustType }}>,
 {% for column in columns %}
-  {% if column.isEdit and not column.special%}
-      // ${{column.columnComment}}
-    {% if column.isRequired %}
-      {% if column.javaType=="String" %}
-      #[validate(custom(function = "crate::string_required", message = "${{column.comment}}不能为空"))]
-      {% else %}
-      #[validate(required(message = "${{column.comment}}不能为空"))]
-      {% endif %}
+    {% if column.isEdit and not column.special %}
+        // ${{ column.comment }}
+        {% if column.isRequired %}
+            {% if column.rustType=="String" %}
+                #[validate(custom(function = "crate::string_required", message = "${{ column.comment }}不能为空"))]
+            {% else %}
+                #[validate(required(message = "${{ column.comment }}不能为空"))]
+            {% endif %}
+        {% endif %}
+        {% if column.rustType=="String" and column.more["checkLength"]=="1" and column.maxLength>0 %}
+            #[validate(length(max = ${{ column.maxLength }}, message = "${{ column.comment }}不能超过${{ column.maxLength }}个字符"))]
+        {% endif %}
+        ${{ serial(column) }}
+        pub ${{ column.rustField }}:Option<${{ column.rustType }}>,
     {% endif %}
-    {% if column.javaType=="String" and column.more["checkLength"]=="1" and column.maxLength>0 %}
-  #[validate(length(max = ${{ column.maxLength}}, message = "${{column.comment}}不能超过${{column.maxLength}}个字符"))]
-    {% endif %}
-{#{% if column.javaType=="BigDecimal" %}#}
-{#    @Digits(integer = column.maxLength, fraction =column.precision, message = "${column.comment}输入错误，整数长度最长为column.maxLength{% if column.precision>0 %}，小数点长度最长为column.precision{% endif %}" %}#}
-{#{% elif column.max&&(column.javaType=="Integer"||column.javaType=="Long" %} %}#}
-{#    @Min(value = column.min,message =  "${column.comment}不能小于column.min" %}#}
-{#    @Max(value = ${column.max}{% if column.javaType=="Long" %}l{% endif %},message = "${column.comment}不能大于column.max" %}#}
-{#{% endif %}#}
-{#{% if column.more("pattern" %} %}#}
-{#    @Pattern(regexp = "column.more("pattern" %}.replace("\","\\" %}", message = "column.more("patternMessage" %}" %}#}
-{#{% endif %}#}
-    pub ${{column.columnName}}:Option<${{column.javaType}}>,
-  {% endif %}
 {% endfor %}
+{% if isM2M %}
+    //${{ subTable.functionName }} 主键列表
+    pub ${{ subTable.pkColumn.rustField }}s:Option<Vec<String>>
+{% endif %}
+{% if isO2M %}
+    //${{ subTable.functionName }}列表
+    pub ${{ subTable.business_name }}s:Option
+    <Vec<${{ subTable.structName }}UpdateDTO>>,
+    //要删除的${{ subTable.functionName }}主键列表
+    pub deleted_${{ subTable.pkColumn.rustField }}s:Option<Vec<String>>,
+{% endif %}
+{% if isO2O %}
+    //${{ subTable.functionName }}
+    pub ${{ subTable.business_name }}:Option<${{ subTable.structName }}UpdateDTO>,
+{% endif %}
 }
 
-impl From<${{className}}UpdateDTO> for ${{className}} {
-    fn from(arg: ${{className}}UpdateDTO) -> Self {
-        ${{className}} {
-            {% for column in columns %} {% if (column.isEdit or column.isPk) and not column.special%} ${{column.columnName}}: arg.${{column.columnName}}, {% else %} ${{column.columnName}}: None, {% endif %}{% endfor %}
-        }
-    }
+impl From<${{ structName }}UpdateDTO> for ${{ structName }} {
+fn from(arg: ${{ structName }}UpdateDTO) -> Self {
+${{ structName }} {
+{% for column in columns %} {% if (column.isEdit or column.isPk) and not column.special %} ${{ column.rustField }}:
+    arg.${{ column.rustField }}, {% else %} ${{ column.rustField }}: None, {% endif %}{% endfor %}
+{% if isSub %}${{ tableOptions.mainTableDisColName }}:None,{% endif %}
+}
+}
 }

@@ -1,75 +1,144 @@
 {% macro ifexpr(column) -%}
-{% if column.javaType == 'String' %}
-if dto.${{column.javaField}} != '':
+{% if column.rustType == 'String' %}
+if dto.${{column.rustField}} != '':
 {% else %}
-if dto.${{column.javaField}} != null:
+if dto.${{column.rustField}} != null:
 {% endif %}
 {%- endmacro %}
 
-use rbatis::{crud, impl_select_page};
-{% for use in useList %}
-use ${{use}};
-{% endfor %}
-crud!(${{className}} {}{% if custTableName!="" %} ,"${{custTableName}}"{% endif %});
-
-
-impl_select_page!( ${{className}}{select_page(dto: &crate::${{moduleName}}::domain::dto::${{className}}PageDTO) =>
-{% if tableOptions.softDelete %}
- "`where ${{tableOptions.softDeleteColumn}} != '2'`
-{% else %}
-"`where 1=1`
-{% endif %}
-{% for column in columns %}
+{% macro query(column,alias) -%}
 {% if column.isQuery %}
 {% if column.queryType == "EQ" %}
 ${{ ifexpr(column) }}
-  ` and ${{column.columnName}} = #{dto.${{column.javaField}}}`
+  ` AND ${{alias}}${{column.rustField}} = #{dto.${{column.rustField}}}`
 {% elif column.queryType == "NE" %}
-  ${{ ifexpr(column) }}
-  ` and ${{column.columnName}} != #{dto.${{column.javaField}}}`
+${{ ifexpr(column) }}
+  ` AND ${{alias}}${{column.rustField}} != #{dto.${{column.rustField}}}`
 {% elif column.queryType == "GT" %}
-  ${{ ifexpr(column) }}
-  ` and ${{column.columnName}} > #{dto.${{column.javaField}}}`
+${{ ifexpr(column) }}
+  ` AND ${{alias}}${{column.rustField}} > #{dto.${{column.rustField}}}`
 {% elif column.queryType == "GTE" %}
-  ${{ ifexpr(column) }}
-  ` and ${{column.columnName}} >= #{dto.${{column.javaField}}}`
+${{ ifexpr(column) }}
+  ` AND ${{alias}}${{column.rustField}} >= #{dto.${{column.rustField}}}`
 {% elif column.queryType == "LT" %}
-  ${{ ifexpr(column) }}
-  ` and ${{column.columnName}} <= #{dto.${{column.javaField}}}`
+${{ ifexpr(column) }}
+  ` AND ${{alias}}${{column.rustField}} <= #{dto.${{column.rustField}}}`
 {% elif column.queryType == "LTE" %}
-  ${{ ifexpr(column) }}
-  ` and ${{column.columnName}} <= #{dto.${{column.javaField}}}`
+${{ ifexpr(column) }}
+  ` AND ${{alias}}${{column.rustField}} <= #{dto.${{column.rustField}}}`
 {% elif column.queryType == "LIKE" %}
-  ${{ ifexpr(column) }}
-  ` and ${{column.columnName}} like concat('%', #{dto.${{column.javaField}}}, '%')`
+${{ ifexpr(column) }}
+  ` AND ${{alias}}${{column.rustField}} like concat('%', #{dto.${{column.rustField}}}, '%')`
 {% elif column.queryType == "START" %}
-  ${{ ifexpr(column) }}
-  ` and ${{column.columnName}} like concat(#{dto.${{column.javaField}}}, '%')`
+${{ ifexpr(column) }}
+  ` AND ${{alias}}${{column.rustField}} like concat(#{dto.${{column.rustField}}}, '%')`
 {% elif column.queryType == "BETWEEN" %}
-{% if column.javaType=="DateTime" %}
-{% set begin=["concat(#{params.begin",column.javaFieldCap,"},' 00:00:00')"]|join %}
-{% set end=["concat(#{params.end",column.javaFieldCap,"},' 23:59:59')"]|join %}
-{% elif column.javaType=="Date" %}
-{% set begin=["#{dto.params.begin",column.javaFieldCap,"}"]|join %}
-{% set end=["#{dto.params.end",column.javaFieldCap,"}"]|join %}
+{% if column.rustType=="DateTime" %}
+{% set begin=["concat(#{params.begin",column.rustField|upperCamel,"},' 00:00:00')"]|join %}
+{% set end=["concat(#{params.end",column.rustField|upperCamel,"},' 23:59:59')"]|join %}
+{% elif column.rustType=="Date" %}
+{% set begin=["#{dto.params.begin",column.rustField|upperCamel,"}"]|join %}
+{% set end=["#{dto.params.end",column.rustField|upperCamel,"}"]|join %}
 {% else %}
-{% set begin=["#{dto.params.begin",column.javaFieldCap,"}"]|join %}
-{% set end=["#{dto.params.end",column.javaFieldCap,"}"]|join %}
+{% set begin=["#{dto.params.begin",column.rustField|upperCamel,"}"]|join %}
+{% set end=["#{dto.params.end",column.rustField|upperCamel,"}"]|join %}
 {% endif %}
-if  dto.params.begin${{ column.javaFieldCap }} != null {% if column.javaType == 'String'  %} and dto.params.begin${{ column.javaFieldCap }}.trim() != ''{% endif %}:
-  ` and ${{column.columnName}} >= ${{begin}}`
-if dto.params.end${{ column.javaFieldCap }} != null {% if column.javaType == 'String'  %} and dto.params.end${{ column.javaFieldCap }}.trim() != ''{% endif %}:
-  ` and ${{column.columnName}} <= ${{end}}`
+if  dto.params.begin${{ column.rustField|upperCamel }} != null {% if column.rustType == 'String'  %} AND dto.params.begin${{ column.rustField|upperCamel }}.trim() != ''{% endif %}:
+  ` ${{alias}}AND ${{column.rustField}} >= ${{begin}}`
+if dto.params.end${{ column.rustField|upperCamel }} != null {% if column.rustType == 'String'  %} AND dto.params.end${{ column.rustField|upperCamel }}.trim() != ''{% endif %}:
+  ` ${{alias}}AND ${{column.rustField}} <= ${{end}}`
 {% endif %}
+{% endif %}
+{%- endmacro %}
+
+
+{% if not isJoin %}use super::super::dto::${{ structName }}PageDTO;{% endif %}
+{% for use in useListMap["mapper"] %}
+    use ${{use}};
+{% endfor %}
+{% if not isJoin %}
+use rbatis::{crud{% if not isTree %}, pysql_select_page{% else %}{% endif %}{% if isSub or isTree %},py_sql{% endif %}};
+{% else %}
+use rbatis::{crud};
+{% endif %}
+crud!(${{structName}} {}{% if custTableName!="" %} ,"${{custTableName}}"{% endif %});
+
+
+{% if not isJoin %}
+impl ${{structName}}{
+  {% if isTree %}
+#[py_sql(
+"`SELECT ${{ isListColumnNames|join(", ") }} from ${{ tableName }} `
+{% if tableOptions.softDelete %}
+` WHERE ${{tableOptions.softDeleteColumn}} != '2'`
+{% else %}
+` WHERE 1=1`
+{% endif %}
+{% for column in columns %}
+${{ query(column,'')}}
+{% endfor %}
+")]
+pub async fn query_all(rb: &dyn rbatis::executor::Executor, dto:&${{ structName }}PageDTO) ->  Vec<${{structName}}> {
+    impled!()
+}
+  {% else %}
+
+pysql_select_page!(select_page(dto:&${{ structName }}PageDTO) -> ${{ structName }} =>
+    r#"
+`SELECT `
+if do_count == false:
+  {% if isSub %}
+  ` s.${{ isListColumnNames|join(", s.") }}, m.${{ tableOptions.mainTableDisColName}}`
+  {% else  %}
+  ` ${{ isListColumnNames|join(", ") }}`
+  {% endif  %}
+if do_count:
+  ` count(1)`
+` FROM`
+` ${{ tableName }} {% if isSub %} s LEFT JOIN ${{tableOptions.subTableName}} m ON s.${{subTable.tableOptions.subTableColName}}=m.${{subTable.pkColumn.rustField}}{% endif  %}`
+  {% if tableOptions.softDelete %}
+` WHERE ${{tableOptions.softDeleteColumn}} != '2'`
+  {% else %}
+` WHERE 1=1`
+  {% endif %}
+{% for column in columns %}
+{% if isSub %}
+${{ query(column,'s.')}}
+{% else %}
+${{ query(column,'')}}
 {% endif %}
 {% endfor %}
 if do_count == false:
-  ` order by create_time desc`
-"}{% if custTableName!="" %} ,"${{custTableName}}"{% endif %});
-#[derive(Clone, Debug, serde::Serialize, serde::Deserialize)]
-pub struct ${{className}} {
-{% for column in columns %}
-      // ${{column.columnComment}}
-    pub ${{column.columnName}}:Option<${{column.javaType}}>,
-{% endfor %}
+  ` ORDER BY {% if isSub %}s.{% endif  %}create_time desc`
+  ` LIMIT ${page_no},${page_size}`
+"#);
+  {% endif  %}
+
+{% if isSub %}
+#[py_sql(
+    "`SELECT s.*, m.${{ tableOptions.mainTableDisColName}} FROM ${{ tableName }} s LEFT JOIN ${{tableOptions.subTableName}} m ON s.${{subTable.tableOptions.subTableColName}}=m.${{subTable.pkColumn.rustField}} WHERE s.${{pkColumn.rustField}}=#{${{pkColumn.rustField}}}`"
+)]
+pub async fn select_by_${{pkColumn.rustField}}(rb: &dyn rbatis::executor::Executor, ${{pkColumn.rustField}}: &str) ->  ${{structName}} {
+    impled!()
 }
+
+
+{% endif %}
+
+}
+
+{% endif %}
+
+#[derive(Clone, Debug, serde::Serialize, serde::Deserialize)]
+  pub struct ${{structName}} {
+    {% for column in columns %}
+          // ${{column.comment}}
+        {% if column.rustType=="bool" %} #[serde(deserialize_with = "crate::bool_or_int")] {% endif %}
+        {% if column.columnName!=column.rustField %} #[serde(rename = "${{column.columnName}}")] {% endif %}
+        pub ${{column.rustField}}:Option<${{column.rustType}}>,
+    {% endfor %}
+    {% if isSub %}
+    //${{tableOptions.mainTableDisLabel}}
+      pub ${{tableOptions.mainTableDisColName}}:Option<String>,
+      {% endif %}
+  }

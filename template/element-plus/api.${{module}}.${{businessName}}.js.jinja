@@ -2,52 +2,61 @@ import request from '@/utils/request'
 
 // 查询${{functionName}}列表
 export function list${{BusinessName}}(data) {
-  return request({
-    url: '/${{moduleName}}/${{businessName}}/list',
-    method: 'post',
-    data
-  })
+    return request({
+        url: '/${{moduleName}}/${{businessName}}/list',
+        method: 'post',
+        data
+    })
 }
-
+{% if isM2M %}
+// //获得所有${{functionName}}列表，只有id和name
+export function list${{BusinessName}}AllSimple(data) {
+    return request({
+        url: '/${{moduleName}}/${{businessName}}/listAllSimple',
+        method: 'get',
+        data
+    })
+}
+{% endif %}
 // 查询${{functionName}}详细
-export function get${{BusinessName}}(${{pkColumn.javaField}}) {
-  return request({
-    url: '/${{moduleName}}/${{businessName}}/' + ${{pkColumn.javaField}},
-    method: 'get'
-  })
+export function get${{BusinessName}}(${{pkColumn.rustField|camel}}) {
+    return request({
+        url: '/${{moduleName}}/${{businessName}}/' + ${{pkColumn.rustField|camel}},
+        method: 'get'
+    })
 }
 
 // 新增${{functionName}}
 export function add${{BusinessName}}(data) {
-  return request({
-    url: '/${{moduleName}}/${{businessName}}',
-    method: 'post',
-    data: data
-  })
+    return request({
+        url: '/${{moduleName}}/${{businessName}}',
+        method: 'post',
+        data: data
+    })
 }
 
 // 修改${{functionName}}
 export function update${{BusinessName}}(data) {
-  return request({
-    url: '/${{moduleName}}/${{businessName}}',
-    method: 'put',
-    data: data
-  })
+    return request({
+        url: '/${{moduleName}}/${{businessName}}',
+        method: 'put',
+        data: data
+    })
 }
 
 // 删除${{functionName}}
-export function del${{BusinessName}}(${{pkColumn.javaField}}) {
-  return request({
-    url: '/${{moduleName}}/${{businessName}}/' + ${{pkColumn.javaField}},
-    method: 'delete'
-  })
+export function del${{BusinessName}}(${{pkColumn.rustField|camel}}) {
+    return request({
+        url: '/${{moduleName}}/${{businessName}}/' + ${{pkColumn.rustField|camel}},
+        method: 'delete'
+    })
 }
 {#{%- for column in columns %}#}
 {##if($column.hasFk())#}
 {#    //查询${column.comment}Map#}
-{#export function get${column.capJavaField}Map() {#}
+{#export function get${column.rustField|upperCamel}Map() {#}
 {#  return request({#}
-{#    url: '/${{moduleName}}/${{businessName}}/${column.javaField}Map',#}
+{#    url: '/${{moduleName}}/${{businessName}}/${column.rustField|camel}Map',#}
 {#    method: 'get'#}
 {#  })#}
 {#}#}

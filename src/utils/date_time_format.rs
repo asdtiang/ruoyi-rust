@@ -8,7 +8,7 @@ where
     S: Serializer,
 {
     match date {
-        None => serializer.serialize_str(""),
+        None => serializer.serialize_none(),
         Some(d) => {
             let s = format!("{}", d.format(FORMAT));
             serializer.serialize_str(&s)
@@ -28,7 +28,9 @@ where
     D: Deserializer<'de>,
 {
     match String::deserialize(deserializer) {
-        Ok(s) => Ok(DateTime::parse(FORMAT, s.as_str()).ok()),
+        Ok(s) => {
+            Ok(DateTime::parse(FORMAT, s.as_str()).ok())
+        },
         Err(_) => Ok(None),
     }
 }

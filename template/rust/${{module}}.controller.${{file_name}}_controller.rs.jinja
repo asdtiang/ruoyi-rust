@@ -1,56 +1,187 @@
-use crate::${{moduleName}}::domain::vo::${{className}}VO;
-use crate::{add_marco, export_excel_controller, update_marco, PageVO, RespVO};
+use crate::${{ moduleName }}::domain::vo::{${{ structName }}VO{% if not isTree %},${{ structName }}ListVO{% endif %}};
+use crate::{{% if not swOpt.notInsert %}add_marco,{% endif %} {% if not swOpt.notExport %}export_excel_controller,{% endif %}  update_marco, {% if not isTree %}PageVO,{% endif %} RespVO};
 use axum::Json;
 use axum::extract::Path;
 use axum::response::IntoResponse;
 use macros::pre_authorize;
-use rbatis::Page;
-use crate::${{moduleName}}::domain::dto::{${{className}}AddDTO, ${{className}}PageDTO, ${{className}}UpdateDTO};
-use crate::${{moduleName}}::${{moduleName|upper}}_CONTEXT;
-use crate::${{moduleName}}::domain::mapper::${{className}};
 
-//查询${{functionName}}列表
-#[pre_authorize("${{permissionPrefix}}:list")]
-pub async fn list(dto: Json<${{className}}PageDTO>) -> impl IntoResponse {
-    let data = ${{moduleName|upper}}_CONTEXT.${{moduleName}}_${{business_name}}_service.page(&dto.0).await;
-    let data = data.map(|d| Page::<${{className}}VO>::from(d));
+{% if not isTree %}use rbatis::Page;{% endif %}
+use crate::${{ moduleName }}::domain::dto::{{% if not swOpt.notInsert %}${{ structName }}AddDTO,{% endif %} ${{ structName }}PageDTO, ${{ structName }}UpdateDTO};
+use crate::${{ moduleName }}::${{ moduleName|upper }}_CONTEXT;
+use crate::${{ moduleName }}::domain::mapper::${{ structName }};
+{% if isO2M or isO2O %}
+    use super::super::domain::mapper::${{ subTable.structName }};
+    use super::super::domain::vo::${{ subTable.structName }}VO;
+{% endif %}
+//查询${{ functionName }}列表
+#[pre_authorize("${{ permissionPrefix }}:list")]
+pub async fn list(dto: Json<${{ structName }}PageDTO>) -> impl IntoResponse {
+{% if isTree %}
+    let data = ${{ moduleName|upper }}_CONTEXT.${{ moduleName }}_${{ business_name }}_service.all(&dto.0).await;
+    RespVO::from_result(&data).into_response()
+{% else %}
+    let data = ${{ moduleName|upper }}_CONTEXT.${{ moduleName }}_${{ business_name }}_service.page(&dto.0).await;
+    let data = data.map(|d| Page::<${{ structName }}ListVO>::from(d));
     PageVO::from_result(&data).into_response()
+{% endif %}
 }
-//获取${{functionName}}详细信息
-#[pre_authorize("${{permissionPrefix}}:query")]
-pub async fn detail(${{pkColumn.columnName}}: Path<String>) -> impl IntoResponse {
-    let ${{business_name}} = ${{moduleName|upper}}_CONTEXT.${{moduleName}}_${{business_name}}_service.detail(&${{pkColumn.columnName}}.0).await;
-    let ${{business_name}} = ${{business_name}}.map(|d| ${{className}}VO::from(d));
-    RespVO::from_result(&${{business_name}}).into_response()
-}
-//新增${{functionName}}
-#[pre_authorize("${{permissionPrefix}}:add", user_cache)]
-pub async fn add(dto: crate::ValidatedForm<${{className}}AddDTO>) -> impl IntoResponse {
-    add_marco!(data, dto, user_cache, ${{className}});
-    let res = ${{moduleName|upper}}_CONTEXT.${{moduleName}}_${{business_name}}_service.add(data).await;
-    RespVO::from_result(&res).into_response()
-}
+{% if isM2M %}
+    //获得所有${{ functionName }}列表，只有id和name
+    #[pre_authorize("${{ permissionPrefix }}:list")]
+    pub async fn all_simple() -> impl IntoResponse {
+    let data = ${{ moduleName|upper }}_CONTEXT.${{ moduleName }}_${{ business_name }}_service.all_with_id_name().await;
+    let data=data.map(|list|
+    list.into_iter().map(${{ structName }}VO::from).collect::<Vec<_>>());
+    RespVO::from_result(&data).into_response()
+    }
+{% endif %}
+//获取${{ functionName }}详细信息
+#[pre_authorize("${{ permissionPrefix }}:query")]
+pub async fn detail(${{ pkColumn.rustField }}: Path
+<String>) -> impl IntoResponse {
+    let ${{ business_name }} =
+    ${{ moduleName|upper }}_CONTEXT.${{ moduleName }}_${{ business_name }}_service.detail(&${{ pkColumn.rustField }}.0).await;
+    {% if isM2M %}
+        let ${{ subTable.pkColumn.rustField }}s=  ${{ moduleName|upper }}_CONTEXT.${{ tableOptions.joinTableName }}_service.get_${{ tableOptions.joinSubTableColName }}s_by_${{ tableOptions.joinLeftColName }}(&${{ pkColumn.rustField }}.0).await.ok();
 
-//更新${{functionName}}
-#[pre_authorize("${{permissionPrefix}}:edit", user_cache)]
-pub async fn update(dto: crate::ValidatedForm<${{className}}UpdateDTO>) -> impl IntoResponse {
-    update_marco!(data, dto, user_cache, ${{className}});
-    let res = ${{moduleName|upper}}_CONTEXT.${{moduleName}}_${{business_name}}_service.update(data).await;
-    RespVO::from_result(&res).into_response()
-}
+        let ${{ business_name }} = ${{ business_name }}.map( |d| {
+        let mut vo=${{ structName }}VO::from(d);
+        vo.${{ subTable.pkColumn.rustField }}s=${{ subTable.pkColumn.rustField }}s;
+        vo });
+    {% elif isO2M %}
+        let ${{ subTable.business_name }}s=  ${{ moduleName|upper }}_CONTEXT.${{ moduleName }}_${{ business_name }}_service.get_${{ subTable.business_name }}s_by_${{ tableOptions.subTableColName }}(&${{ pkColumn.rustField }}
+        .0).await;
+        let ${{ subTable.business_name }}s = ${{ subTable.business_name }}s.map(|d| d.into_iter().map(|v|${{ subTable.structName }}VO::from(v)).collect::
+        <Vec<_>>());
 
-//删除${{functionName}}
-#[pre_authorize("${{permissionPrefix}}:remove")]
-pub async fn remove(${{pkColumn.columnName}}: Path<String>) -> impl IntoResponse {
-    let rows_affected = ${{moduleName|upper}}_CONTEXT.${{moduleName}}_${{business_name}}_service.remove_batch(&${{pkColumn.columnName}}.0).await;
-    RespVO::<u64>::judge_result(rows_affected, "删除成功！", "删除失败！")
-        .into_response()
-}
-//导出${{functionName}}
-export_excel_controller!(
-    "${{permissionPrefix}}:export",
-    ${{className}}PageDTO,
-    ${{moduleName|upper}}_CONTEXT,
-    ${{moduleName}}_${{business_name}}_service,
-    export_as_excel_bytes
-);
+        let ${{ business_name }} = ${{ business_name }}.map( |d| {
+        let mut vo=${{ structName }}VO::from(d);
+
+        vo.${{ subTable.business_name }}s=${{ subTable.business_name }}s.ok();
+        vo });
+    {% elif isO2O %}
+        let ${{ subTable.business_name }}=  ${{ moduleName|upper }}_CONTEXT.${{ subTable.moduleName }}_${{ subTable.business_name }}_service.detail(&${{ pkColumn.rustField }}.0).await;
+        let ${{ subTable.business_name }} = ${{ subTable.business_name }}.map(|v|${{ subTable.structName }}VO::from(v));
+        let ${{ business_name }} = ${{ business_name }}.map( |d| {
+        let mut vo=${{ structName }}VO::from(d);
+
+        vo.${{ subTable.business_name }}=${{ subTable.business_name }}.ok();
+        vo });
+
+
+
+    {% else %}
+        let ${{ business_name }} = ${{ business_name }}.map(|d| ${{ structName }}VO::from(d));
+    {% endif %}
+    RespVO::from_result(&${{ business_name }}).into_response()
+    }
+    {% if not swOpt.notInsert %}
+        //新增${{ functionName }}
+        #[pre_authorize("${{ permissionPrefix }}:add", user_cache)]
+        pub async fn add(dto: crate::ValidatedForm<${{ structName }}AddDTO>) -> impl IntoResponse {
+        {% if isM2M %}
+            let ${{ subTable.pkColumn.rustField }}s=dto.0.${{ subTable.pkColumn.rustField }}s.clone().unwrap_or_default();
+        {% endif %}
+        {% if isO2M %}
+            let ${{ subTable.business_name }}s=dto.0.${{ subTable.business_name }}s.clone().unwrap_or_default();
+        {% endif %}
+        {% if isO2O %}
+            let ${{ subTable.business_name }}=dto.0.${{ subTable.business_name }}.clone();
+        {% endif %}
+        add_marco!(data, dto, user_cache, ${{ structName }});
+        {% if isO2M %}
+            let ${{ pkColumn.rustField }} = data.${{ pkColumn.rustField }}.clone();
+            let ${{ subTable.business_name }}s=${{ subTable.business_name }}s.into_iter()
+            .map(|dto| {
+            let mut d=   ${{ subTable.structName }}::from(dto);
+            d.create_by=Some(user_cache.user_name());
+            d.create_time=Some(crate::Now!());
+            d.${{ tableOptions.subTableColName }}=${{ pkColumn.rustField }}.clone();
+            d
+            }).collect::<Vec<_>>();
+        {% endif %}
+        {% if isO2O %}
+            let ${{ pkColumn.rustField }} = data.${{ pkColumn.rustField }}.clone();
+            let ${{ subTable.business_name }}=${{ subTable.business_name }}
+            .map(|dto| {
+            let mut d=   ${{ subTable.structName }}::from(dto);
+            d.create_by=Some(user_cache.user_name());
+            d.create_time=Some(crate::Now!());
+            d.${{ tableOptions.subTableColName }}=${{ pkColumn.rustField }}.clone();
+            d
+            });
+        {% endif %}
+        let res = ${{ moduleName|upper }}_CONTEXT.${{ moduleName }}_${{ business_name }}_service.add(data {% if isM2M %}
+        ,&${{ subTable.pkColumn.rustField }}s {% endif %}
+        {% if isO2M %},&${{ subTable.business_name }}s {% endif %}{% if isO2O %},&${{ subTable.business_name }}
+    {% endif %}).await;
+        RespVO::from_result(&res).into_response()
+        }
+    {% endif %}
+
+    //更新${{ functionName }}
+    #[pre_authorize("${{ permissionPrefix }}:edit", user_cache)]
+    pub async fn update(dto: crate::ValidatedForm<${{ structName }}UpdateDTO>) -> impl IntoResponse {
+    {% if isM2M %}
+        let ${{ subTable.pkColumn.rustField }}s=dto.0.${{ subTable.pkColumn.rustField }}s.clone().unwrap_or_default();
+    {% endif %}
+    {% if isO2M %}
+        let ${{ subTable.business_name }}s=dto.0.${{ subTable.business_name }}s.clone().unwrap_or_default();
+        let deleted_${{ subTable.pkColumn.rustField }}s=dto.0.deleted_${{ subTable.pkColumn.rustField }}s.clone().unwrap_or_default();
+    {% endif %}
+    {% if isO2O %}
+        let ${{ subTable.business_name }}=dto.0.${{ subTable.business_name }}.clone();
+    {% endif %}
+    update_marco!(data, dto, user_cache, ${{ structName }});
+    {% if isO2M %}
+        let ${{ pkColumn.rustField }} = data.${{ pkColumn.rustField }}.clone();
+        let ${{ subTable.business_name }}s=${{ subTable.business_name }}s.into_iter()
+        .map(|dto| {
+        let mut d=   ${{ subTable.structName }}::from(dto);
+        if  d. ${{ subTable.pkColumn.rustField }}.is_some() {
+        d.update_by=Some(user_cache.user_name());
+        d.update_time=Some(crate::Now!());
+        }else{
+        d.create_by=Some(user_cache.user_name());
+        d.create_time=Some(crate::Now!());
+        }
+        d.${{ tableOptions.subTableColName }}=${{ pkColumn.rustField }}.clone();
+        d
+        }).collect::<Vec<_>>();
+    {% endif %}
+    {% if isO2O %}
+        let ${{ subTable.business_name }}=${{ subTable.business_name }}
+        .map(|dto| {
+       let mut d= ${{ subTable.structName }}::from(dto);
+        d.update_by=Some(user_cache.user_name());
+        d.update_time=Some(crate::Now!());
+        d
+        });
+
+    {% endif %}
+    let res = ${{ moduleName|upper }}_CONTEXT.${{ moduleName }}_${{ business_name }}_service.update(data {% if isM2M %}
+        ,&${{ subTable.pkColumn.rustField }}s {% endif %}
+    {% if isO2M %},&${{ subTable.business_name }}s, &deleted_${{ subTable.pkColumn.rustField }}s {% endif %}
+    {% if isO2O %},&${{ subTable.business_name }} {% endif %}).await;
+    RespVO::from_result(&res).into_response()
+    }
+
+    //删除${{ functionName }}
+    #[pre_authorize("${{ permissionPrefix }}:remove")]
+    pub async fn remove(${{ pkColumn.rustField }}: Path
+    <String>) -> impl IntoResponse {
+        let rows_affected = ${{ moduleName|upper }}_CONTEXT.${{ moduleName }}_${{ business_name }}_service.remove_batch(&${{ pkColumn.rustField }}.0).await;
+        RespVO::
+        <u64>::judge_result(rows_affected, "删除成功！", "删除失败！")
+            .into_response()
+            }
+            {% if not swOpt.notExport %}
+                //导出${{ functionName }}
+                export_excel_controller!(
+                "${{ permissionPrefix }}:export",
+                ${{ structName }}PageDTO,
+                ${{ moduleName|upper }}_CONTEXT,
+                ${{ moduleName }}_${{ business_name }}_service,
+                export_as_excel_bytes
+                );
+            {% endif %}

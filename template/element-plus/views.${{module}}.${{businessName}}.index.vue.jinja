@@ -1,130 +1,8 @@
+{% include 'form.snap.jinja' %}
 <template>
   <div class="app-container">
-    {% set queryTypeDict={"EQ":"等于",
-"NE":"不等于",
-"GT":"大于",
-"GTE":"大于或等于",
-"LT":"小于",
-"LTE":"小于或等于",
-"LIKE":"包含",
-"START":"开始于",
-"BETWEEN":"之间"} %}
 
-    <el-form :model="queryParams" ref="queryRef" class="queryForm" v-show="showSearch">
-      <el-row :gutter="15">
-        {% for column in columns %}
-          {% if column.isQuery %}
-            <el-col :span="24" :md="12" :lg="8" :xl="6">
-              {% if column.htmlType == "input" or column.htmlType == "textarea" %}
-                <el-form-item label="${{ column.comment }}" prop="${{ column.javaField }}">
-                  <el-input
-                      v-model="queryParams.${{ column.javaField }}"
-                      placeholder="请输入${{ column.comment }}（${{ queryTypeDict[column.queryType] }}）"
-                      clearable
-                      @keyup.enter.native="handleQuery"
-                  />
-                </el-form-item>
-              {% elif column.htmlType == "select"  or  column.htmlType == "radio" %}
-                {% if column.dictType %}
-                  <el-form-item label="${{ column.comment }}" prop="${{ column.javaField }}">
-                    <el-select v-model="queryParams.${{ column.javaField }}" placeholder="请选择${{ column.comment }}"
-                               clearable>
-                      <el-option v-for="dict in ${{ column.dictType }}" :key="dict.value" :label="dict.label"
-                                 :value="dict.value"/>
-                    </el-select>
-                  </el-form-item>
-                {% elif column.hasFk %}
-                  <el-form-item label="${{ column.comment }}" prop="${{ column.javaField }}">
-                    <el-select v-model="queryParams.${{ column.javaField }}" placeholder="请选择${{ column.comment }}"
-                               clearable>
-                      <el-option
-                          v-for="(item,key) in ${{ column.javaField }}Map"
-                          :key="key"
-                          :label="item"
-                          {% if column.javaType == "Integer"  or  column.javaType == "Long" %}:value="parseInt(key)"
-                          {% else %} :value="key"{% endif %}
-                      />
-                    </el-select>
-                  </el-form-item>
-                {% else %}
-                  <el-form-item label="${{ column.comment }}" prop="${{ column.javaField }}">
-                    <el-select v-model="queryParams.${{ column.javaField }}" placeholder="请选择${{ column.comment }}"
-                               clearable>
-                      <el-option label="请选择字典生成" value=""/>
-                    </el-select>
-                  </el-form-item>
-                {% endif %}
-              {% elif column.htmlType == "datetime" or column.htmlType == "date" %}
-                {% if column.queryType =="BETWEEN" %}
-                  <div class="d-flex">
-                    <el-form-item label="${{ column.comment }}" prop="begin${{ column.javaFieldCap }}">
-                      <el-date-picker
-                          v-model="queryParams.params.begin${{ column.javaFieldCap }}" value-format="YYYY-MM-DD"f
-                          type="date"
-                          title="请选择${{ column.comment }}开始日期"
-                          clearable
-                          @keyup.enter.native="handleQuery" style="width:unset;"
-                      />
-                    </el-form-item>
-                    <span style="margin:5px">至</span>
-                    <el-form-item props="end${{ column.javaFieldCap }}">
-                      <el-date-picker v-model="queryParams.params.end${{ column.javaFieldCap }}"
-                                      title="请选择${{ column.comment }}结束日期" value-format="YYYY-MM-DD"
-                                      type="date"
-                                      clearable @keyup.enter.native="handleQuery" style="width:unset;"/>
-                    </el-form-item>
-                  </div>
-                {% else %}
-                  <el-form-item label="${{ column.comment }}" prop="${{ column.javaField }}">
-                    <el-date-picker clearable
-                                    v-model="queryParams.${{ column.javaField }}"
-                                    type="${{column.htmlType}}"
-                                    value-format="YYYY-MM-DD{% if column.htmlType == "datetime" %} HH:mm:ss{% endif %}"
-                                    placeholder="选择${{ column.comment }}（${{ queryTypeDict[column.queryType] }}）">
-                    </el-date-picker>
-                  </el-form-item>
-                {% endif %}
-              {% elif column.htmlType == "number" %}
-                {% if column.queryType =="BETWEEN" %}
-                  <div class="d-flex">
-                    <el-form-item label="${{ column.comment }}区间" prop="begin${{ column.javaFieldCap }}">
-                      <el-input
-                          v-model="queryParams.params.begin${{ column.javaFieldCap }}"
-                          title="请输入${{ column.comment }}最小值"
-                          clearable
-                          @keyup.enter.native="handleQuery"
-                      />
-                    </el-form-item>
-                    <span style="margin:5px">至</span>
-                    <el-form-item props="end${{ column.javaFieldCap }}">
-                      <el-input v-model="queryParams.params.end${{ column.javaFieldCap }}"
-                                title="请输入${{ column.comment }}最大值"
-                                clearable @keyup.enter.native="handleQuery"/>
-                    </el-form-item>
-                  </div>
-                {% else %}
-                  <el-form-item label="${{ column.comment }}" prop="${{ column.javaField }}">
-                    <el-input
-                        v-model="queryParams.${{ column.javaField }}"
-                        placeholder="请输入${{ column.comment }}（${{ queryTypeDict[column.queryType] }}）"
-                        clearable
-                        @keyup.enter.native="handleQuery"
-                    />
-                  </el-form-item>
-                {% endif %}
-              {% endif %}
-            </el-col>
-          {% endif %}
-        {% endfor %}
-        <el-col :span="24" :md="12" :lg="8" :xl="6">
-          <el-form-item>
-            <el-button type="primary" icon="Search" @click="handleQuery">查询</el-button>
-            <el-button icon="Refresh" @click="resetQuery">重置</el-button>
-          </el-form-item>
-        </el-col>
-      </el-row>
-    </el-form>
-
+    {% include 'query.snap.jinja' %}
 
     <el-row :gutter="10" class="mb8">
       <el-col :span="1.5">
@@ -137,83 +15,105 @@
         >新增
         </el-button>
       </el-col>
-      {#      <el-col :span="1.5">#}
-      {#        <el-button#}
-      {#            ## type="success"#}
-      {#            ## plain#}
-      {#            ## icon="Edit"#}
-      {#            ## :disabled="single"#}
-      {#            ## @click="handleUpdate"#}
-      {#            ## v-hasPermi="['${{ permissionPrefix }}:edit']"#}
-      {#            ##>修改#}
-      {#        </el-button>#}
-      {#        ###}
-      {#      </el-col>#}
-      <el-col :span="1.5">
-        <el-button
-            type="danger"
-            plain
-            icon="Delete"
-            :disabled="multiple"
-            @click="handleDelete"
-            v-hasPermi="['${{ permissionPrefix }}:remove']"
-        >删除
-        </el-button>
-      </el-col>
-      <el-col :span="1.5">
-        <el-button
-            type="warning"
-            plain
-            icon="Download"
-            @click="handleExport"
-            v-hasPermi="['${{ permissionPrefix }}:export']"
-        >导出
-        </el-button>
-      </el-col>
-      <right-toolbar v-model:showSearch="showSearch" @queryTable="getList"></right-toolbar>
+      {% if not isTree %}
+        <el-col :span="1.5">
+          <el-button
+              type="danger"
+              plain
+              icon="Delete"
+              :disabled="multiple"
+              @click="handleDelete"
+              v-hasPermi="['${{ permissionPrefix }}:remove']"
+          >删除
+          </el-button>
+        </el-col>
+        <el-col :span="1.5">
+          <el-button
+              type="warning"
+              plain
+              icon="Download"
+              @click="handleExport"
+              v-hasPermi="['${{ permissionPrefix }}:export']"
+          >导出
+          </el-button>
+        </el-col>
+      {% endif %}
+      {% if isTree %}
+        <el-col :span="1.5">
+          <el-button
+              type="info"
+              plain
+              icon="Sort"
+              @click="toggleExpandAll"
+          >展开/折叠
+          </el-button>
+        </el-col>
+      {% endif %}
+      <right-toolbar v-model:showSearch="showSearch" @queryTable="getList"
+                     {% if swOpt.showColumns %}:columns="columns"{% endif %}></right-toolbar>
     </el-row>
-{% macro tableColumnAttrs(column) -%}
-label="${{ column.comment }}" {% if column.sortable %} sortable="custom" {% endif %} align="center" prop="${{ column.javaField }}"
-{%- endmacro %}
-    <el-table v-loading="loading"{% if fixedHeader %} v-fixedTableHeight="85"{% endif %}
-              :data="${{ businessName }}List" @selection-change="handleSelectionChange"
-        {% if hasSortColumn %}  @sort-change="sortChange"{% endif %}>
+    {% macro tableColumnAttrs(column) -%}
+      label="${{ column.comment }}" {% if column.sortable %} sortable="custom" {% endif %} align="center"
+      prop="${{ column.rustField|camel }}" {% if swOpt.showColumns and column.isList %} v-if="columnMap.${{ column.rustField|camel }}" {% endif %}
+    {%- endmacro %}
+    <el-table v-loading="loading" {% if swOpt.fixHeader %}v-fixedTableHeight{% endif %}
+              :data="${{ businessName }}s"
+        {% if isTree %}  row-key="${{ tableOptions.treeCode|camel }}"
+              :default-expand-all="isExpandAll"
+              :tree-props="{children: 'children', hasChildren: 'hasChildren'}"
+              v-if="refreshTable"
+        {% else %}
+              @selection-change="handleSelectionChange"
+          {% if hasSortColumn %}  @sort-change="sortChange" {% endif %}
+        {% endif %}
+
+    >
+
       <el-table-column type="selection" width="55" align="center"/>
+      {% if isSub %}
+        <el-table-column align="center" label="${{ tableOptions.mainTableDisLabel }}"
+                         prop="${{ tableOptions.mainTableDisColName|camel }}"/>
+      {% endif %}
       {% for column in columns %}
         {% if column.isList %}
           {% if column.htmlType == "datetime" or column.htmlType == "date" %}
-            <el-table-column ${{tableColumnAttrs(column)}}/>
+            <el-table-column ${{ tableColumnAttrs(column) }}/>
           {% elif column.dictType %}
-            <el-table-column ${{tableColumnAttrs(column)}}>
+            <el-table-column ${{ tableColumnAttrs(column) }}>
               <template #default="{row}">
-                <dict-tag :options="${{ column.dictType }}" :value="row.${{ column.javaField }}"/>
+                <dict-tag :options="${{ column.dictType }}" :value="row.${{ column.rustField|camel }}"/>
               </template>
             </el-table-column>
           {% elif column.htmlType == "select"  and  column.hasFk %}
-            <el-table-column  ${{tableColumnAttrs(column)}} :formatter="${{ column.javaField }}Format"/>
-           {% elif column.htmlType == "imageUpload"%}
-             <el-table-column  ${{tableColumnAttrs(column)}}>
+            <el-table-column ${{ tableColumnAttrs(column) }} :formatter="${{ column.rustField|camel }}Format"/>
+          {% elif column.htmlType == "imageUpload" %}
+            <el-table-column ${{ tableColumnAttrs(column) }}>
               <template #default="{row}">
-                       <el-image preview-teleported
-                                 src="/images/preview.svg"
-                                 style="width: 20px;height: 20px;cursor: pointer"
-                                 :preview-src-list="row.${{ column.javaField }}.map(url=>baseUrl+url)"
-                                 v-if="row.${{ column.javaField }}&&row.${{ column.javaField }}.length>0"
-                                 lazy
-                       />
+                <el-image preview-teleported
+                          src="/images/preview.svg"
+                          style="width: 20px;height: 20px;cursor: pointer"
+                          :preview-src-list="row.${{ column.rustField|camel }}.map(url=>baseUrl+url)"
+                          v-if="row.${{ column.rustField|camel }}&&row.${{ column.rustField|camel }}.length>0"
+                          lazy
+                />
 
-                     </template>
-             </el-table-column>
-           {% elif column.javaType == "String" %}
-           <el-table-column  ${{tableColumnAttrs(column)}}
-                             {% if column.maxLength>200 or column.maxLength==0  %}show-overflow-tooltip{% endif %}/>
-          {% elif column.javaField %}
-            <el-table-column  ${{tableColumnAttrs(column)}}/>
+              </template>
+            </el-table-column>
+          {% elif column.rustType == "String" %}
+            <el-table-column ${{ tableColumnAttrs(column) }}
+                             {% if column.maxLength>200 or column.maxLength==0 %}show-overflow-tooltip{% endif %}/>
+          {% elif column.rustField|camel %}
+            <el-table-column ${{ tableColumnAttrs(column) }}/>
           {% endif %}
         {% endif %}
       {% endfor %}
       <el-table-column label="操作" align="center" class-name="small-padding fixed-width">
         <template #default="{row}">
+          {% if isTree %}
+          <el-button type="primary" text icon="Plus" @click="handleAdd(row)"
+                     v-hasPermi="['${{ permissionPrefix }}:add']">新增
+          </el-button>
+          {% endif %}
           <el-button type="primary" text icon="Edit" @click="handleUpdate(row)"
                      v-hasPermi="['${{ permissionPrefix }}:edit']">修改
           </el-button>
@@ -223,141 +123,103 @@ label="${{ column.comment }}" {% if column.sortable %} sortable="custom" {% endi
         </template>
       </el-table-column>
     </el-table>
-    <pagination v-show="total>0" :total="total" v-model:page="queryParams.pageNum"
-                v-model:limit="queryParams.pageSize" @pagination="getList"/>
+    {% if not isTree %}
+      <pagination v-show="total>0" :total="total" v-model:page="queryParams.pageNum"
+                  v-model:limit="queryParams.pageSize" @pagination="getList"/>
+    {% endif %}
     <!-- 添加或修改${{functionName}}对话框 -->
     <el-dialog :title="title" v-model="open" {% if insertEditCnt>=8 %}width="650px"{% else %}
                width="500px"{% endif %}>
-     {% if insertEditCnt>=12 %} <el-scrollbar height="600px" class="pr-2" > {% endif %}
-      <el-form ref="${{ businessName }}Ref" :model="form" :rules="rules"  {% if insertEditCnt>=12 %} class="mr-2"  {% endif %}>
+      {% if insertEditCnt>=12 %}
+        <el-scrollbar height="600px" class="pr-2"> {% endif %}
+      <el-form ref="${{ businessName }}Ref" :model="form" :rules="rules"  {% if insertEditCnt>=12 %}
+               class="mr-2"  {% endif %}>
         {% if insertEditCnt>=8 %}
           <el-row :gutter="15">
         {% endif %}
-        {% for column in columns %}
-          {% if not column.special and not column.isPk and (column.isEdit or column.isInsert) %}
-
-          {% if not column.isEdit and column.isInsert %} {% set disabled=":disabled='isEdit'" %}{%else%} {% set disabled="" %}{% endif %}
-          {% if insertEditCnt>=8 %}<el-col {% if column.htmlType == "textarea" or column.htmlType == "imageUpload" or column.htmlType == "fileUpload" %}:span="24"{% else %}
-                                                 :span="12"{% endif %}{% endif %} {% if column.isEdit and not column.isInsert %} v-show="isEdit"{% endif %}>
-            <el-form-item label="${{ column.comment }}" prop="${{ column.javaField }}">
-              {% if column.htmlType == "input" %}
-                <el-input v-model="form.${{ column.javaField }}"  ${{disabled}} placeholder="请输入${{ column.comment }}"
-                          {% if column.maxLength>0 %}:maxlength="${{ column.maxLength }}" show-word-limit{% endif %}/>
-              {% elif column.htmlType == "imageUpload" %}
-                <imageUpload v-model="form.${{ column.javaField }}"  ${{disabled}}/>
-              {% elif column.htmlType == "fileUpload" %}
-                <fileUpload v-model="form.${{ column.javaField }}"  ${{disabled}}/>
-              {% elif column.htmlType == "editor" %}
-                <editor v-model="form.${{ column.javaField }}" :min-height="192"  ${{disabled}}/>
-              {% elif column.htmlType == "select" %}
-                {% if column.dictType %}
-                  <el-select v-model="form.${{ column.javaField }}"  ${{disabled}} placeholder="请选择${{ column.comment }}">
-                    <el-option
-                        v-for="dict in ${{ column.dictType }}"
-                        :key="dict.value"
-                        :label="dict.label"
-                        {% if column.javaType == "Integer"  or  column.javaType == "Long" %}
-                        :value="parseInt(dict.value)"
-                        {% else %} :value="dict.value"{% endif %}
-                    ></el-option>
-                  </el-select>
-                {% elif column.hasFk %}
-                  <el-select v-model="form.${{ column.javaField }}" placeholder="请选择${{ column.comment }}" clearable>
-                    <el-option
-                        v-for="(item,key) in ${{ column.javaField }}Map"
-                        :key="key"
-                        :label="item"
-                        {% if column.javaType == "Integer"  or  column.javaType == "Long" %}:value="parseInt(key)"
-                        {% else %} :value="key"{% endif %}
-                    />
-                  </el-select>
-                {% else %}
-                  <el-select v-model="form.${{ column.javaField }}"  ${{disabled}} placeholder="请选择${{ column.comment }}">
-                    <el-option label="请选择字典生成" value=""/>
-                  </el-select>
-                {% endif %}
-              {% elif column.htmlType == "checkbox"  and  "" != column.dictType %}
-                {% if column.dictType %}
-                  <el-checkbox-group v-model="form.${{ column.javaField }}"  ${{disabled}}>
-                    <el-checkbox
-                        v-for="dict in ${{ column.dictType }}"
-                        :key="dict.value"
-                        :label="dict.value">
-                      {{ dict.label }}
-                    </el-checkbox>
-                  </el-checkbox-group>
-                {% else %}
-                  <el-checkbox-group v-model="form.${{ column.javaField }}"  ${{disabled}}>
-                    <el-checkbox>请选择字典生成</el-checkbox>
-                  </el-checkbox-group>
-                {% endif %}
-              {% elif column.htmlType == "radio" %}
-                {% if column.dictType %}
-                  <el-radio-group v-model="form.${{ column.javaField }}"  ${{disabled}}>
-                    <el-radio-button v-for="dict in ${{ column.dictType }}" :key="dict.value"
-                                     {% if column.javaType == "Integer"  or  column.javaType == "Long" %}:value="parseInt(dict.value)"{% else %}
-                                     :value="dict.value"{% endif %}
-                    >{{ dict.label }}
-                    </el-radio-button>
-                  </el-radio-group>
-                {% else %}
-                  <el-radio-group v-model="form.${{ column.javaField }}"  ${{disabled}}>
-                    <el-radio-button value="1">请选择字典生成</el-radio-button>
-                  </el-radio-group>
-                {% endif %}
-              {% elif column.htmlType == "datetime" or column.htmlType == "date" %}
-                <el-date-picker clearable
-                                v-model="form.${{ column.javaField }}"  ${{disabled}}
-                                type="${{column.htmlType}}"
-                                value-format="YYYY-MM-DD{% if column.htmlType == "datetime" %} HH:mm:ss{% endif %}"
-                                placeholder="选择${{ column.comment }}">
-                </el-date-picker>
-              {% elif column.htmlType == "time" %}
-                <el-time-picker arrow-control clearable v-model="form.${{ column.javaField }}"  ${{disabled}} value-format="HH:mm:ss"
-                                placeholder="选择${{ column.comment }}">
-                </el-time-picker>
-              {% elif column.htmlType == "textarea" %}
-                <el-input v-model="form.${{ column.javaField }}"  ${{disabled}} type="textarea" autosize
-                          placeholder="请输入${{ column.comment }}"
-                          {% if column.maxLength>0 %}:maxlength="${{ column.maxLength }}" show-word-limit{% endif %}/>
-              {% elif column.htmlType == "number" %}
-                <el-input-number v-model="form.${{ column.javaField }}"  ${{disabled}} placeholder="输入${{ column.comment }}"
-                                 :min="${{column.min}}"
-                                 :max="{% if column.javaType== "BigDecimal" %}column.maxBigDecimal{% else %} ${{column.max}} {% endif %}"
-                                 title="输入最大值为{% if column.javaType== "BigDecimal" %} column.maxBigDecimal{% else %}  ${{column.max}} {% endif %}"
-                                 {% if column.precision>0 %}:precision="${{column.precision}}"{% endif %}
-                                 controls-position="right"/>
-              {% endif %}
-            </el-form-item>
-            {% if insertEditCnt>=8 %}</el-col>{% endif %}
+        {% if isSub %}
+          {% if insertEditCnt>=8 %}
+            <el-col :span="12"> {% endif %}
+        <el-form-item label="${{ tableOptions.mainTableDisLabel }}">
+          <el-input v-model="form.${{ tableOptions.mainTableDisColName|camel }}" disabled/>
+        </el-form-item>
+        {% if insertEditCnt>=8 %}</el-col> {% endif %}
         {% endif %}
+        {% for column in columns %}
+          ${{ formItemRender(column,insertEditCnt>=8,'form','') }}
         {% endfor %}
-        {% if sub %}
+        {% if isO2O %}
           <el-divider content-position="center">${{ subTable.functionName }}信息</el-divider>
-          <el-row :gutter="10" class="mb8">
-            <el-col :span="1.5">
-              <el-button type="primary" icon="Plus" size="small" @click="handleAdd${subClassName}">添加
-              </el-button>
-            </el-col>
-            <el-col :span="1.5">
-              <el-button type="danger" icon="Delete" size="small" @click="handleDelete${subClassName}">删除
-              </el-button>
-            </el-col>
-          </el-row>
-          <el-table :data="${{ subClassName }}List" :row-class-name="row${subClassName}Index"
-                    @selection-change="handle${subClassName}SelectionChange" ref="${{ subClassName }}">
-            <el-table-column type="selection" width="50" align="center"/>
-            <el-table-column label="序号" align="center" prop="index" width="50"/>
+
+          <div class="w-100 mb-2 ml-2">
+            <el-button
+                type="primary"
+                plain
+                small
+                icon="Plus"
+                @click="new${{ subTable.BusinessName }}"
+                v-if="!form.${{ subTable.businessName }}"
+                v-hasPermi="['${{ subTable.permissionPrefix }}:add']"
+            >新增
+            </el-button>
+            <el-button
+                type="danger"
+                plain
+                small
+                icon="Delete"
+                v-if="form.${{ subTable.businessName }}"
+                @click="form.${{ subTable.businessName }}=undefined"
+                v-hasPermi="['${{ subTable.permissionPrefix }}:remove']"
+            >删除
+            </el-button>
+          </div>
+          <template v-if="form.${{ subTable.businessName }}">
             {% for column in subTable.columns %}
-              {% if column.isPk  or  column.javaField  ==  subTableFkclassName %}
-              {% elif column.list  and  "" != column.javaField %}
-                <el-table-column label="${{ column.comment }}" prop="${{ column.javaField }}">
+              ${{ formItemRender(column,insertEditCnt>=8,'form',subTable.businessName) }}
+            {% endfor %}
+          </template>
+        {% endif %}
+
+        {% if isM2M %}
+          <el-col :span="12">
+            <el-form-item label="${{ subTable.functionName }}" prop="${{ subTable.pkColumn.rustField|camel }}s">
+              <el-select v-model="form.${{ subTable.pkColumn.rustField|camel }}s" placeholder="请选择" clearable
+                         :options="all${{ subTable.BusinessName }}s" multiple
+                         :props="{value:'${{ subTable.pkColumn.rustField|camel }}',label:'${{ tableOptions.subTableDisColName|camel }}'}">
+              </el-select>
+            </el-form-item>
+          </el-col>
+        {% endif %}
+        {% if isO2M %}
+          <el-divider content-position="center">${{ subTable.functionName }}信息</el-divider>
+          <el-table :data="form.${{ subTable.businessName }}s"
+                    ref="${{ subTable.BusinessName }}">
+            <el-table-column label="序号" align="center" prop="index" width="50">
+              <template #default="{row,$index}">
+                <div class="subTableDelete">
+                  <el-button icon="Delete" circle text type="danger"
+                             @click="handleDelete${{ subTable.BusinessName }}(row.${{ subTable.pkColumn.rustField|camel }},$index)"></el-button>
+                  <span>{{$index+1}}</span>
+                </div>
+
+              </template>
+            </el-table-column>
+            {% for column in subTable.columns %}
+              {% if column.isPk  or  column.rustField|camel  ==  tableOptions.subTableColName|camel %}
+
+              {% elif not column.special and not column.isPk and (column.isEdit or column.isInsert) %}
+                <el-table-column label="${{ column.comment }}" prop="${{ column.rustField|camel }}">
                   <template #default="{row}">
-                    <el-input v-model="row.${{ column.javaField }}" placeholder="请输入${{ column.comment }}"/>
+
+                   ${{inputRender(column,'row',column.rustField|camel)}}
                   </template>
                 </el-table-column>
               {% endif %}
             {% endfor %}
+            <template #append>
+              <el-button type="primary" icon="Plus" size="small" @click="handleAdd${{subTable.BusinessName}}" class="m-2">添加一行
+              </el-button>
+            </template>
           </el-table>
         {% endif %}
         {% if insertEditCnt>=8 %}</el-row>{% endif %}
@@ -372,9 +234,9 @@ label="${{ column.comment }}" {% if column.sortable %} sortable="custom" {% endi
 </template>
 
 <script setup name="${{ BusinessName }}">
-{% if hasImageInList %}
-const baseUrl = import.meta.env.VITE_APP_BASE_API;
-{% endif %}
+    {% if hasImageInList %}
+        const baseUrl = import.meta.env.VITE_APP_BASE_API;
+    {% endif %}
     import {
         list${{BusinessName}},
         get${{BusinessName}},
@@ -384,68 +246,63 @@ const baseUrl = import.meta.env.VITE_APP_BASE_API;
     } from "@/api/${{moduleName}}/${{businessName}}";
 
     import {ElMessage, ElMessageBox} from "element-plus";
+
+    {% if isTree %}
+        import {handleTree} from "@/utils/ruoyi.js";
+    {% endif %}
     {% if dicts!="" %}
         import {useDict} from "@/utils/dict.js";
-        const { ${{dicts|replace("'","")}}} = useDict(${{dicts}});
+        const {${{dicts|replace("'","")}}} = useDict(${{dicts}});
     {% endif %}
 
-    const ${{businessName}}List = ref([]);
-    {% if sub %}
-        const ${{subclassName}}List = ref([]);
-    {% endif %}
+    const ${{businessName}}s = ref([]);
+
+
     const open = ref(false);
     const loading = ref(true);
     const showSearch = ref(true);
     const ids = ref([]);
-    {% if sub %}
-        const checked${{subClassName}} = ref([]);
-    {% endif %}
     const single = ref(true);
     const multiple = ref(true);
-    const total = ref(0);
+    {% if not isTree %}
+        const total = ref(0);
+    {% else %}
+        const ${{businessName}}Options = ref([]);
+        const isExpandAll = ref(true);
+        const refreshTable = ref(true);
+    {% endif %}
+
     const title = ref("");
     const queryParams = ref({
         pageNum: 1,
         pageSize: 10,
         {% if hasBetween %}
-           params: {},
+            params: {},
         {% endif %}
 
         {% for column in columns %}
             {% if column.query %}
-                ${{ column.javaField}}: null,
+                ${{ column.rustField|camel }}: null,
             {% endif %}
         {% endfor %}
     });
+    {% include 'rules.snap.jinja' %}
     const rules = {
         {% for column in columns %}
-            {% if not column.special and not column.isPk and (column.isEdit or column.isInsert) %}
-                ${{ column.javaField}}: [
-                    {% if column.isRequired %}
-                        {
-                            required: true,
-                            message: "${{column.comment}}不能为空",
-                            trigger: {% if column.htmlType == "select" %} "change" {% else %} "blur"{% endif %}
-                        },
-                    {% endif %}
-                    {% if column.maxLength>0 and column.javaType=="String" and column.htmlType!="select" %}
-                        {max: ${{ column.maxLength }}, message: '长度最长为 ${{ column.maxLength }} 个字符', trigger: 'change'},
-                    {% endif %}
-                    {% if column.more["pattern"] %}
-                        {
-                            pattern: /${{ column.more["pattern"] }}/,
-                            message: "${{ column.more["patternMessage"]}}",
-                            trigger: "change"
-                        },
-                    {% endif %}
-                ],
-            {% endif %}
+            ${{buildRules(column,'')}}
         {% endfor %}
+        {% if isO2O %}
+            {% for column in subTable.columns %}
+                ${{buildRules(column,subTable.businessName)}}
+            {% endfor %}
+        {% endif %}
     }
+
     const form = ref({});
-const isEdit=computed(()=>{
-  return form.value.${{pkColumn.javaField}};
-})
+    const isEdit = computed(() => {
+        return form.value.${{pkColumn.rustField|camel}};
+    })
+
     /** 查询${{functionName}}列表 */
     function getList() {
         loading.value = true;
@@ -462,8 +319,12 @@ const isEdit=computed(()=>{
             // }
         {% endif %}
         list${{BusinessName}}(queryParams.value).then(response => {
-            ${{businessName}}List.value = response.rows;
-            total.value = response.total;
+            {% if isTree %}
+                ${{businessName}}s.value = handleTree(response.data, "${{tableOptions.treeCode|camel}}", "${{tableOptions.treeParentCode|camel}}");
+            {% else %}
+                ${{businessName}}s.value = response.rows;
+                total.value = response.total;
+            {% endif %}
             loading.value = false;
         });
     }
@@ -476,33 +337,46 @@ const isEdit=computed(()=>{
 
     const ${{businessName}}Ref = ref();
 
+
+    {% macro defaultForm(column) -%}
+        {% if (tableOptions.softDelete and tableOptions.softDeleteColumn==column.rustField) or column.special %}
+        {% elif column.defVal is not none %}
+            {% if column.rustType == "String" or column.rustType == "char" %}
+              ${{ column.rustField|camel }}: "${{ column.defVal}}",
+            {% elif column.rustType == "bool"%}
+              ${{ column.rustField|camel }}:{% if column.defVal=='0'%} false{% else %}true{% endif %},
+            {% else %}
+              ${{ column.rustField|camel }}: ${{ column.defVal}},
+            {% endif %}
+        {% elif column.htmlType == "checkbox" %}
+          ${{ column.rustField|camel }}: [],
+        {% else %}
+            ${{ column.rustField|camel }}: null,
+        {% endif %}
+    {%- endmacro %}
     // 表单重置
     function reset() {
         form.value = {
             {% for column in columns %}
-
-                {% if (tableOptions.softDelete and tableOptions.softDeleteColumn==column.columnName) or column.javaField=="createBy" or column.javaField=="createTime" or column.javaField== "updateBy" or column.javaField=="updateTime" %}
-                {% elif column.defVal is not none %}
-                    {% if column.javaType == "String" or column.javaType == "char" %}
-                        ${{ column.javaField }}: "${{ column.defVal}}",
-                    {% else %}
-                        ${{ column.javaField }}: ${{ column.defVal}},
-                    {% endif %}
-                {% elif column.htmlType == "radio" %}
-                    ${{ column.javaField }}: {% if column.javaType == "Boolean" %} 0, {% else %} "0", {% endif %}
-                {% elif column.htmlType == "checkbox" %}
-                    ${{ column.javaField }}: [],
-                {% else %}
-                    ${{ column.javaField }}: null,
-                {% endif %}
+                ${{defaultForm(column)}}
             {% endfor %}
+            {% if isO2M %}
+                ${{ subTable.businessName }}s: []
+            {% endif %}
         };
-        {% if sub %}
-            ${{ subclassName}}List.value = [];
-        {% endif %}
+
         ${{businessName}}Ref.value && ${{businessName}}Ref.value.resetFields();
     }
-
+    {% if isO2O %}
+        function new${{ subTable.BusinessName }}() {
+            let ${{ subTable.businessName }} = {
+                {% for column in subTable.columns %}
+                    ${{defaultForm(column)}}
+                {% endfor %}
+            }
+            form.value.${{ subTable.businessName }} = ${{ subTable.businessName }};
+        }
+    {% endif %}
     /** 搜索按钮操作 */
     function handleQuery() {
         queryParams.value.pageNum = 1;
@@ -520,14 +394,21 @@ const isEdit=computed(()=>{
 
     // 多选框选中数据
     function handleSelectionChange(selection) {
-        ids.value = selection.map(item => item.${{pkColumn.javaField}});
+        ids.value = selection.map(item => item.${{pkColumn.rustField|camel}});
         single.value = selection.length != 1;
         multiple.value = !selection.length;
     }
 
     /** 新增按钮操作 */
-    function handleAdd() {
+    function handleAdd({% if isTree %}row{% endif %}) {
         reset();
+        {% if isTree %}
+            if (row != null && row.${{tableOptions.treeCode|camel}}) {
+                form.value.${{tableOptions.treeParentCode|camel}} = row.${{tableOptions.treeCode|camel}};
+            } else {
+                form.value.${{tableOptions.treeParentCode|camel}} = '0';
+            }
+        {% endif %}
         open.value = true;
         title.value = "添加${{functionName}}";
     }
@@ -535,17 +416,14 @@ const isEdit=computed(()=>{
     /** 修改按钮操作 */
     function handleUpdate(row) {
         reset();
-        const _${{pkColumn.javaField}} = row.${{pkColumn.javaField}} || ids.value
-        get${{BusinessName}}(_${{pkColumn.javaField}}).then(response => {
+        const _${{pkColumn.rustField|camel}} = row.${{pkColumn.rustField|camel}} || ids.value
+        get${{BusinessName}}(_${{pkColumn.rustField|camel}}).then(response => {
             form.value = response.data;
             {% for column in columns %}
                 {% if column.htmlType == "checkbox" %}
-                    form.value.${{ column.javaField }} = form.value.${{column.javaField}}.split(",");
+                    form.value.${{ column.rustField|camel }} = form.value.${{column.rustField|camel}}.split(",");
                 {% endif %}
             {% endfor %}
-            {% if sub  %}
-                ${{subclassName}}List.value = response.data.${{subclassName}}List;
-            {% endif %}
             open.value = true;
             title.value = "修改${{functionName}}";
         });
@@ -557,34 +435,57 @@ const isEdit=computed(()=>{
             if (valid) {
                 {% for column in columns %}
                     {% if column.htmlType == "checkbox" %}
-                        form.value.${{column.javaField}} = form.value.${{column.javaField}}.join(",");
+                        form.value.${{column.rustField|camel}} = form.value.${{column.rustField|camel}}.join(",");
                     {% endif %}
                 {% endfor %}
-                {% if sub %}
-                    form.value.${{subclassName}}List = ${{subclassName}}List.value;
-                {% endif %}
-                if (form.value.${{pkColumn.javaField}} != null) {
+                if (form.value.${{pkColumn.rustField|camel}} != null) {
                     update${{BusinessName}}(form.value).then(response => {
                         ElMessage.success("修改成功");
                         open.value = false;
                         getList();
+                        {% if isTree %}getTreeselect();{% endif %}
                     });
                 } else {
                     add${{BusinessName}}(form.value).then(response => {
                         ElMessage.success("新增成功");
                         open.value = false;
                         getList();
+                        {% if isTree %}getTreeselect();{% endif %}
                     });
                 }
             }
         });
     }
 
+    {% if isTree %}
+        /** 展开/折叠操作 */
+        function toggleExpandAll() {
+            refreshTable.value = false;
+            isExpandAll.value = !isExpandAll.value;
+            nextTick(() => {
+                refreshTable.value = true;
+            });
+        }
+        /** 查询${{functionName}}下拉树结构 */
+        function getTreeselect() {
+            list${{BusinessName}}({}).then(response => {
+                ${{businessName}}Options.value = [];
+                const data = {
+                    ${{tableOptions.treeCode|camel}}: '0',
+                    ${{tableOptions.treeName|camel}}: '顶级节点',
+                    children: []
+                };
+                data.children = handleTree(response.data, "${{tableOptions.treeCode|camel}}", "${{tableOptions.treeParentCode|camel}}");
+                ${{businessName}}Options.value.push(data);
+            });
+        }
+    {% endif %}
+
     /** 删除按钮操作 */
     function handleDelete(row) {
-        const _${{pkColumn.javaField}}s = row.${{pkColumn.javaField}} || ids.value;
-        ElMessageBox.confirm('是否确认删除${{functionName}}编号为"' + _${{pkColumn.javaField}}s + '"的数据项？').then(function () {
-            return del${{BusinessName}}(_${{pkColumn.javaField}}s);
+        const _${{pkColumn.rustField|camel}}s = row.${{pkColumn.rustField|camel}} || ids.value;
+        ElMessageBox.confirm('是否确认删除${{functionName}}编号为"' + _${{pkColumn.rustField|camel}}s + '"的数据项？').then(function () {
+            return del${{BusinessName}}(_${{pkColumn.rustField|camel}}s);
         }).then(() => {
             getList();
             ElMessage.success.success("删除成功");
@@ -592,41 +493,24 @@ const isEdit=computed(()=>{
         });
     }
 
-    {% if sub %}
-        /** ${{subTable.functionName}}序号 */
-        function row${{subClassName|upper}}Index({row, rowIndex}) {
-            row.index = rowIndex + 1;
-        }
-
+    {% if isO2M %}
         /** ${{subTable.functionName}}添加按钮操作 */
-        function handleAdd${{subClassName|upper}}() {
+        function handleAdd${{subTable.BusinessName}}() {
             let obj = {};
-            {% for column in subTable.columns %}
-                {% if column.pk  or  column.javaField == subTableFkclassName %}
-                {% elif column.isList  and  "" != column.javaField %}
-                    obj.${{column.javaField  }} = "";
-                {% endif %}
-            {% endfor %}
-            ${{ subclassName }}List.value.push(obj);
+
+            form.value.${{ subTable.businessName }}s.push(obj);
         }
 
         /** ${{subTable.functionName}}删除按钮操作 */
-        function handleDelete${{subClassName|upper}}() {
-            if (checked${{subClassName|upper}}.value.length == 0) {
-                ElMessage.error("请先选择要删除的${subTable.functionName}数据");
-            } else {
-                const ${{subClassName}}s = ${{subClassName}}List.value;
-                const checked${{subClassName|upper}}s = checked${{subClassName|upper}}.value;
-                ${{subClassName}}List.value = ${{subClassName}}s.filter(function (item) {
-                    return checked${{subClassName|upper}}s.indexOf(item.index) == -1
-                });
+        function handleDelete${{subTable.BusinessName}}(${{subTable.pkColumn.rustField|camel}}, idx) {
+            if (!Array.isArray(form.value.deleted${{subTable.pkColumn.rustField|upperCamel}}s)) {
+                form.value.deleted${{subTable.pkColumn.rustField|upperCamel}}s = [];
             }
+            ${{subTable.pkColumn.rustField|camel}} && form.value.deleted${{subTable.pkColumn.rustField|upperCamel}}s.push(${{subTable.pkColumn.rustField|camel}});
+
+            form.value.${{subTable.businessName }}s.splice(idx, 1);
         }
 
-        /** 复选框选中数据 */
-        function handle${{subClassName|upper}}SelectionChange(selection) {
-            checked${{subClassName|upper}}.value = selection.map(item => item.index)
-        }
 
     {% endif %}
 
@@ -639,5 +523,38 @@ const isEdit=computed(()=>{
         }, `${{businessName}}_${new Date().getTime()}.xlsx`)
     }
 
+    {% if isM2M %}
+        import {
+            list${{subTable.BusinessName}}AllSimple
+        } from "@/api/${{subTable.moduleName}}/${{subTable.businessName}}";
+
+        const all${{subTable.BusinessName}}s = ref([])
+        function handleListAll() {
+            list${{subTable.BusinessName}}AllSimple().then((res) => {
+                all${{subTable.BusinessName}}s.value = res.data;
+            })
+        }
+        handleListAll();
+    {% endif %}
+
+    {% if swOpt.showColumns %}
+        //region 显示隐藏列
+        const columns_ = [
+            {% for column in columns %}
+                {% if column.isList %}
+                    {
+                        label: "${{column.comment}}",
+                        key: "${{column.rustField|camel}}",
+                        visible: {% if column.isTable %}true{% else %}false{% endif %}
+                    },
+                {% endif %}
+            {% endfor %}
+        ]
+
+        import useShowColumns from "@/utils/useShowColumns.js";
+        const {columns, columnMap} = useShowColumns(columns_, "${{businessName}}");
+        //endregion
+    {% endif %}
     getList();
+    {% if isTree %}getTreeselect();{% endif %}
 </script>

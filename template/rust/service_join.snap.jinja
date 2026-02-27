@@ -1,0 +1,81 @@
+use crate::${{moduleName}}::domain::mapper::${{moduleName}}_${{business_name}}::${{structName}};
+use crate::error::Result;
+use crate::pool;
+{#连接表只支持2个键#}
+{% set col1=columns[0]%}
+{%set col2=columns[1] %}
+
+
+pub struct ${{structName}}Service {}
+
+impl ${{structName}}Service {
+  #[macros::replace_pool]
+  pub async fn add_${{col1.rustField}}_${{col2.rustField}}s(&self, ${{col1.rustField}}:&str,${{col2.rustField}}s:  &Vec<String>) -> Result<u64> {
+    if ${{col2.rustField}}s.len()<=0{
+        return Ok(0);
+    }
+    let rows = ${{col2.rustField}}s .into_iter()
+    .map(|id| ${{structName}} {
+      ${{col1.rustField}}: ${{col1.rustField}}.to_string().into(),
+      ${{col2.rustField}}: id.to_string().into(),
+      }).collect::<Vec<_>>();
+    Ok(${{structName}}::insert_batch(pool!(), &rows, 20).await?.rows_affected)
+  }
+      #[macros::replace_pool]
+       pub async fn reset_${{col1.rustField}}_${{col2.rustField}}s(&self, ${{col1.rustField}}: &str, ${{col2.rustField}}s: &Vec<String>) -> Result<u64> {
+           self.remove_by_${{col1.rustField}}_tx(${{col1.rustField}},tx).await?;
+           if !${{col2.rustField}}s.is_empty() {
+               self.add_${{col1.rustField}}_${{col2.rustField}}s_tx(${{col1.rustField}}, ${{col2.rustField}}s,tx).await
+           } else {
+               Ok(1)
+           }
+       }
+  #[macros::replace_pool]
+  pub async fn add_${{col2.rustField}}_${{col1.rustField}}s(&self, ${{col2.rustField}}:&str,${{col1.rustField}}s:  &Vec<String>) -> Result<u64> {
+   if ${{col1.rustField}}s.len()<=0{
+        return Ok(0);
+    }
+    let rows = ${{col1.rustField}}s .into_iter()
+    .map(|id| ${{structName}} {
+      ${{col2.rustField}}: ${{col2.rustField}}.to_string().into(),
+      ${{col1.rustField}}: id.to_string().into(),
+      }).collect::<Vec<_>>();
+    Ok(${{structName}}::insert_batch(pool!(), &rows, 20).await?.rows_affected)
+  }
+      #[macros::replace_pool]
+       pub async fn reset_${{col2.rustField}}_${{col1.rustField}}s(&self, ${{col2.rustField}}: &str, ${{col1.rustField}}s: &Vec<String>) -> Result<u64> {
+           self.remove_by_${{col2.rustField}}_tx(${{col2.rustField}},tx).await?;
+           if !${{col1.rustField}}s.is_empty() {
+               self.add_${{col2.rustField}}_${{col1.rustField}}s_tx(${{col2.rustField}}, ${{col1.rustField}}s,tx).await
+           } else {
+               Ok(1)
+           }
+       }
+
+       #[macros::replace_pool]
+       pub async fn remove_by_${{col1.rustField}}(&self, ${{col1.rustField}}: &str) -> Result<u64> {
+           Ok(
+               ${{structName}}::delete_by_map(pool!(), rbs::value! {"${{col1.rustField}}": ${{col1.rustField}}})
+                   .await?
+                   .rows_affected,
+           )
+       }
+       #[macros::replace_pool]
+       pub async fn remove_by_${{col2.rustField}}(&self, ${{col2.rustField}}: &str) -> Result<u64> {
+           Ok(
+               ${{structName}}::delete_by_map(pool!(), rbs::value! {"${{col2.rustField}}": ${{col2.rustField}}})
+                   .await?
+                   .rows_affected,
+           )
+       }
+    pub async fn get_${{col1.rustField}}s_by_${{col2.rustField}}(&self, ${{col2.rustField}}: &str) -> Result<Vec<String>> {
+        let list = ${{structName}}::select_by_map(pool!(), rbs::value! {"${{col2.rustField}}": ${{col2.rustField}}}).await?;
+        let ids = list.into_iter().map(|r| r.${{col1.rustField}}.unwrap_or_default()).collect();
+        Ok(ids)
+    }
+    pub async fn get_${{col2.rustField}}s_by_${{col1.rustField}}(&self, ${{col1.rustField}}: &str) -> Result<Vec<String>> {
+        let list = ${{structName}}::select_by_map(pool!(), rbs::value! {"${{col1.rustField}}": ${{col1.rustField}}}).await?;
+        let ids = list.into_iter().map(|r| r.${{col2.rustField}}.unwrap_or_default()).collect();
+        Ok(ids)
+    }
+   }

@@ -1,65 +1,223 @@
-use rbatis::{Page, PageRequest};
-use crate::${{moduleName}}::domain::vo::${{className}}VO;
-use crate::${{moduleName}}::domain::dto::${{className}}PageDTO;
-use crate::${{moduleName}}::domain::mapper::${{moduleName}}_${{business_name}}::${{className}};
-use crate::error::Error;
-use crate::error::Result;
-use crate::{export_excel_service, pool, remove_batch_tx};
+{% if isJoin %}
+    {% include 'service_join.snap.jinja' %}
+{% else %}
+
+    {% if not isTree %}use rbatis::{Page, PageRequest};{% endif %}
+    use crate::${{ moduleName }}::domain::vo::${{ structName }}ListVO;
+    use crate::${{ moduleName }}::domain::dto::${{ structName }}PageDTO;
+    use crate::${{ moduleName }}::domain::mapper::${{ moduleName }}_${{ business_name }}::${{ structName }};
+    {% if isO2M or isO2O %}
+        use super::super::domain::mapper::${{ subTable.structName }};
+    {% endif %}
+    {% if not isSub %}
+        use crate::error::Error;
+    {% endif %}
+
+    use crate::error::Result;
+    use crate::{{% if not swOpt.notExport %}export_excel_service,{% endif %} pool, remove_batch_tx};
+    {% if isM2M%}
+        use crate::${{ moduleName }}::${{ moduleName|upper }}_CONTEXT;
+    {% endif %}
+    {% if isM2M or isO2M or isO2O %}
+        {% set poolTx='&tx' %}
+    {% else %}
+        {% set poolTx='pool!()' %}
+    {% endif %}
 
 
-pub struct ${{className}}Service {}
+    pub struct ${{ structName }}Service {}
 
-impl ${{className}}Service {
-    pub async fn page(&self, arg: &${{className}}PageDTO) -> Result<Page<${{className}}>> {
-        let data = ${{className}}::select_page(pool!(), &PageRequest::from(arg), arg).await?;
+    impl ${{ structName }}Service {
 
+    {% if isTree %}
+        pub async fn all(&self, arg: &${{ structName }}PageDTO) ->Result<Vec<${{ structName }}ListVO>> {
+        let data = ${{ structName }}::query_all(pool!(),  arg).await?;
+        let data:Vec<${{ structName }}ListVO>=data.into_iter().map(|d|{${{ structName }}ListVO::from(d)}).collect();
         Ok(data)
+
+        }
+    {% else %}
+        pub async fn page(&self, arg: &${{ structName }}PageDTO) ->Result <Page<${{ structName }}>> {
+        let data =${{ structName }}::select_page(pool!(), &PageRequest::from(arg), arg).await?;
+        Ok(data)
+        }
+    {% endif %}
+
+
+
+    pub async fn detail(&self, ${{ pkColumn.rustField }}: &str) -> Result<${{ structName }}> {
+    {% if isSub %}
+        let  ${{ business_name }} =${{ structName }}::select_by_${{ pkColumn.rustField }}(pool!(),${{ pkColumn.rustField }}
+        ).await?;
+    {% else %}
+        let  ${{ business_name }} =
+        ${{ structName }}::select_by_map(pool!(), rbs::value!{"${{ pkColumn.rustField }}": ${{ pkColumn.rustField }}})
+        .await?
+        .into_iter()
+        .next()
+        .ok_or_else(|| Error::from(format!("不存在:{} ！", ${{ pkColumn.rustField }})))?;
+    {% endif %}
+    Ok( ${{ business_name }})
     }
+    {% if not swOpt.notInsert %}
+        {% if isM2M or isO2M or isO2O %}#[macros::transactional(tx)]{% endif %}
+        pub async fn add(&self, ${{ business_name }}: ${{ structName }}{% if isM2M %},${{ subTable.pkColumn.rustField }}s:&Vec<String> {% endif %}
+        {% if isO2M %},${{ subTable.business_name }}s:&Vec<${{ subTable.structName }}> {% endif %}
+        {% if isO2O %},${{ subTable.business_name }}:&Option<${{ subTable.structName }}> {% endif %}
+        ) -> Result
+        <u64> {
+        {% for column in columns %}
+            {% if column.more and column.more.isUnique %}
+                self.check_${{ column.rustField }}_unique(&${{ business_name }}.${{ pkColumn.rustField }},${{ business_name }}. ${{ column.rustField }}.clone().unwrap_or_default()).await?;
+            {% endif %}
+        {% endfor %}
 
-    pub async fn detail(&self, ${{pkColumn.columnName}}: &str) -> Result<${{className}}> {
-        let  ${{business_name}} =
-            ${{className}}::select_by_map(pool!(), rbs::value!{"${{pkColumn.columnName}}": ${{pkColumn.columnName}}})
-                .await?
-                .into_iter()
-                .next()
-                .ok_or_else(|| Error::from(format!("不存在:{} ！", ${{pkColumn.columnName}})))?;
-        Ok( ${{business_name}})
-    }
 
-    pub async fn add(&self, ${{business_name}}: ${{className}}) -> Result<u64> {
-        let result = Ok(${{className}}::insert(pool!(), &${{business_name}}).await?.rows_affected);
-        result
-    }
-
-    pub async fn update(&self, ${{business_name}}: ${{className}}) -> Result<u64> {
-        let result = ${{className}}::update_by_map(pool!(), &${{business_name}}, rbs::value!{"${{pkColumn.columnName}}": ${{business_name}}.${{pkColumn.columnName}}.clone()}).await;
-        Ok(result?.rows_affected)
-    }
-
-    #[macros::replace_pool]
-    pub async fn remove(&self, ${{pkColumn.columnName}}: &str) -> Result<u64> {
-        {% if tableOptions.softDelete %}
-         let r = pool!()
-                    .exec(
-                        "update ${{tableName}} set ${{tableOptions.softDeleteColumn}} = '2' where ${{pkColumn.columnName}} = ?",
-                        vec![rbs::value!(${{pkColumn.columnName}})],
-                    )
-                    .await?;
-         {% else %}
-         let targets = ${{className}}::select_by_map(pool!(),  rbs::value!{"${{pkColumn.columnName}}": ${{pkColumn.columnName}}}).await?;
-         let r = ${{className}}::delete_by_map(pool!(),  rbs::value!{"${{pkColumn.columnName}}": ${{pkColumn.columnName}}}).await?;
-         if r.rows_affected > 0 {
-             //copy data to trash
-             use crate::context::CONTEXT;
-             CONTEXT
-                 .sys_trash_service
-                 .add("${{moduleName}}_${{business_name}}", &targets)
-                 .await?;
-         }
-
+        {% if isM2M %}
+            let ${{ pkColumn.rustField }}=${{ business_name }}.${{ pkColumn.rustField }}.clone().unwrap_or_default();
         {% endif %}
-        Ok(r.rows_affected)
+
+        let result = Ok(${{ structName }}::insert(${{ poolTx }}, &${{ business_name }}).await?.rows_affected);
+        {% if isM2M %}
+            ${{ moduleName|upper }}_CONTEXT.${{ tableOptions.joinTableName }}_service.add_${{ tableOptions.joinLeftColName }}_${{ tableOptions.joinSubTableColName }}s_tx(&${{ pkColumn.rustField }}
+            ,&${{ subTable.pkColumn.rustField }}s,&tx).await?;
+        {% endif %}
+        {% if isO2M %}
+            if ${{ subTable.business_name }}s.len() > 0 {
+              ${{ subTable.structName }}::insert_batch(&tx,${{ subTable.business_name }}s,10).await?;
+            }
+        {% endif %}
+        {% if isO2O %}
+            if let Some(${{ subTable.business_name }})=${{ subTable.business_name }}{
+            ${{ subTable.structName }}::insert(&tx,${{ subTable.business_name }}).await?;
+            }
+        {% endif %}
+        result
+        }
+    {% endif %}
+{% if isM2M or isO2M or isO2O %}#[macros::transactional(tx)]{% endif %}
+pub async fn update(&self, ${{ business_name }}: ${{ structName }}{% if isM2M %},${{ subTable.pkColumn.rustField }}s:&Vec
+    <String> {% endif %}
+{% if isO2M %},${{ subTable.business_name }}s:&Vec<${{ subTable.structName }}>,deleted_${{ subTable.pkColumn.rustField }}s:&Vec
+    <String> {% endif %}
+{% if isO2O %},${{ subTable.business_name }}:&Option<${{ subTable.structName }}> {% endif %}
+) -> Result
+<u64> {
+    {% for column in columns %}
+        {% if column.more and column.more.isUnique %}
+            self.check_${{ column.rustField }}_unique(&${{ business_name }}.${{ pkColumn.rustField }},${{ business_name }}. ${{ column.rustField }}.clone().unwrap_or_default()).await?;
+        {% endif %}
+    {% endfor %}
+    {% if isM2M %}
+        let ${{ pkColumn.rustField }}=${{ business_name }}.${{ pkColumn.rustField }}.clone().unwrap_or_default();
+    {% endif %}
+    let result = ${{ structName }}::update_by_map(${{ poolTx }}, &${{ business_name }},
+    rbs::value!{"${{ pkColumn.rustField }}": ${{ business_name }}.${{ pkColumn.rustField }}.clone()}).await?;
+    {% if isM2M %}
+        ${{ moduleName|upper }}_CONTEXT.${{ tableOptions.joinTableName }}_service.reset_${{ tableOptions.joinLeftColName }}_${{ tableOptions.joinSubTableColName }}s_tx(&${{ pkColumn.rustField }},&${{ subTable.pkColumn.rustField }}s,&tx).await?;
+    {% endif %}
+    {% if isO2M %}
+        for ${{ subTable.business_name }} in ${{ subTable.business_name }}s {
+        if let Some(${{ subTable.pkColumn.rustField }})= ${{ subTable.business_name }}.${{ subTable.pkColumn.rustField }}.clone(){
+        ${{ subTable.structName }}::update_by_map(&tx,${{ subTable.business_name }}, rbs::value! {"${{ subTable.pkColumn.rustField }}": ${{ subTable.pkColumn.rustField }}}).await?;
+        }else{
+        let mut ${{ subTable.business_name }}=${{ subTable.business_name }}.clone();
+        ${{ subTable.business_name }}.${{ subTable.pkColumn.rustField }}=
+        rbatis::object_id::ObjectId::new().to_string().into();
+        ${{ subTable.structName }}::insert(&tx, &${{ subTable.business_name }}).await?;
+        }
+
+        }for ${{ subTable.pkColumn.rustField }} in deleted_${{ subTable.pkColumn.rustField }}s {
+        ${{ subTable.structName }}::delete_by_map(&tx, rbs::value! {"${{ subTable.pkColumn.rustField }}": ${{ subTable.pkColumn.rustField }}}).await?;
+        }
+    {% endif %}
+    {% if isO2O %}
+        if let Some(${{ subTable.business_name }})=${{ subTable.business_name }}{
+        if let Some(${{ subTable.pkColumn.rustField }})= ${{ subTable.business_name }}.${{ subTable.pkColumn.rustField }}.clone(){
+        ${{ subTable.structName }}::update_by_map(&tx,${{ subTable.business_name }}, rbs::value! {"${{ subTable.pkColumn.rustField }}":${{ subTable.pkColumn.rustField }}}).await?;
+        }else{
+        let mut ${{ subTable.business_name }}=${{ subTable.business_name }}.clone();
+        ${{ subTable.business_name }}.${{ subTable.pkColumn.rustField }}= ${{ business_name }}.${{ pkColumn.rustField }}.clone();
+        ${{ subTable.structName }}::insert(&tx, &${{ subTable.business_name }}).await?;
+        }
+        }else{
+        ${{ subTable.structName }}::delete_by_map( &tx,
+        rbs::value! {"${{ subTable.pkColumn.rustField }}": ${{ business_name }}.${{ pkColumn.rustField }}
+        .clone()}).await?;
+        }
+    {% endif %}
+    Ok(result.rows_affected)
     }
-    remove_batch_tx!(${{pkColumn.columnName}}s);
-    export_excel_service!(${{className}}PageDTO, ${{className}}VO, ${{className}}::select_page);
-}
+    {% if isO2M %}
+        pub async fn get_${{ subTable.business_name }}s_by_${{ tableOptions.subTableColName }}(&self, ${{ tableOptions.subTableColName }}: &str) -> Result
+        <Vec<${{ subTable.structName }}>> {
+        let ${{ subTable.business_name }}s=${{ subTable.structName }}::select_by_map(pool!(), rbs::value! {"${{ tableOptions.subTableColName }}": ${{ tableOptions.subTableColName }}}).await?;
+        Ok(${{ subTable.business_name }}s)
+        }
+    {% endif %}
+    #[macros::replace_pool]
+    pub async fn remove(&self, ${{ pkColumn.rustField }}: &str) -> Result
+    <u64> {
+        {% if isTree %}
+            let count: u64 = pool!().query_decode(
+            "select count(1) as count from ${{ file_name }} where ${{ tableOptions.treeParentCode }} =?",//todo
+            vec![rbs::value!(${{ pkColumn.rustField }})],
+            )
+            .await?;
+            if count > 0 {
+            return Err(Error::from("存在子项,不允许删除！"));
+            }
+        {% endif %}
+        {% if tableOptions.softDelete %}
+            let r = pool!()
+            .exec(
+            "update ${{ tableName }} set ${{ tableOptions.softDeleteColumn }} = '2' where ${{ pkColumn.rustField }} =
+            ?",
+            vec![rbs::value!(${{ pkColumn.rustField }})],
+            )
+            .await?;
+        {% else %}
+            let r = ${{ structName }}::delete_by_map(pool!(),  rbs::value!{"${{ pkColumn.rustField }}": ${{ pkColumn.rustField }}}).await?.rows_affected;
+            {% if isM2M %}
+                if r > 0 {
+                ${{ moduleName|upper }}_CONTEXT.${{ tableOptions.joinTableName }}_service.remove_by_${{ tableOptions.joinLeftColName }}_tx(${{ pkColumn.rustField }},&tx).await?;
+                }
+            {% endif %}
+            {% if isO2M %}
+                if r > 0 {
+                ${{ subTable.structName }}::delete_by_map(tx, rbs::value! {"${{ tableOptions.subTableColName }}": ${{ pkColumn.rustField }}}).await?;
+                }
+            {% endif %}
+        {% endif %}
+        Ok(r)
+        }
+        {% if isM2M %}
+            pub async fn all_with_id_name(&self) -> Result
+            <Vec<${{ structName }}>> {
+            let list= ${{ structName }}::select_by_map(pool!(),rbs::value! {"column":["${{ pkColumn.rustField }}","${{ subTable.tableOptions.subTableDisColName }}"]}).await?;
+            Ok(list)
+            }
+        {% endif %}
+        remove_batch_tx!(${{ pkColumn.rustField }}s);
+        {% if not swOpt.notExport %}
+            export_excel_service!(${{ structName }}PageDTO, ${{ structName }}ListVO, {% if isTree %}  ${{ structName }}
+            ::select_all {% else %}${{ structName }}::select_page{% endif %});
+        {% endif %}
+        {% for column in columns %}
+            {% if column.more and column.more.isUnique %}
+                //更新${{ column.comment }}
+                crate::check_unique!(check_${{ column.rustField }}_unique, "${{ tableName }}", ${{ pkColumn.rustField }}, ${{ column.rustField }}, "${{ column.comment }}重复");
+            {% endif %}
+            {% if column.more and column.more.update %}
+             crate::update_single_col!(
+                    update_${{ column.rustField }},
+                    ${{ column.rustField }},
+                    ${{ pkColumn.rustField }},
+                    ${{ structName }},
+                    "${{ tableName }}"
+                );
+            {% endif %}
+        {% endfor %}
+
+        }
+{% endif %}

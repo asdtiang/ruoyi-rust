@@ -1,0 +1,142 @@
+{% set queryTypeDict={"EQ":"等于",
+"NE":"不等于",
+"GT":"大于",
+"GTE":"大于或等于",
+"LT":"小于",
+"LTE":"小于或等于",
+"LIKE":"包含",
+"START":"开始于",
+"BETWEEN":"之间"} %}
+{% set span=":span=\"24\" :md=\"12\" :lg=\"8\" :xl=\"6\"" %}
+<el-form :model="queryParams" ref="queryRef" class="queryForm" v-show="showSearch">
+  <el-row :gutter="15">
+    {% for column in columns %}
+      {% if column.isQuery %}
+        <el-col ${{ span }}>
+          {% if column.htmlType == "input" or column.htmlType == "textarea" %}
+            <el-form-item label="${{ column.comment }}" prop="${{ column.rustField|camel }}">
+              <el-input
+                  v-model="queryParams.${{ column.rustField|camel }}"
+                  placeholder="请输入${{ column.comment }}（${{ queryTypeDict[column.queryType] }}）"
+                  clearable
+                  @keyup.enter.native="handleQuery"
+              />
+            </el-form-item>
+          {% elif column.htmlType == "select"  or  column.htmlType == "radio" %}
+            {% if column.dictType %}
+              <el-form-item label="${{ column.comment }}" prop="${{ column.rustField|camel }}">
+                <el-select v-model="queryParams.${{ column.rustField|camel }}" placeholder="请选择${{ column.comment }}"
+                           clearable>
+                  <el-option v-for="dict in ${{ column.dictType }}" :key="dict.value" :label="dict.label"
+                             :value="dict.value"/>
+                </el-select>
+              </el-form-item>
+            {% elif column.hasFk %}
+              <el-form-item label="${{ column.comment }}" prop="${{ column.rustField|camel }}">
+                <el-select v-model="queryParams.${{ column.rustField|camel }}" placeholder="请选择${{ column.comment }}"
+                           clearable>
+                  <el-option
+                      v-for="(item,key) in ${{ column.rustField|camel }}Map"
+                      :key="key"
+                      :label="item"
+                      {% if column.rustType == "Integer"  or  column.rustType == "Long" %}:value="parseInt(key)"
+                      {% else %} :value="key"{% endif %}
+                  />
+                </el-select>
+              </el-form-item>
+            {% else %}
+              <el-form-item label="${{ column.comment }}" prop="${{ column.rustField|camel }}">
+                <el-select v-model="queryParams.${{ column.rustField|camel }}" placeholder="请选择${{ column.comment }}"
+                           clearable>
+                  <el-option label="请选择字典生成" value=""/>
+                </el-select>
+              </el-form-item>
+            {% endif %}
+          {% elif column.htmlType == "datetime" or column.htmlType == "date" %}
+            {% if column.queryType =="BETWEEN" %}
+              <div class="d-flex">
+                <el-form-item label="${{ column.comment }}" prop="begin${{ column.rustField|camel|upperCamel }}">
+                  <el-date-picker
+                      v-model="queryParams.params.begin${{ column.rustField|camel|upperCamel }}" value-format="YYYY-MM-DD" f
+                      type="date"
+                      title="请选择${{ column.comment }}开始日期"
+                      clearable
+                      @keyup.enter.native="handleQuery" style="width:unset;"
+                  />
+                </el-form-item>
+                <span style="margin:5px">至</span>
+                <el-form-item props="end${{ column.rustField|camel|upperCamel }}">
+                  <el-date-picker v-model="queryParams.params.end${{ column.rustField|camel|upperCamel }}"
+                                  title="请选择${{ column.comment }}结束日期" value-format="YYYY-MM-DD"
+                                  type="date"
+                                  clearable @keyup.enter.native="handleQuery" style="width:unset;"/>
+                </el-form-item>
+              </div>
+            {% else %}
+              <el-form-item label="${{ column.comment }}" prop="${{ column.rustField|camel }}">
+                <el-date-picker clearable
+                                v-model="queryParams.${{ column.rustField|camel }}"
+                                type="${{ column.htmlType }}"
+                                value-format="YYYY-MM-DD{% if column.htmlType == "datetime" %} HH:mm:ss{% endif %}"
+                                placeholder="选择${{ column.comment }}（${{ queryTypeDict[column.queryType] }}）">
+                </el-date-picker>
+              </el-form-item>
+            {% endif %}
+          {% elif column.htmlType == "number" %}
+            {% if column.queryType =="BETWEEN" %}
+              <div class="d-flex">
+                <el-form-item label="${{ column.comment }}区间" prop="begin${{ column.rustField|camel|upperCamel }}">
+                  <el-input
+                      v-model="queryParams.params.begin${{ column.rustField|camel|upperCamel }}"
+                      title="请输入${{ column.comment }}最小值"
+                      clearable
+                      @keyup.enter.native="handleQuery"
+                  />
+                </el-form-item>
+                <span style="margin:5px">至</span>
+                <el-form-item props="end${{ column.rustField|camel|upperCamel }}">
+                  <el-input v-model="queryParams.params.end${{ column.rustField|camel|upperCamel }}"
+                            title="请输入${{ column.comment }}最大值"
+                            clearable @keyup.enter.native="handleQuery"/>
+                </el-form-item>
+              </div>
+            {% else %}
+              <el-form-item label="${{ column.comment }}" prop="${{ column.rustField|camel }}">
+                <el-input
+                    v-model="queryParams.${{ column.rustField|camel }}"
+                    placeholder="请输入${{ column.comment }}（${{ queryTypeDict[column.queryType] }}）"
+                    clearable
+                    @keyup.enter.native="handleQuery"
+                />
+              </el-form-item>
+            {% endif %}
+          {% elif column.htmlType == "switch" %}
+              <el-form-item label="${{ column.comment }}" prop="${{ column.rustField|camel }}">
+                <el-select v-model="queryParams.${{ column.rustField|camel }}" placeholder="请选择${{ column.comment }}"
+                           clearable>
+
+                  <el-option label="是" :value="true"/>
+                  <el-option label="否" :value="false"/>
+                </el-select>
+              </el-form-item>
+          {% else %}
+          <el-form-item label="${{ column.comment }}" prop="${{ column.rustField|camel }}">
+              <el-input
+                  v-model="queryParams.${{ column.rustField|camel }}"
+                  placeholder="请输入${{ column.comment }}（${{ queryTypeDict[column.queryType] }}）"
+                  clearable
+                  @keyup.enter.native="handleQuery"
+              />
+            </el-form-item>
+          {% endif %}
+        </el-col>
+      {% endif %}
+    {% endfor %}
+    <el-col ${{ span }}>
+      <el-form-item>
+        <el-button type="primary" icon="Search" @click="handleQuery">查询</el-button>
+        <el-button icon="Refresh" @click="resetQuery">重置</el-button>
+      </el-form-item>
+    </el-col>
+  </el-row>
+</el-form>

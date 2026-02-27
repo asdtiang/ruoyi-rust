@@ -63,7 +63,6 @@ impl SysPostService {
     pub async fn finds_post_ids_by_user_id(&self, user_id: &str) -> Result<Vec<String>> {
         let user_posts = SysUserPost::select_by_map(pool!(), rbs::value! {"user_id": user_id}).await?;
         let ids = user_posts.into_iter().map(|r| r.post_id.unwrap_or_default()).collect();
-
         Ok(ids)
     }
     pub async fn select_post_names_by_user_name(&self, user_name: &str) -> Result<Vec<String>> {

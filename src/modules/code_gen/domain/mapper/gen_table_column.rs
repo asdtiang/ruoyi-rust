@@ -22,11 +22,11 @@ pub struct GenTableColumn {
     // 列类型
     pub column_type: Option<String>,
 
-    // JAVA类型
-    pub java_type: Option<String>,
+    // rust类型
+    pub rust_type: Option<String>,
 
-    // JAVA字段名
-    pub java_field: Option<String>,
+    // rust字段名
+    pub rust_field: Option<String>,
 
     // 是否主键（1是）
     pub is_pk: Option<char>,
@@ -45,6 +45,8 @@ pub struct GenTableColumn {
 
     // 是否列表字段（1是）
     pub is_list: Option<char>,
+    // 是否前台表格显示字段（1是）
+    pub is_table: Option<char>,
     //  是否详情字段（1是）
     pub is_detail: Option<char>,
 

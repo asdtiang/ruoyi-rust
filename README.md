@@ -31,7 +31,7 @@ by wizount, 2537660666,wx:glqqyx
 - `src/error.rs`: 错误处理
 - `src/modules`: 各功能模块
   - `system`: 系统管理模块
-  - `gen`: 代码生成模块
+  - `code_gen`: 代码生成模块
   - `oa`: 办公自动化模块（待实现）
 - `src/utils`: 工具类
 - `src/web`: jwt实现、身份验证、日志处理、数据过滤，数据权限实现

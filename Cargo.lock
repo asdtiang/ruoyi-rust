@@ -3413,7 +3413,6 @@ dependencies = [
  "thiserror 2.0.17",
  "tokio",
  "tower-http",
- "unicode-segmentation",
  "user-agent-parser",
  "uuid",
  "validator",

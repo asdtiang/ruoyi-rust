@@ -7,10 +7,10 @@ use crate::pool;
 use crate::system::domain::dto::MenuPageDTO;
 use crate::system::domain::mapper::sys_menu::SysMenu;
 use crate::system::domain::vo::{MenuTreeSelectVO, MetaVO, RouterVO, SysMenuVO};
-use crate::utils::string::{capitalize};
 use crate::web::token::auth::UserCache;
 use macros::transactional;
 use std::collections::BTreeMap;
+use convert_case::{Case, Casing};
 
 const RES_MENU_KEY: &'static str = "sys_menu:all";
 
@@ -260,7 +260,7 @@ impl SysMenuService {
             } else if menu.is_menu_frame() {
                 let mut children_list = vec![];
                 let children = RouterVO {
-                    name: Some(capitalize(&menu.path.clone().unwrap())), //大写
+                    name: menu.path.clone().map(|s|s.to_case(Case::UpperCamel)), //大写
                     path: menu.path.clone(),
                     hidden: Some(false),
                     redirect: None,
@@ -289,7 +289,7 @@ impl SysMenuService {
                 router.path = Some("/".to_string());
                 let mut children_list = vec![];
                 let children = RouterVO {
-                    name: Some(capitalize(&menu.path.clone().unwrap())), //大写
+                    name: menu.path.clone().map(|s|s.to_case(Case::UpperCamel)), //大写
                     path: menu.path.clone(),
                     hidden: Some(false),
                     redirect: None,
@@ -323,7 +323,7 @@ impl SysMenuService {
         if menu.is_menu_frame() {
             "".to_string()
         } else {
-            capitalize(menu.path.as_deref().unwrap_or_default())
+            menu.path.clone().map(|s|s.to_case(Case::UpperCamel)).unwrap_or_default()
         }
     }
     /**

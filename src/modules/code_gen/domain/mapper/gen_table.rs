@@ -13,12 +13,12 @@ pub struct GenTable {
     pub table_name: Option<String>,
     //表描述
     pub table_comment: Option<String>,
-    //关联父表的表名
-    pub sub_table_name: Option<String>,
-    //本表关联父表的外键名
-    pub sub_table_fk_name: Option<String>,
+    // //子表或者连接表表名
+    // pub sub_table_name: Option<String>,
+    // //子表或者关联表关联父表的外键名
+    // pub sub_table_fk_name: Option<String>,
     //实体类名称(首字母大写)
-    pub class_name: Option<String>,
+    pub struct_name: Option<String>,
     //使用的模板（crud单表操作 tree树表操作 sub主子表操作）
     pub tpl_category: Option<String>,
     //前端类型（element-ui模版 element-plus模版）
@@ -35,13 +35,13 @@ pub struct GenTable {
     //生成作者
     pub function_author: Option<String>,
     //* vue固定表头
-    pub fixed_header: Option<char>,
+    pub switch_opt: Option<serde_json::Value>,
     //生成代码方式（0zip压缩包 1自定义路径）
     pub gen_type: Option<String>,
     //前端生成路径（不填默认项目路径）
     pub gen_path_back: Option<String>,
     //后台生成路径（不填默认项目路径）
-    pub gen_path_front: Option<String>,
+    pub gen_path_web: Option<String>,
     //表列信息
     pub options: Option<serde_json::Value>,
     pub create_by: Option<String>,

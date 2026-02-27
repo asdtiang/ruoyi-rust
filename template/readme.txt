@@ -7,4 +7,8 @@
 3、以点号隔开
 例：
 ${{module}}.controller.${{file_name}}.rs.jinja
-将在${{module}}/.controller创建${{file_name}}.rs文件
+将在${{module}}/controller文件夹下创建${{file_name}}.rs文件
+
+
+fixme
+tableName和className不一致处理

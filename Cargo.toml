@@ -62,7 +62,6 @@ sysinfo = "0.37.0"
 bytesize = "2.0.1"
 user-agent-parser = "0.3.4"
 
-unicode-segmentation = "*"
 
 # enc passowrd, like springboot secutiry
 bcrypt = "0.18.0"

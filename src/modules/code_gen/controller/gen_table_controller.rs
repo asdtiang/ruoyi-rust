@@ -13,16 +13,11 @@ use rbatis::Page;
 use serde_json::json;
 use std::collections::HashMap;
 
-#[axum::debug_handler]
-pub async fn list(user_cache: crate::UserCache, dto: Json<TablePageDTO>) -> impl IntoResponse {
-    match crate::web::check_permit(&user_cache, "tool:gen:list").await {
-        None => {
-            let data = GEN_CONTEXT.gen_table_service.page(&dto.0).await;
-            let data = data.map(|d| Page::<GenTableVO>::from(d));
-            PageVO::from_result(&data).into_response()
-        }
-        Some(res) => { res.into_response() }
-    }
+#[pre_authorize("tool:gen:list")]
+pub async fn list(dto: Json<TablePageDTO>) -> impl IntoResponse {
+    let data = GEN_CONTEXT.gen_table_service.page(&dto.0).await;
+    let data = data.map(|d| Page::<GenTableVO>::from(d));
+    PageVO::from_result(&data).into_response()
 }
 
 #[pre_authorize("tool:gen:list")]
@@ -83,7 +78,10 @@ pub async fn remove(table_id: Path<String>) -> impl IntoResponse {
 pub async fn import_table(table_name: axum::extract::Query<TableNamesDTO>) -> impl IntoResponse {
     let tables = table_name.0.tables.unwrap_or_default();
     let table_names = tables.split(",").collect::<Vec<&str>>();
-    let insert_cnt = GEN_CONTEXT.gen_table_service.import_gen_table(table_names,&user_cache.user_name).await;
+    let insert_cnt = GEN_CONTEXT
+        .gen_table_service
+        .import_gen_table(table_names, &user_cache.user_name)
+        .await;
 
     RespVO::<u64>::judge_result(insert_cnt, "导入成功！", "导入失败！").into_response()
 }
