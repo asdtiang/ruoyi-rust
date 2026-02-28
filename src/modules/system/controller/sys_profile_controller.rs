@@ -52,7 +52,7 @@ pub async fn profile() -> impl IntoResponse {
 #[pre_authorize(user_cache)]
 pub async fn update_profile(dto: Json<ProfileUpdateDTO>) -> impl IntoResponse {
     update_marco!(data, dto, user_cache, SysUser);
-
+    data.user_id=Some(user_cache.user_id);
     let res = CONTEXT.sys_user_service.update_profile(data).await;
 
     RespVO::<u64>::judge_result(res, "修改成功", "修改失败").into_response()

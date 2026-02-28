@@ -104,6 +104,7 @@ pub fn prepare_context(gen_table: GenTable, columns: Vec<GenTableColumn>) -> min
         .iter()
         .any(|c| c.is_list && c.html_type.eq(&Some(gen_constants::HTML_IMAGE_UPLOAD.to_string())));
 
+    //在分页查询中要查询的列
     let is_list_col_names = columns
         .iter()
         .filter(|c| c.is_list || c.is_pk)
@@ -126,7 +127,7 @@ pub fn prepare_context(gen_table: GenTable, columns: Vec<GenTableColumn>) -> min
         permissionPrefix=>permission_prefix,
         swOpt=>gen_table.switch_opt,
         insertEditCnt=>insert_edit_cnt,
-        tableOptions=>gen_table.options.clone().unwrap_or_default(),
+        tableOptions=>gen_table.options,
         useListMap=>use_list_map,
         sqlIds=>sql_ids,
         hasBetween=>has_between,

@@ -57,7 +57,7 @@ fn user_api() -> Router {
         .route("/export", post(sys_user_controller::export_to_excel))
         //profile
         .route("/profile", get(sys_profile_controller::profile))
-        .route("/profile", put(sys_profile_controller::update_profile))
+        .route("/profile", router_log!(put,sys_profile_controller::update_profile,"用户资料","修改"))
         .route("/profile/updatePwd", put(sys_profile_controller::update_pwd))
 
 }
