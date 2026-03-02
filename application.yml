@@ -13,7 +13,7 @@ cache: "redis://127.0.0.1:6379"
 #storage: "s3://{\"bucket\":\"test\",\"endpoint\":\"http://127.0.0.1:9000\",\"access_key\":\"minioadmin\",\"secret_key\":\"minioadmin\",\"region\":\"\"}",
 storage: "local"
 #后台用数据库地址
-db_url: "mysql://root:ruoyi-rust@127.0.0.1/rouyi-rust"
+db_url: "mysql://root:123456@127.0.0.1/ruoyi-rust"
 #database pool len
 db_pool_len: 32
 #pool get timeout
