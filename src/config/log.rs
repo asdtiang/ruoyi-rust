@@ -1,19 +1,67 @@
+use std::fmt::Write;
 use crate::context::CONTEXT;
 use fast_log::config::Config;
 use fast_log::consts::LogSize;
 use fast_log::plugin::file_split::{DateType, KeepType, Packer, Rolling, RollingType};
 use rbatis::rbdc::DateTime;
 use std::time::Duration;
+use fast_log::appender::FastLogRecord;
+use fast_log::FastLogFormat;
+use time::OffsetDateTime;
+use fast_log::appender::LogAppender;
 
+// 定义自定义 Appender
+struct CustomLogAppender;
+
+impl LogAppender for CustomLogAppender {
+    fn do_logs(&mut self, records: &[FastLogRecord]) {
+        for record in records {
+            let mut data = String::new();
+
+            // --- 修复 now 的转换逻辑 ---
+            // fast_log 1.7 的 record.now 通常是 SystemTime
+            // 最简单的办法是直接使用 fastdate 的格式化工具
+            // 将 SystemTime 转换为 OffsetDateTime (UTC时间)
+            let datetime = OffsetDateTime::from(record.now);
+            // 格式化为 2026-03-03 11:50:00
+            let time_str = format!("{:04}-{:02}-{:02} {:02}:{:02}:{:02}",
+                                   datetime.year(), datetime.month() as u8, datetime.day(),
+                                   datetime.hour(), datetime.minute(), datetime.second());
+            // 如果报错，可以尝试：let now = fastdate::DateTime::from_system_time(record.now, 0);
+            // 手动拼接格式：[时间] [级别] [文件:行号] - 内容
+            let _ = write!(
+                &mut data,
+                "{} {} [{}:{}] - {}\n",
+                time_str,
+                record.level,
+                record.file,
+                record.line.unwrap_or(0),
+                record.args
+            );
+
+            // 输出到控制台
+            print!("my log {}", data);
+        }
+    }
+}
+
+
+// 确保导入
 pub fn init_log() {
     //init fast log
+    // 1. 创建 Config 实例
     let mut cfg = Config::new()
         .chan_len(CONTEXT.config.log_chan_len)
-        .level(parse_log_level(&CONTEXT.config.log_level))
-        .file_split(&CONTEXT.config.log_dir,
-                         Rolling::new(parse_rolling_type(CONTEXT.config.log_rolling.as_str())),
-                         parse_keep_type(&CONTEXT.config.log_keep_type),
-                         parse_packer(&CONTEXT.config.log_pack_compress),
+        // 关键：在格式化字符串中包含 {line} 和 {file}
+        // 并且去掉 $ 符号，改用 {args} 或 {body} (1.7版本建议用 {args})
+        .custom(CustomLogAppender {})
+        .level(parse_log_level(&CONTEXT.config.log_level));
+    // 3. 继续配置其他选项
+    cfg = cfg.file_split(
+        &CONTEXT.config.log_dir,
+        Rolling::new(parse_rolling_type(CONTEXT.config.log_rolling.as_str())),
+        parse_keep_type(&CONTEXT.config.log_keep_type),
+        parse_packer(&CONTEXT.config.log_pack_compress),
     );
     if CONTEXT.config.debug {
         cfg = cfg.console();
@@ -23,6 +71,9 @@ pub fn init_log() {
         println!("[ruoyi_rust] release_mode is up! [file_log] open,[console_log] disabled!");
     }
 }
+
+
+
 
 fn parse_rolling_type(log_rolling: &str) -> RollingType {
     let lower = log_rolling.to_lowercase();

@@ -3411,6 +3411,7 @@ dependencies = [
  "sqlparser",
  "sysinfo",
  "thiserror 2.0.17",
+ "time",
  "tokio",
  "tower-http",
  "user-agent-parser",

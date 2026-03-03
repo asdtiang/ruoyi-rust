@@ -12,6 +12,8 @@ use macros::pre_authorize;
 use rbatis::Page;
 use serde_json::json;
 use std::collections::HashMap;
+use crate::system::controller::sys_auth_controller::info;
+use log::info; // 确保 Cargo.toml 里有 log = "0.4"
 
 #[pre_authorize("tool:gen:list")]
 pub async fn list(dto: Json<TablePageDTO>) -> impl IntoResponse {
@@ -96,6 +98,7 @@ pub async fn batch_gen_code(table_name: Path<String>) -> impl IntoResponse {
 #[pre_authorize("tool:gen:code")]
 pub async fn preview_code(table_id: Path<String>) -> impl IntoResponse {
     let table_id = table_id.0;
+    info!("table_id {} ", table_id); // 支持占位符
     let codes = GEN_CONTEXT.gen_table_service.preview_code(&table_id).await;
     RespVO::from_result(&codes).into_response()
 }
