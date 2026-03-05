@@ -23,7 +23,7 @@ pub async fn log_write_state(
     req: Request,
     next: Next,
 ) -> Result<impl IntoResponse, (StatusCode, String)> {
-    let request_method = req.method().to_string().into();
+    let request_method: Option<String> = Some(req.method().to_string());
 
     let (parts, body) = req.into_parts();
 
@@ -36,6 +36,20 @@ pub async fn log_write_state(
     let start = DateTime::now();
     let res = next.run(req).await;
     let cost_time = (DateTime::now().unix_timestamp_millis() - start.unix_timestamp_millis()) as u64;
+
+    // 检查响应状态，如果是错误则记录日志
+    let status = res.status();
+    if status.is_server_error() {
+        let backtrace = std::backtrace::Backtrace::capture();
+        if backtrace.status() == std::backtrace::BacktraceStatus::Disabled {
+            log::error!("[HTTP {}] Server error for request {} {}", status.as_u16(), request_method.as_deref().unwrap_or(""), url.as_deref().unwrap_or(""));
+            log::warn!("[BACKTRACE] Backtrace is disabled. To enable detailed stack trace, set environment variable: RUST_BACKTRACE=1");
+        } else {
+            log::error!("[HTTP {}] Server error for request {} {}\nBacktrace:\n{}", status.as_u16(), request_method.as_deref().unwrap_or(""), url.as_deref().unwrap_or(""), backtrace);
+        }
+    } else if status.is_client_error() {
+        log::warn!("[HTTP {}] Client error for request {} {}", status.as_u16(), request_method.as_deref().unwrap_or(""), url.as_deref().unwrap_or(""));
+    }
 
     let (parts, body) = res.into_parts();
     let bytes = get_body_bytes(body).await?;

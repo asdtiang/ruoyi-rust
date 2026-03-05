@@ -307,6 +307,13 @@ macro_rules! update_marco {
 macro_rules! error_wrapper {
     ($fun:expr) => {
         if let Err(e) = $fun.await {
+            let backtrace = std::backtrace::Backtrace::capture();
+            if backtrace.status() == std::backtrace::BacktraceStatus::Disabled {
+                log::error!("[ERROR] Controller error: {}", e.to_string());
+                log::warn!("[BACKTRACE] Backtrace is disabled. To enable detailed stack trace, set environment variable: RUST_BACKTRACE=1");
+            } else {
+                log::error!("[ERROR] Controller error: {}\nBacktrace:\n{}", e.to_string(), backtrace);
+            }
             return RespVO::<u64>::from_error_info(500, &e.to_string()).into_response();
         }
     };
@@ -317,6 +324,13 @@ macro_rules! error_wrapper_unwrap {
     ($fun:expr,$res:ident) => {
         let $res = $fun.await;
         if let Err(e) = $res {
+            let backtrace = std::backtrace::Backtrace::capture();
+            if backtrace.status() == std::backtrace::BacktraceStatus::Disabled {
+                log::error!("[ERROR] Controller error: {}", e.to_string());
+                log::warn!("[BACKTRACE] Backtrace is disabled. To enable detailed stack trace, set environment variable: RUST_BACKTRACE=1");
+            } else {
+                log::error!("[ERROR] Controller error: {}\nBacktrace:\n{}", e.to_string(), backtrace);
+            }
             return RespVO::<u64>::from_error_info(500, &e.to_string()).into_response();
         }
         let $res = $res.unwrap();

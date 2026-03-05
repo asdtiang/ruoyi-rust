@@ -3,6 +3,8 @@ pub mod code_gen;
 //pub mod oa;
 pub mod system;
 
+pub mod ap;
+
 use axum::Router;
 
 pub fn build_api() -> Router {
@@ -10,7 +12,9 @@ pub fn build_api() -> Router {
         .merge(system::controller::build_auth_api())
         .nest("/system", system::controller::build_system_api())
         .nest("/monitor", system::controller::monitor::build_monitor_api())
+        .nest("/ap", ap::build_ap_api())
         .nest("/common", system::controller::build_common_api());
+    
        // .nest("/oa", oa::build_oa_api());
 
     #[cfg(feature = "code-gen")]
@@ -24,6 +28,7 @@ pub fn build_api() -> Router {
 
 use crate::error::Error;
 use axum::response::{IntoResponse, Response};
+use log::info;
 use rbatis::Page;
 use serde::de::DeserializeOwned;
 use serde::{Deserialize, Serialize};
@@ -49,6 +54,7 @@ where
     T: Serialize + DeserializeOwned + Clone,
 {
     pub fn from_result(arg: &Result<T, Error>) -> Self {
+        info!("arg: {:?}", arg.is_ok());
         if arg.is_ok() {
             Self {
                 code: CODE_SUCCESS,
@@ -56,9 +62,20 @@ where
                 data: arg.clone().ok(),
             }
         } else {
+            let error_msg = arg.clone().err().unwrap().to_string();
+            let backtrace = std::backtrace::Backtrace::capture();
+
+            // 检查 backtrace 是否被启用
+            if backtrace.status() == std::backtrace::BacktraceStatus::Disabled {
+                log::error!("[ERROR] API error: {}", error_msg);
+                log::warn!("[BACKTRACE] Backtrace is disabled. To enable detailed stack trace, set environment variable: RUST_BACKTRACE=1");
+            } else {
+                log::error!("[ERROR] API error: {}\nBacktrace:\n{}", error_msg, backtrace);
+            }
+
             Self {
                 code: CODE_FAIL,
-                msg: Some(arg.clone().err().unwrap().to_string()),
+                msg: Some(error_msg),
                 data: None,
             }
         }
@@ -95,6 +112,15 @@ where
     }
 
     pub fn from_error_info(code: u16, info: &str) -> Self {
+        let backtrace = std::backtrace::Backtrace::capture();
+
+        if backtrace.status() == std::backtrace::BacktraceStatus::Disabled {
+            log::error!("[ERROR] API error (code={}): {}", code, info);
+            log::warn!("[BACKTRACE] Backtrace is disabled. To enable detailed stack trace, set environment variable: RUST_BACKTRACE=1");
+        } else {
+            log::error!("[ERROR] API error (code={}): {}\nBacktrace:\n{}", code, info, backtrace);
+        }
+
         Self {
             code,
             msg: Some(info.to_string()),
@@ -116,6 +142,7 @@ where
                         data: None,
                     }
                 } else {
+                    log::warn!("[WARN] API operation failed: {} (0 rows affected)", fail_message);
                     Self {
                         code: CODE_FAIL,
                         msg: Some(fail_message.to_string()),
@@ -124,6 +151,13 @@ where
                 }
             }
             Err(err) => {
+                let backtrace = std::backtrace::Backtrace::capture();
+                if backtrace.status() == std::backtrace::BacktraceStatus::Disabled {
+                    log::error!("[ERROR] API operation failed: {}", err.to_string());
+                    log::warn!("[BACKTRACE] Backtrace is disabled. To enable detailed stack trace, set environment variable: RUST_BACKTRACE=1");
+                } else {
+                    log::error!("[ERROR] API operation failed: {}\nBacktrace:\n{}", err.to_string(), backtrace);
+                }
                 Self {
                     code: CODE_FAIL,
                     msg: Some(err.to_string()),
@@ -215,11 +249,21 @@ where
                 msg: None,
             }
         } else {
+            let error_msg = arg.clone().err().unwrap().to_string();
+            let backtrace = std::backtrace::Backtrace::capture();
+
+            if backtrace.status() == std::backtrace::BacktraceStatus::Disabled {
+                log::error!("[ERROR] Page API error: {}", error_msg);
+                log::warn!("[BACKTRACE] Backtrace is disabled. To enable detailed stack trace, set environment variable: RUST_BACKTRACE=1");
+            } else {
+                log::error!("[ERROR] Page API error: {}\nBacktrace:\n{}", error_msg, backtrace);
+            }
+
             Self {
                 code: CODE_FAIL,
                 rows: None,
                 total: None,
-                msg: Some(arg.clone().err().unwrap().to_string()),
+                msg: Some(error_msg),
             }
         }
     }

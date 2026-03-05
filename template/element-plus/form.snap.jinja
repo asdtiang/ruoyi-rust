@@ -1,138 +1,84 @@
-  {% macro inputRender(column,model,prop) -%}
-    {% if not column.isEdit and column.isInsert %} {% set disabled=":disabled='isEdit'" %}{% else %}
-          {% set disabled="" %}
-    {% endif %}
-
-      {% if isTree and tableOptions.treeParentCode!='' and column.rustField|camel == tableOptions.treeParentCode|camel %}
-        <el-tree-select
-            v-model="${{model}}.${{prop}}"
-            :data="${{ businessName }}Options"
-            :props="{ value: '${{ tableOptions.treeCode|camel }}', label: '${{ tableOptions.treeName|camel }}', children: 'children' }"
-            value-key="${{ tableOptions.treeCode|camel }}"
-            placeholder="请选择${{ column.comment }}"
-            check-strictly
-        />
-      {% elif column.rustType == "bool" %}
-        {% if column.htmlType == "radio" %}
+{%- macro inputRender(column,model,prop) -%}
+    {%- if not column.isEdit and column.isInsert %}{% set disabled=":disabled='isEdit'" %}{% else %}{% set disabled="" %}{% endif -%}
+    {%- if isTree and tableOptions.treeParentCode!='' and column.rustField|camel == tableOptions.treeParentCode|camel -%}
+        <el-tree-select v-model="${{model}}.${{prop}}" :data="${{ businessName }}Options" :props="{ value: '${{ tableOptions.treeCode|camel }}', label: '${{ tableOptions.treeName|camel }}', children: 'children' }" value-key="${{ tableOptions.treeCode|camel }}" placeholder="请选择${{ column.comment }}" check-strictly />
+    {%- elif column.rustType == "bool" -%}
+        {%- if column.htmlType == "radio" -%}
           <el-radio-group v-model="${{model}}.${{prop}}">
               <el-radio-button label="是" :value="true"/>
               <el-radio-button label="否" :value="false"/>
             </el-radio-group>
-        {% else %}
+        {%- else -%}
           <el-switch v-model="${{model}}.${{prop}}" active-text="是" :active-value="true" inactive-text="否" :inactive-value="false"></el-switch>
-        {% endif %}
-      {% elif column.htmlType == "imageUpload" %}
+        {%- endif -%}
+    {%- elif column.htmlType == "imageUpload" -%}
         <imageUpload v-model="${{model}}.${{prop}}" ${{ disabled }}/>
-      {% elif column.htmlType == "fileUpload" %}
+    {%- elif column.htmlType == "fileUpload" -%}
         <fileUpload v-model="${{model}}.${{prop}}" ${{ disabled }}/>
-      {% elif column.htmlType == "editor" %}
+    {%- elif column.htmlType == "editor" -%}
         <editor v-model="${{model}}.${{prop}}" :min-height="192" ${{ disabled }}/>
-      {% elif column.htmlType == "select" %}
-        {% if column.dictType %}
-          <el-select v-model="${{model}}.${{prop}}" ${{ disabled }}
-             placeholder="请选择${{ column.comment }}">
-            <el-option
-        v-for="dict in ${{ column.dictType }}"
-        :key="dict.value"
-        :label="dict.label"
-        {% if column.rustType == "Integer"  or  column.rustType == "Long" %}
-        :value="parseInt(dict.value)"
-        {% else %} :value="dict.value"{% endif %}
-            ></el-option>
+    {%- elif column.htmlType == "select" -%}
+        {%- if column.dictType -%}
+          <el-select v-model="${{model}}.${{prop}}" ${{ disabled }} placeholder="请选择${{ column.comment }}">
+            <el-option v-for="dict in ${{ column.dictType }}" :key="dict.value" :label="dict.label"{% if column.rustType == "Integer"  or  column.rustType == "Long" %} :value="parseInt(dict.value)"{% else %} :value="dict.value"{% endif %}></el-option>
           </el-select>
-        {% elif column.hasFk %}
+        {%- elif column.hasFk -%}
           <el-select v-model="${{model}}.${{prop}}" placeholder="请选择${{ column.comment }}" clearable>
-            <el-option
-        v-for="(item,key) in ${{ column.rustField|camel }}Map"
-        :key="key"
-        :label="item"
-        {% if column.rustType == "Integer"  or  column.rustType == "Long" %}:value="parseInt(key)"
-        {% else %} :value="key"{% endif %}
-            />
+            <el-option v-for="(item,key) in ${{ column.rustField|camel }}Map" :key="key" :label="item"{% if column.rustType == "Integer"  or  column.rustType == "Long" %} :value="parseInt(key)"{% else %} :value="key"{% endif %} />
           </el-select>
-        {% else %}
-          <el-select v-model="${{model}}.${{prop}}" ${{ disabled }}
-             placeholder="请选择${{ column.comment }}">
+        {%- else -%}
+          <el-select v-model="${{model}}.${{prop}}" ${{ disabled }} placeholder="请选择${{ column.comment }}">
             <el-option label="请选择字典生成" value=""/>
           </el-select>
-        {% endif %}
-      {% elif column.htmlType == "checkbox"  and  "" != column.dictType %}
-        {% if column.dictType %}
+        {%- endif -%}
+    {%- elif column.htmlType == "checkbox"  and  "" != column.dictType -%}
+        {%- if column.dictType -%}
           <el-checkbox-group v-model="${{model}}.${{prop}}" ${{ disabled }}>
-            <el-checkbox
-        v-for="dict in ${{ column.dictType }}"
-        :key="dict.value"
-        :label="dict.value">
-              {{ dict.label }}
-            </el-checkbox>
+            <el-checkbox v-for="dict in ${{ column.dictType }}" :key="dict.value" :label="dict.value">{{ dict.label }}</el-checkbox>
           </el-checkbox-group>
-        {% else %}
+        {%- else -%}
           <el-checkbox-group v-model="${{model}}.${{prop}}" ${{ disabled }}>
             <el-checkbox>请选择字典生成</el-checkbox>
           </el-checkbox-group>
-        {% endif %}
-      {% elif column.htmlType == "radio" %}
-        {% if column.dictType %}
+        {%- endif -%}
+    {%- elif column.htmlType == "radio" -%}
+        {%- if column.dictType -%}
           <el-radio-group v-model="${{model}}.${{prop}}" ${{ disabled }}>
-            <el-radio-button v-for="dict in ${{ column.dictType }}" :key="dict.value"
-             {% if column.rustType == "Integer"  or  column.rustType == "Long" %}:value="parseInt(dict.value)"{% else %}
-             :value="dict.value"{% endif %}
-            >{{ dict.label }}
-            </el-radio-button>
+            <el-radio-button v-for="dict in ${{ column.dictType }}" :key="dict.value"{% if column.rustType == "Integer"  or  column.rustType == "Long" %} :value="parseInt(dict.value)"{% else %} :value="dict.value"{% endif %}>{{ dict.label }}</el-radio-button>
           </el-radio-group>
-        {% else %}
+        {%- else -%}
           <el-radio-group v-model="${{model}}.${{prop}}" ${{ disabled }}>
             <el-radio-button value="1">请选择字典生成</el-radio-button>
           </el-radio-group>
-        {% endif %}
-      {% elif column.htmlType == "datetime" or column.htmlType == "date" %}
-        <el-date-picker clearable
-                v-model="${{model}}.${{prop}}" ${{ disabled }}
-                type="${{ column.htmlType }}"
-                value-format="YYYY-MM-DD{% if column.htmlType == "datetime" %} HH:mm:ss{% endif %}"
-                placeholder="选择${{ column.comment }}">
-        </el-date-picker>
-      {% elif column.htmlType == "time" %}
-        <el-time-picker arrow-control clearable v-model="${{model}}.${{prop}}" ${{ disabled }}
-                value-format="HH:mm:ss"
-                placeholder="选择${{ column.comment }}">
-        </el-time-picker>
-      {% elif column.htmlType == "textarea" %}
-        <el-input v-model="${{model}}.${{prop}}" ${{ disabled }} type="textarea" autosize
-          placeholder="请输入${{ column.comment }}"
-          {% if column.maxLength>0 %}:maxlength="${{ column.maxLength }}" show-word-limit{% endif %}/>
-      {% elif column.htmlType == "number" %}
-        <el-input-number v-model="${{model}}.${{prop}}" ${{ disabled }}
-                 placeholder="请输入${{ column.comment }}"
-                 :min="${{ column.min }}"
-                 :max="{% if column.rustType== "BigDecimal" %}column.maxBigDecimal{% else %} ${{ column.max }} {% endif %}"
-                 title="输入最大值为{% if column.rustType== "BigDecimal" %} column.maxBigDecimal{% else %}  ${{ column.max }} {% endif %}"
-                 {% if column.precision>0 %}:precision="${{ column.precision }}"{% endif %}
-                 controls-position="right"/>
-      {% else %}
-        <el-input v-model="${{model}}.${{prop}}" ${{ disabled }} placeholder="请输入${{ column.comment }}"
-          {% if column.maxLength>0 %}:maxlength="${{ column.maxLength }}" show-word-limit{% endif %}/>
-      {% endif %}
-{%- endmacro %}
+        {%- endif -%}
+    {%- elif column.htmlType == "datetime" or column.htmlType == "date" -%}
+        <el-date-picker clearable v-model="${{model}}.${{prop}}" ${{ disabled }} type="${{ column.htmlType }}" value-format="YYYY-MM-DD{% if column.htmlType == "datetime" %} HH:mm:ss{% endif %}" placeholder="选择${{ column.comment }}"></el-date-picker>
+    {%- elif column.htmlType == "time" -%}
+        <el-time-picker arrow-control clearable v-model="${{model}}.${{prop}}" ${{ disabled }} value-format="HH:mm:ss" placeholder="选择${{ column.comment }}"></el-time-picker>
+    {%- elif column.htmlType == "textarea" -%}
+        <el-input v-model="${{model}}.${{prop}}" ${{ disabled }} type="textarea" autosize placeholder="请输入${{ column.comment }}"{% if column.maxLength>0 %} :maxlength="${{ column.maxLength }}" show-word-limit{% endif %}/>
+    {%- elif column.htmlType == "number" -%}
+        <el-input-number v-model="${{model}}.${{prop}}" ${{ disabled }} placeholder="请输入${{ column.comment }}" :min="${{ column.min }}" :max="{% if column.rustType== "BigDecimal" %}column.maxBigDecimal{% else %}${{ column.max }}{% endif %}" title="输入最大值为{% if column.rustType== "BigDecimal" %} column.maxBigDecimal{% else %}  ${{ column.max }} {% endif %}"{% if column.precision>0 %} :precision="${{ column.precision }}"{% endif %} controls-position="right"/>
+    {%- else -%}
+        <el-input v-model="${{model}}.${{prop}}" ${{ disabled }} placeholder="请输入${{ column.comment }}"{% if column.maxLength>0 %} :maxlength="${{ column.maxLength }}" show-word-limit{% endif %}/>
+    {%- endif -%}
+{%- endmacro -%}
 
-{% macro formItemRender(column,hasCol,model,subModel) -%}
-
-  {% if not column.special and not column.isPk and (column.isEdit or column.isInsert) %}
-    {% if hasCol %}
-      <el-col
-      {% if column.htmlType == "textarea" or column.htmlType == "imageUpload" or column.htmlType == "fileUpload" %}:span="24"
-      {% else %}
-      :span="12"{% endif %} {% if column.isEdit and not column.isInsert %}v-show="isEdit"{% endif %}>
-    {% endif %}
-        {% if subModel %}
-      {% set prop=[subModel,'.', column.rustField|camel]|join %}
-    {% else %}
-     {% set prop= column.rustField|camel %}
-    {% endif %}
-    <el-form-item label="${{ column.comment }}" prop="${{prop}}">
-      ${{inputRender(column,model,prop)}}
-    </el-form-item>
-    {% if hasCol %}</el-col>{% endif %}
-          {% endif %}
-{%- endmacro %}
-
+{%- macro formItemRender(column,hasCol,model,subModel) -%}
+{%- if not column.special and not column.isPk and (column.isEdit or column.isInsert) -%}
+  {%- if hasCol -%}
+<el-col {% if column.htmlType == "textarea" or column.htmlType == "imageUpload" or column.htmlType == "fileUpload" %}:span="24"{% else %}:span="12"{% endif %}{% if column.isEdit and not column.isInsert %} v-show="isEdit"{% endif %}>
+  {%- endif %}
+    {%- if subModel -%}
+      {%- set prop=[subModel,'.', column.rustField|camel]|join -%}
+    {%- else -%}
+      {%- set prop= column.rustField|camel -%}
+    {%- endif %}
+  <el-form-item label="${{ column.comment }}" prop="${{prop}}">
+    ${{inputRender(column,model,prop)}}
+  </el-form-item>
+  {%- if hasCol -%}
+</el-col>
+  {%- endif -%}
+{%- endif -%}
+{%- endmacro -%}

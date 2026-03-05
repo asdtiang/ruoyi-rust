@@ -20,6 +20,7 @@ use std::fs;
 use std::io::Write;
 use std::path::{Path, PathBuf};
 use std::process::{Command, Stdio};
+use log::info;
 
 /// table service
 pub struct GenTableService {}
@@ -109,6 +110,7 @@ impl GenTableService {
             .into_iter()
             .next();
         if let Some(t) = table {
+            info!("table_id {} ", table_id); // 支持占位符
             let code_map = self.generate(&t, false).await?;
             let mut res = HashMap::new();
             code_map.iter().for_each(|(path, v)| {
@@ -169,6 +171,9 @@ impl GenTableService {
                 .build()
                 .map_err(|e| Error::from(e.to_string()))?,
         );
+        // 启用这两个选项通常能有效减少多余的空行和缩进
+        env.set_trim_blocks(true);
+        env.set_lstrip_blocks(true);
         let columns = GEN_CONTEXT
             .gen_table_column_service
             .select_gen_table_column_list_by_table_id(&gen_table.table_id.clone().unwrap_or_default())
@@ -209,12 +214,14 @@ impl GenTableService {
         };
 
         for (lng, path) in lng_path {
+            info!("lng: {}, path: {}", lng, path);
             let tlt_path = std::env::current_dir()?.join("template").join(lng);
             let tpl_path_list = find_files_with_extension(tlt_path.as_path(), "jinja")?;
 
             let mut tpl_name_list = vec![];
             tpl_path_list.into_iter().for_each(|path| {
                 let file_name = path.file_name().unwrap_or_default().to_str().unwrap_or_default();
+                info!("file_name: {} ", file_name);
                 tpl_name_list.push(file_name.to_string());
                 let contents = fs::read(&path)
                     .ok()
@@ -223,6 +230,7 @@ impl GenTableService {
                 let _ = env.add_template_owned(file_name.to_string(), contents);
             });
             for tpl_name in &tpl_name_list {
+                info!("tpl_name: {} ", tpl_name);
                 if tpl_category.eq(TPL_JOIN)
                     && !(tpl_name.contains("service.rs.jinja") || tpl_name.contains("domain.mapper")|| tpl_name.contains("temp.json"))
                 {
@@ -231,7 +239,10 @@ impl GenTableService {
                 if tpl_name.ends_with(".snap.jinja") {//fixme ||tpl_name.ends_with(".sql.jinja")
                     continue;
                 }
+                info!(" render start tpl_name: {} ", tpl_name);
+
                 let file_name_render = env.render_str(tpl_name, &ctx).map_err(|e| Error::from(e.to_string()))?;
+
                 let code = env
                     .get_template(&tpl_name)
                     .map_err(|e| Error::from(e.to_string()))?
@@ -245,22 +256,29 @@ impl GenTableService {
                     is_first = true;
                     suffix = file_name_split.pop().unwrap_or_default();
                 }
+                info!(" render e tpl_name: {} ", tpl_name);
                 let file_name = file_name_split.pop().unwrap_or_default();
+                info!(" render end file_name_split: {file_name_split:?} ");
 
                 let path = PathBuf::from(path)
                     .join(file_name_split.join("\\"))
                     .join(format!("{file_name}.{suffix}"));
-                println!("{path:?}");
+                info!(" render end path: {path:?} ");
+
                 let mut code = code;
 
                 let ext = path.extension().unwrap_or_default();
                 if ext.eq("rs") {
                     code = self.format_rust_code(&code)?;
                 } else if ext.eq("vue") {
-                    code = self.format_html_code(&code, "vue")?;
+                   // code = self.format_html_code(&code, "Vue")?;
                 } else if ext.eq("js") {
-                    code = self.format_html_code(&code, "typescript")?;
+                    info!(" render js start  end path: {path:?} ");
+                    info!(" render js start  end code {}: ",code);
+                   // code = self.format_html_code(&code, "typescript")?;
                 }
+                info!(" render end path: {path:?} ");
+
                 //删除多余的换行
                 loop {
                     let t_code = code.replace("\n  \n", "\n").replace("\n\n", "\n");
@@ -273,6 +291,8 @@ impl GenTableService {
                 if is_first && path.exists() {
                     // println!("文件{}已存在！", path.display());
                 } else {
+                    info!(" render end path: {path:?} ");
+
                     if save_file && !path.ends_with("temp.json") {
                         fs::create_dir_all(&path.parent().unwrap())?;
                         fs::write(path, code)?;
@@ -426,7 +446,7 @@ impl GenTableService {
         Ok(String::from_utf8(output.stdout).unwrap_or(code.to_string()))
     }
 
-    pub fn format_html_code(&self, code: &str, language: &str) -> Result<String> {
+    pub fn format_html_code(&self, path: &str, language: &str) -> Result<()>  {
         let mut child = Command::new("prettier.cmd")
             .arg("--print-width=160")
             .arg(format!("--parser={}", language))
@@ -434,12 +454,12 @@ impl GenTableService {
             .stdout(Stdio::piped())
             .spawn()?;
 
-        if let Some(stdin) = &mut child.stdin {
-            stdin.write_all(code.as_bytes())?;
-        }
+        // if let Some(stdin) = &mut child.stdin {
+        //     stdin.write_all(code.as_bytes())?;
+        // }
 
         let output = child.wait_with_output()?;
-        Ok(String::from_utf8(output.stdout).unwrap_or(code.to_string()))
+        Ok(())
     }
 
     pub async fn synch_db(&self, table_name: &str) -> Result<()> {

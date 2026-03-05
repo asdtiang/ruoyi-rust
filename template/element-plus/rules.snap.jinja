@@ -1,29 +1,29 @@
-  {% macro buildRules(column,space) -%}
-            {% if not column.special and not column.isPk and (column.isEdit or column.isInsert) %}
-              {% if column.isRequired or column.maxLength>0 and column.rustType=="String" and column.htmlType!="select" or column.more and column.more["pattern"] %}
-                {%if space %}"${{space}}.{% endif %}${{ column.rustField|camel}}{%if space %}"{% endif %}: [
-                    {% if column.isRequired %}
-                        {
-                            required: true,
-                            message: "${{column.comment}}不能为空",
-                            trigger: {% if column.htmlType == "select" %} "change" {% else %} "blur"{% endif %}
-                        },
-                    {% endif %}
-                    {% if column.maxLength>0 and column.rustType=="String" and column.htmlType!="select" %}
-                        {
-                            max: ${{ column.maxLength }},
-                            message: '长度最长为 ${{ column.maxLength }} 个字符',
-                            trigger: 'change'
-                        },
-                    {% endif %}
-                    {% if column.more and column.more["pattern"] %}
-                        {
-                            pattern: /${{ column.more["pattern"] }}/,
-                            message: "${{ column.more["patternMessage"]}}",
-                            trigger: "change"
-                        },
-                    {% endif %}
-                ],
-              {% endif %}
-            {% endif %}
-    {%- endmacro %}
+{%- macro buildRules(column,space) -%}
+    {%- if not column.special and not column.isPk and (column.isEdit or column.isInsert) %}
+        {%- if column.isRequired or column.maxLength>0 and column.rustType=="String" and column.htmlType!="select" or column.more and column.more["pattern"] %}
+            {%- if space %}"${{space}}.{% endif %}${{ column.rustField|camel}}{%if space %}"{% endif %}: [
+                {%- if column.isRequired %}
+                    {
+                        required: true,
+                        message: "${{column.comment}}不能为空",
+                        trigger: {% if column.htmlType == "select" %} "change" {% else %} "blur"{% endif %}
+                    },
+                {%- endif %}
+                {%- if column.maxLength>0 and column.rustType=="String" and column.htmlType!="select" %}
+                    {
+                        max: ${{ column.maxLength }},
+                        message: '长度最长为 ${{ column.maxLength }} 个字符',
+                        trigger: 'change'
+                    },
+                {%- endif %}
+                {%- if column.more and column.more["pattern"] %}
+                    {
+                        pattern: /${{ column.more["pattern"] }}/,
+                        message: "${{ column.more["patternMessage"]}}",
+                        trigger: "change"
+                    },
+                {%- endif %}
+            ],
+        {%- endif %}
+    {%- endif %}
+{%- endmacro -%}

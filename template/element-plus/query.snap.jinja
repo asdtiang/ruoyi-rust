@@ -10,10 +10,10 @@
 {% set span=":span=\"24\" :md=\"12\" :lg=\"8\" :xl=\"6\"" %}
 <el-form :model="queryParams" ref="queryRef" class="queryForm" v-show="showSearch">
   <el-row :gutter="15">
-    {% for column in columns %}
-      {% if column.isQuery %}
+    {%- for column in columns %}
+      {%- if column.isQuery %}
         <el-col ${{ span }}>
-          {% if column.htmlType == "input" or column.htmlType == "textarea" %}
+          {%- if column.htmlType == "input" or column.htmlType == "textarea" %}
             <el-form-item label="${{ column.comment }}" prop="${{ column.rustField|camel }}">
               <el-input
                   v-model="queryParams.${{ column.rustField|camel }}"
@@ -22,8 +22,8 @@
                   @keyup.enter.native="handleQuery"
               />
             </el-form-item>
-          {% elif column.htmlType == "select"  or  column.htmlType == "radio" %}
-            {% if column.dictType %}
+          {%- elif column.htmlType == "select"  or  column.htmlType == "radio" %}
+            {%- if column.dictType %}
               <el-form-item label="${{ column.comment }}" prop="${{ column.rustField|camel }}">
                 <el-select v-model="queryParams.${{ column.rustField|camel }}" placeholder="请选择${{ column.comment }}"
                            clearable>
@@ -31,7 +31,7 @@
                              :value="dict.value"/>
                 </el-select>
               </el-form-item>
-            {% elif column.hasFk %}
+            {%- elif column.hasFk %}
               <el-form-item label="${{ column.comment }}" prop="${{ column.rustField|camel }}">
                 <el-select v-model="queryParams.${{ column.rustField|camel }}" placeholder="请选择${{ column.comment }}"
                            clearable>
@@ -39,21 +39,21 @@
                       v-for="(item,key) in ${{ column.rustField|camel }}Map"
                       :key="key"
                       :label="item"
-                      {% if column.rustType == "Integer"  or  column.rustType == "Long" %}:value="parseInt(key)"
-                      {% else %} :value="key"{% endif %}
+                      {%- if column.rustType == "Integer"  or  column.rustType == "Long" %}:value="parseInt(key)"
+                      {%- else %} :value="key"{% endif %}
                   />
                 </el-select>
               </el-form-item>
-            {% else %}
+            {%- else %}
               <el-form-item label="${{ column.comment }}" prop="${{ column.rustField|camel }}">
                 <el-select v-model="queryParams.${{ column.rustField|camel }}" placeholder="请选择${{ column.comment }}"
                            clearable>
                   <el-option label="请选择字典生成" value=""/>
                 </el-select>
               </el-form-item>
-            {% endif %}
-          {% elif column.htmlType == "datetime" or column.htmlType == "date" %}
-            {% if column.queryType =="BETWEEN" %}
+            {%- endif %}
+          {%- elif column.htmlType == "datetime" or column.htmlType == "date" %}
+            {%- if column.queryType =="BETWEEN" %}
               <div class="d-flex">
                 <el-form-item label="${{ column.comment }}" prop="begin${{ column.rustField|camel|upperCamel }}">
                   <el-date-picker
@@ -72,7 +72,7 @@
                                   clearable @keyup.enter.native="handleQuery" style="width:unset;"/>
                 </el-form-item>
               </div>
-            {% else %}
+            {%- else %}
               <el-form-item label="${{ column.comment }}" prop="${{ column.rustField|camel }}">
                 <el-date-picker clearable
                                 v-model="queryParams.${{ column.rustField|camel }}"
@@ -81,9 +81,9 @@
                                 placeholder="选择${{ column.comment }}（${{ queryTypeDict[column.queryType] }}）">
                 </el-date-picker>
               </el-form-item>
-            {% endif %}
-          {% elif column.htmlType == "number" %}
-            {% if column.queryType =="BETWEEN" %}
+            {%- endif %}
+          {%- elif column.htmlType == "number" %}
+            {%- if column.queryType =="BETWEEN" %}
               <div class="d-flex">
                 <el-form-item label="${{ column.comment }}区间" prop="begin${{ column.rustField|camel|upperCamel }}">
                   <el-input
@@ -100,7 +100,7 @@
                             clearable @keyup.enter.native="handleQuery"/>
                 </el-form-item>
               </div>
-            {% else %}
+            {%- else %}
               <el-form-item label="${{ column.comment }}" prop="${{ column.rustField|camel }}">
                 <el-input
                     v-model="queryParams.${{ column.rustField|camel }}"
@@ -109,8 +109,8 @@
                     @keyup.enter.native="handleQuery"
                 />
               </el-form-item>
-            {% endif %}
-          {% elif column.htmlType == "switch" %}
+            {%- endif %}
+          {%- elif column.htmlType == "switch" %}
               <el-form-item label="${{ column.comment }}" prop="${{ column.rustField|camel }}">
                 <el-select v-model="queryParams.${{ column.rustField|camel }}" placeholder="请选择${{ column.comment }}"
                            clearable>
@@ -119,7 +119,7 @@
                   <el-option label="否" :value="false"/>
                 </el-select>
               </el-form-item>
-          {% else %}
+          {%- else %}
           <el-form-item label="${{ column.comment }}" prop="${{ column.rustField|camel }}">
               <el-input
                   v-model="queryParams.${{ column.rustField|camel }}"
@@ -128,10 +128,10 @@
                   @keyup.enter.native="handleQuery"
               />
             </el-form-item>
-          {% endif %}
+          {%- endif %}
         </el-col>
-      {% endif %}
-    {% endfor %}
+      {%- endif %}
+    {%- endfor %}
     <el-col ${{ span }}>
       <el-form-item>
         <el-button type="primary" icon="Search" @click="handleQuery">查询</el-button>

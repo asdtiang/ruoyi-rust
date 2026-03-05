@@ -4,12 +4,41 @@ use ruoyi_rust::build_api;
 use ruoyi_rust::context::CONTEXT;
 use std::net::SocketAddr;
 use std::path::PathBuf;
+use std::panic;
 use tower_http::compression::predicate::SizeAbove;
 use tower_http::compression::CompressionLayer;
 use tower_http::services::{ServeDir, ServeFile};
+use ruoyi_rust::web::middleware::panic_catcher::catch_panic_middleware;
 
 #[tokio::main]
 async fn main() -> std::io::Result<()> {
+    // 设置全局 panic hook，捕获所有未处理的 panic 并记录日志
+    panic::set_hook(Box::new(|panic_info| {
+        let location = panic_info.location().unwrap_or_else(|| panic::Location::caller());
+        let payload = panic_info.payload();
+        let payload_str = if let Some(s) = payload.downcast_ref::<&str>() {
+            s.to_string()
+        } else if let Some(s) = payload.downcast_ref::<String>() {
+            s.clone()
+        } else {
+            "Unknown panic payload".to_string()
+        };
+
+        log::error!(
+            "[PANIC] Location: {}:{}:{}\nMessage: {}\nThis indicates a bug in the code!\nBacktrace:\n{}",
+            location.file(),
+            location.line(),
+            location.column(),
+            payload_str,
+            std::backtrace::Backtrace::capture()
+        );
+
+        // 如果有 cause，也记录
+        if let Some(cause) = payload.downcast_ref::<Box<dyn std::error::Error + Send + Sync>>() {
+            log::error!("[PANIC] Caused by: {}", cause);
+        }
+    }));
+
     //log
     ruoyi_rust::config::log::init_log();
     if CONTEXT.config.debug {
@@ -43,6 +72,7 @@ async fn main() -> std::io::Result<()> {
                 ServeDir::new(PathBuf::from(&CONTEXT.config.upload_path).join("attach")),
             ),
         )
+        .layer(axum::middleware::from_fn(catch_panic_middleware)) // 捕获所有未处理的 panic
         .layer(CompressionLayer::new().compress_when(SizeAbove::new(2048))) //启动压缩
         .layer(DefaultBodyLimit::disable())
         .layer(tower_http::limit::RequestBodyLimitLayer::new(

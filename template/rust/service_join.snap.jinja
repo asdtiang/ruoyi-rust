@@ -2,8 +2,8 @@ use crate::${{moduleName}}::domain::mapper::${{moduleName}}_${{business_name}}::
 use crate::error::Result;
 use crate::pool;
 {#连接表只支持2个键#}
-{% set col1=columns[0]%}
-{%set col2=columns[1] %}
+{%- set col1=columns[0]%}
+{%- set col2=columns[1] %}
 
 
 pub struct ${{structName}}Service {}
