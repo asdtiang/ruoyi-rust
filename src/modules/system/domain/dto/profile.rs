@@ -7,7 +7,7 @@ pub struct PasswordUpdateDTO {
     #[validate(custom(function = "crate::string_required", message = "旧密码不能为空"))]
     pub old_password: Option<String>,
     #[validate(custom(function = "crate::string_required", message = "新密码不能为空"))]
-    #[validate(custom(function = "crate::password_score", message = "密码强度过弱"))]
+    //#[validate(custom(function = "crate::password_score", message = "密码强度过弱"))]
     pub new_password: Option<String>
 }
 

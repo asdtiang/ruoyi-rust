@@ -72,6 +72,8 @@ datetime_format: "YYYY-MM-DD hh:mm:ss"
 
 #根据ip查地址
 address_enabled: true
+#是否检查密码过期
+chn_pwd_check: false
 
 #https://www.apihz.cn id和key,需要注册
 apihz_id: "*"

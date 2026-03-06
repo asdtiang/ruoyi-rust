@@ -25,6 +25,7 @@ pub struct ApplicationConfig {
     pub captcha_expired_min: u64,
     pub token_expired_min: u64,
     pub address_enabled: bool,
+    pub chn_pwd_check: bool,
     pub apihz_id: String,
     pub apihz_key: String,
     pub cache: String,

@@ -1,0 +1,114 @@
+<?xml version="1.1" encoding="UTF-8" standalone="no"?>
+<databaseChangeLog xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+                   xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+                   xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-3.8.xsd">
+
+    <changeSet id="abel-lee-2026-03-05-003" author="abel.lee">
+        <sql>
+
+            -- 菜单 SQL
+            insert into sys_menu (menu_id, menu_name, parent_id, order_num, path, component, is_frame, is_cache, menu_type, visible,
+            status, perms, icon, create_by, create_time, update_by, update_time, remark)
+            values ('69a95fbf00d0ebe400000000', '品牌库', '69a6d22b007bf0cf00000000', '30', 'ProductBrand',
+            'ap/ProductBrand/index', 1, 0, 'C', '0', '0', 'ap:ProductBrand:list', 'build', 'admin',
+            sysdate(), '', null, '品牌库菜单');
+
+
+            -- 按钮 SQL
+            insert into sys_menu (menu_id, menu_name, parent_id, order_num, path, component, is_frame, is_cache, menu_type, visible,
+            status, perms, icon, create_by, create_time, update_by, update_time, remark)
+            values ('69a95fbf00d0ebe400000001', '品牌库查询', '69a95fbf00d0ebe400000000', '1', '#', '', 1, 0, 'F', '0', '0',
+            'ap:ProductBrand:query', '#', 'admin', sysdate(), '', null, '');
+
+            insert into sys_menu (menu_id, menu_name, parent_id, order_num, path, component, is_frame, is_cache, menu_type, visible,
+            status, perms, icon, create_by, create_time, update_by, update_time, remark)
+            values ('69a95fbf00d0ebe400000002', '品牌库新增', '69a95fbf00d0ebe400000000', '2', '#', '', 1, 0, 'F', '0', '0',
+            'ap:ProductBrand:add', '#', 'admin', sysdate(), '', null, '');
+
+            insert into sys_menu (menu_id, menu_name, parent_id, order_num, path, component, is_frame, is_cache, menu_type, visible,
+            status, perms, icon, create_by, create_time, update_by, update_time, remark)
+            values ('69a95fbf00d0ebe400000003', '品牌库修改', '69a95fbf00d0ebe400000000', '3', '#', '', 1, 0, 'F', '0', '0',
+            'ap:ProductBrand:edit', '#', 'admin', sysdate(), '', null, '');
+
+            insert into sys_menu (menu_id, menu_name, parent_id, order_num, path, component, is_frame, is_cache, menu_type, visible,
+            status, perms, icon, create_by, create_time, update_by, update_time, remark)
+            values ('69a95fbf00d0ebe400000004', '品牌库删除', '69a95fbf00d0ebe400000000', '4', '#', '', 1, 0, 'F', '0', '0',
+            'ap:ProductBrand:remove', '#', 'admin', sysdate(), '', null, '');
+
+            insert into sys_menu (menu_id, menu_name, parent_id, order_num, path, component, is_frame, is_cache, menu_type, visible,
+            status, perms, icon, create_by, create_time, update_by, update_time, remark)
+            values ('69a95fbf00d0ebe400000005', '品牌库导出', '69a95fbf00d0ebe400000000', '5', '#', '', 1, 0, 'F', '0', '0',
+            'ap:ProductBrand:export', '#', 'admin', sysdate(), '', null, '');
+
+            -- 菜单 SQL
+            insert into sys_menu (menu_id, menu_name, parent_id, order_num, path, component, is_frame, is_cache, menu_type, visible,
+            status, perms, icon, create_by, create_time, update_by, update_time, remark)
+            values ('69a9614800d0ebe400000032', '商品分类', '69a6d22b007bf0cf00000000', '40', 'ProductCategory',
+            'ap/ProductCategory/index', 1, 0, 'C', '0', '0', 'ap:ProductCategory:list', 'cascader', 'admin',
+            sysdate(), '', null, '商品分类菜单');
+
+
+            -- 按钮 SQL
+            insert into sys_menu (menu_id, menu_name, parent_id, order_num, path, component, is_frame, is_cache, menu_type, visible,
+            status, perms, icon, create_by, create_time, update_by, update_time, remark)
+            values ('69a9614800d0ebe400000033', '商品分类查询', '69a9614800d0ebe400000032', '1', '#', '', 1, 0, 'F', '0', '0',
+            'ap:ProductCategory:query', '#', 'admin', sysdate(), '', null, '');
+
+            insert into sys_menu (menu_id, menu_name, parent_id, order_num, path, component, is_frame, is_cache, menu_type, visible,
+            status, perms, icon, create_by, create_time, update_by, update_time, remark)
+            values ('69a9614800d0ebe400000034', '商品分类新增', '69a9614800d0ebe400000032', '2', '#', '', 1, 0, 'F', '0', '0',
+            'ap:ProductCategory:add', '#', 'admin', sysdate(), '', null, '');
+
+            insert into sys_menu (menu_id, menu_name, parent_id, order_num, path, component, is_frame, is_cache, menu_type, visible,
+            status, perms, icon, create_by, create_time, update_by, update_time, remark)
+            values ('69a9614800d0ebe400000035', '商品分类修改', '69a9614800d0ebe400000032', '3', '#', '', 1, 0, 'F', '0', '0',
+            'ap:ProductCategory:edit', '#', 'admin', sysdate(), '', null, '');
+
+            insert into sys_menu (menu_id, menu_name, parent_id, order_num, path, component, is_frame, is_cache, menu_type, visible,
+            status, perms, icon, create_by, create_time, update_by, update_time, remark)
+            values ('69a9614800d0ebe400000036', '商品分类删除', '69a9614800d0ebe400000032', '4', '#', '', 1, 0, 'F', '0', '0',
+            'ap:ProductCategory:remove', '#', 'admin', sysdate(), '', null, '');
+
+            insert into sys_menu (menu_id, menu_name, parent_id, order_num, path, component, is_frame, is_cache, menu_type, visible,
+            status, perms, icon, create_by, create_time, update_by, update_time, remark)
+            values ('69a9614800d0ebe400000037', '商品分类导出', '69a9614800d0ebe400000032', '5', '#', '', 1, 0, 'F', '0', '0',
+            'ap:ProductCategory:export', '#', 'admin', sysdate(), '', null, '');
+
+            -- 菜单 SQL
+            insert into sys_menu (menu_id, menu_name, parent_id, order_num, path, component, is_frame, is_cache, menu_type, visible,
+            status, perms, icon, create_by, create_time, update_by, update_time, remark)
+            values ('69a9614a00d0ebe40000003c', '单位', '69a6d22b007bf0cf00000000', '50', 'productUnit',
+            'ap/productUnit/index', 1, 0, 'C', '0', '0', 'ap:productUnit:list', 'dict', 'admin',
+            sysdate(), '', null, '单位菜单');
+
+
+            -- 按钮 SQL
+            insert into sys_menu (menu_id, menu_name, parent_id, order_num, path, component, is_frame, is_cache, menu_type, visible,
+            status, perms, icon, create_by, create_time, update_by, update_time, remark)
+            values ('69a9614a00d0ebe40000003d', '单位查询', '69a9614a00d0ebe40000003c', '1', '#', '', 1, 0, 'F', '0', '0',
+            'ap:productUnit:query', '#', 'admin', sysdate(), '', null, '');
+
+            insert into sys_menu (menu_id, menu_name, parent_id, order_num, path, component, is_frame, is_cache, menu_type, visible,
+            status, perms, icon, create_by, create_time, update_by, update_time, remark)
+            values ('69a9614a00d0ebe40000003e', '单位新增', '69a9614a00d0ebe40000003c', '2', '#', '', 1, 0, 'F', '0', '0',
+            'ap:productUnit:add', '#', 'admin', sysdate(), '', null, '');
+
+            insert into sys_menu (menu_id, menu_name, parent_id, order_num, path, component, is_frame, is_cache, menu_type, visible,
+            status, perms, icon, create_by, create_time, update_by, update_time, remark)
+            values ('69a9614a00d0ebe40000003f', '单位修改', '69a9614a00d0ebe40000003c', '3', '#', '', 1, 0, 'F', '0', '0',
+            'ap:productUnit:edit', '#', 'admin', sysdate(), '', null, '');
+
+            insert into sys_menu (menu_id, menu_name, parent_id, order_num, path, component, is_frame, is_cache, menu_type, visible,
+            status, perms, icon, create_by, create_time, update_by, update_time, remark)
+            values ('69a9614a00d0ebe400000040', '单位删除', '69a9614a00d0ebe40000003c', '4', '#', '', 1, 0, 'F', '0', '0',
+            'ap:productUnit:remove', '#', 'admin', sysdate(), '', null, '');
+
+            insert into sys_menu (menu_id, menu_name, parent_id, order_num, path, component, is_frame, is_cache, menu_type, visible,
+            status, perms, icon, create_by, create_time, update_by, update_time, remark)
+            values ('69a9614a00d0ebe400000041', '单位导出', '69a9614a00d0ebe40000003c', '5', '#', '', 1, 0, 'F', '0', '0',
+            'ap:productUnit:export', '#', 'admin', sysdate(), '', null, '');
+
+        </sql>
+    </changeSet>
+
+</databaseChangeLog>

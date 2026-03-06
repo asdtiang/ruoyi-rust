@@ -1,0 +1,39 @@
+-- 菜单 SQL
+insert into sys_menu (menu_id, menu_name, parent_id, order_num, path, component, is_frame, is_cache, menu_type, visible,
+                      status, perms, icon, create_by, create_time, update_by, update_time, remark)
+values ('69a6d22b007bf0cf00000000', '商品', '0', '50', 'APManager',
+        'ap/ApSupplier/index', 1, 0, 'M', '0', '0', '', 'tree-table', 'admin',
+        sysdate(), '', null, '商品菜单');
+
+insert into sys_menu (menu_id, menu_name, parent_id, order_num, path, component, is_frame, is_cache, menu_type, visible,
+                      status, perms, icon, create_by, create_time, update_by, update_time, remark)
+values ('69a6d22b007bf0ce00000000', '供应商', '69a6d22b007bf0cf00000000', '1', 'ApSupplier',
+        'ap/ApSupplier/index', 1, 0, 'C', '0', '0', 'ap:ApSupplier:list', 'tree', 'admin',
+        sysdate(), '', null, '供应商菜单');
+
+
+-- 按钮 SQL
+insert into sys_menu (menu_id, menu_name, parent_id, order_num, path, component, is_frame, is_cache, menu_type, visible,
+                      status, perms, icon, create_by, create_time, update_by, update_time, remark)
+values ('69a6d22b007bf0ce00000001', '供应商查询', '69a6d22b007bf0ce00000000', '1', '#', '', 1, 0, 'F', '0', '0',
+        'ap:ApSupplier:query', '#', 'admin', sysdate(), '', null, '');
+
+insert into sys_menu (menu_id, menu_name, parent_id, order_num, path, component, is_frame, is_cache, menu_type, visible,
+                      status, perms, icon, create_by, create_time, update_by, update_time, remark)
+values ('69a6d22b007bf0ce00000002', '供应商新增', '69a6d22b007bf0ce00000000', '2', '#', '', 1, 0, 'F', '0', '0',
+        'ap:ApSupplier:add', '#', 'admin', sysdate(), '', null, '');
+
+insert into sys_menu (menu_id, menu_name, parent_id, order_num, path, component, is_frame, is_cache, menu_type, visible,
+                      status, perms, icon, create_by, create_time, update_by, update_time, remark)
+values ('69a6d22b007bf0ce00000003', '供应商修改', '69a6d22b007bf0ce00000000', '3', '#', '', 1, 0, 'F', '0', '0',
+        'ap:ApSupplier:edit', '#', 'admin', sysdate(), '', null, '');
+
+insert into sys_menu (menu_id, menu_name, parent_id, order_num, path, component, is_frame, is_cache, menu_type, visible,
+                      status, perms, icon, create_by, create_time, update_by, update_time, remark)
+values ('69a6d22b007bf0ce00000004', '供应商删除', '69a6d22b007bf0ce00000000', '4', '#', '', 1, 0, 'F', '0', '0',
+        'ap:ApSupplier:remove', '#', 'admin', sysdate(), '', null, '');
+
+insert into sys_menu (menu_id, menu_name, parent_id, order_num, path, component, is_frame, is_cache, menu_type, visible,
+                      status, perms, icon, create_by, create_time, update_by, update_time, remark)
+values ('69a6d22b007bf0ce00000005', '供应商导出', '69a6d22b007bf0ce00000000', '5', '#', '', 1, 0, 'F', '0', '0',
+        'ap:ApSupplier:export', '#', 'admin', sysdate(), '', null, '');

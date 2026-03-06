@@ -1,11 +1,13 @@
 # 代码生成
 
 # 作者
-author: wizount
+author: asdtiang
 # 默认生成包路径 system 需改成自己的模块名称 如 system monitor tool，todo java中使用，将删除
-package_name: com.ruoyi.oa
+package_name: com.ruoyi.ap
 # 自动去除表前缀，默认是false
 auto_remove_pre: false
+gen_serve_path: D:\openSource\ruoyi-rust\src\modules
+gen_vue_path: D:\openSource\ruoyi-vue3-rust\src
 # 表前缀（生成类名不会包含表前缀，多个用逗号分隔）
 table_prefixes:
   - sys_

@@ -1,13 +1,12 @@
 use crate::config::config::ApplicationConfig;
 use crate::system::service::cache_service::CacheService;
 use crate::system::service::*;
-use log::LevelFilter;
+use log::{error, info, LevelFilter};
 use rbatis::intercept_log::LogInterceptor;
 use rbatis::RBatis;
 use rbdc_mysql::MysqlDriver;
 use std::sync::LazyLock;
 use std::time::Duration;
-
 /// Service CONTEXT
 pub static CONTEXT: LazyLock<ServiceContext> = LazyLock::new(|| ServiceContext::default());
 
@@ -45,7 +44,25 @@ pub struct ServiceContext {
 impl ServiceContext {
     /// init database pool
     pub async fn init_database(&self) {
-        log::info!("[ruoyi_rust] rbatis pool init ({})...", self.config.db_url);
+        info!("[ruoyi_rust] rbatis pool init ({})...", self.config.db_url);
+        sqlx::any::install_default_drivers();
+        let migrate_pool = match sqlx::AnyPool::connect(&self.config.db_url).await {
+            Ok(pool) => pool,
+            Err(e) => {
+                error!("❌ liqubase数据库连接失败: {}", e);
+                return;
+            }
+        };
+
+        let lb = rs_liquibase::Liquibase::new(migrate_pool);
+
+        // 处理迁移错误
+        if let Err(e) = lb.run("liqubase/master.xml").await {
+            error!("❌ liqubase 执行出错: {}", e);
+        }
+        info!("✅ liqubase 执行完成");
+
+
         //include auto choose driver struct by 'config.db_url'
         self.rb
             .link(MysqlDriver {}, &self.config.db_url)
