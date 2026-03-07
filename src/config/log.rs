@@ -29,7 +29,7 @@ impl LogAppender for CustomLogAppender {
                                    datetime.hour(), datetime.minute(), datetime.second());
             // 如果报错，可以尝试：let now = fastdate::DateTime::from_system_time(record.now, 0);
             // 手动拼接格式：[时间] [级别] [文件:行号] - 内容
-            let _ = write!(
+            let _ = writeln!(
                 &mut data,
                 "{} {} [{}:{}] - {}\n",
                 time_str,

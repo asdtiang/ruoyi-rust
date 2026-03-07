@@ -48,7 +48,7 @@ impl CacheService {
             {
                 println!("[ruoyi_rust]  cache_type: redis");
                 return Ok(Self {
-                    inner: Box::new(RedisService::new(&cache)?),
+                    inner: Box::new(RedisService::new(cache)?),
                 });
             }
         }

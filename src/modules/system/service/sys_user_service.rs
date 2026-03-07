@@ -24,7 +24,7 @@ impl SysUserService {
 
     ///user details
     pub async fn detail(&self, user_id: &str) -> Result<SysUser> {
-        let user = self.find_by_user_id(&user_id).await?;
+        let user = self.find_by_user_id(user_id).await?;
         Ok(user)
     }
 
@@ -46,18 +46,18 @@ impl SysUserService {
             .await?;
 
         let user_id = user.user_id.clone().unwrap_or_default();
-        let res = SysUser::insert(&tx, &user).await?;
+        let res = SysUser::insert(&tx, user).await?;
         if res.rows_affected > 0 {
             if role_ids.len() > 0 {
                 CONTEXT
                     .sys_user_role_service
-                    .add_user_roles_tx(&user_id, &role_ids, &tx)
+                    .add_user_roles_tx(&user_id, role_ids, &tx)
                     .await?;
             }
             if post_ids.len() > 0 {
                 CONTEXT
                     .sys_user_post_service
-                    .add_user_posts_tx(&user_id, &post_ids, &tx)
+                    .add_user_posts_tx(&user_id, post_ids, &tx)
                     .await?;
             }
         }
@@ -187,7 +187,7 @@ impl SysUserService {
         if res > 0 {
             CONTEXT
                 .sys_user_online_service
-                .force_logout_by_user_id(&user_id)
+                .force_logout_by_user_id(user_id)
                 .await?;
         }
         Ok(res)
