@@ -6,8 +6,12 @@ use serde::{Deserialize, Serialize};
 #[derive(Serialize, Deserialize, Clone, Debug, Default)]
 #[serde(rename_all = "camelCase")]
 pub struct ApProductCategoryPageDTO {
+    // 名称
+    pub name: Option<String>,
     // 上级分类id
-    pub parent_id: Option<i32>,
+    pub parent_id: Option<u64>,
+    // 上级分类名称
+    pub parent_name: Option<String>,
     // 创建者ID
     pub create_id: Option<u64>,
     // 更新者ID
@@ -23,12 +27,13 @@ pub struct ApProductCategoryAddDTO {
     #[validate(length(max = 255, message = "名称不能超过255个字符"))]
     pub name: Option<String>,
     // 上级分类id
-    pub parent_id: Option<i32>,
+    pub parent_id: Option<u64>,
+    // 上级分类名称
+    #[validate(length(max = 255, message = "上级分类名称不能超过255个字符"))]
+    pub parent_name: Option<String>,
     // 创建者ID
-    #[validate(required(message = "创建者ID不能为空"))]
     pub create_id: Option<u64>,
     // 更新者ID
-    #[validate(required(message = "更新者ID不能为空"))]
     pub update_id: Option<u64>,
     // 备注
     #[validate(length(max = 500, message = "备注不能超过500个字符"))]
@@ -42,6 +47,7 @@ impl From<ApProductCategoryAddDTO> for ApProductCategory {
             id: None,
             name: arg.name,
             parent_id: arg.parent_id,
+            parent_name: arg.parent_name,
             create_id: arg.create_id,
             create_by: None,
             create_time: None,
@@ -62,12 +68,10 @@ pub struct ApProductCategoryUpdateDTO {
     #[validate(length(max = 255, message = "名称不能超过255个字符"))]
     pub name: Option<String>,
     // 上级分类id
-    pub parent_id: Option<i32>,
+    pub parent_id: Option<u64>,
     // 创建者ID
-    #[validate(required(message = "创建者ID不能为空"))]
     pub create_id: Option<u64>,
     // 更新者ID
-    #[validate(required(message = "更新者ID不能为空"))]
     pub update_id: Option<u64>,
     // 备注
     #[validate(length(max = 500, message = "备注不能超过500个字符"))]
@@ -78,9 +82,10 @@ pub struct ApProductCategoryUpdateDTO {
 impl From<ApProductCategoryUpdateDTO> for ApProductCategory {
     fn from(arg: ApProductCategoryUpdateDTO) -> Self {
         ApProductCategory {
-            id: None,
+            id: arg.id,
             name: arg.name,
             parent_id: arg.parent_id,
+            parent_name: None,
             create_id: arg.create_id,
             create_by: None,
             create_time: None,

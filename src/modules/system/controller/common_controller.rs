@@ -23,11 +23,8 @@ pub async fn upload(mut multipart: Multipart) -> impl IntoResponse {
         fs::create_dir_all(path.parent().unwrap()).unwrap();
         fs::write(path.as_path(), data).unwrap();
         let mut res = RespJson::success_info("操作成功");
-        // res.insert("url".to_string(),json!(path.as_path().display().to_string()));
-        res.insert(
-            "fileName".to_string(),
-            json!(path.display().to_string().replace(&CONTEXT.config.upload_path,"").replace("\\", "/")),
-        );
+        res.insert("fileName".to_string(), json!(path.display().to_string().replace(&CONTEXT.config.upload_path,"").replace("\\", "/")));
+        res.insert("url".to_string(),json!(path.display().to_string().replace(&CONTEXT.config.upload_path,"").replace("\\", "/")));
         res.insert("newFileName".to_string(), json!(&new_file_name));
         res.insert("originalFilename".to_string(), json!(file_name));
 

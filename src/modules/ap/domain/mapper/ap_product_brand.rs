@@ -7,7 +7,7 @@ impl ApProductBrand {
     r#"
 `SELECT `
 if do_count == false:
-  ` id, create_id, update_id`
+  ` id, create_id,name,logo, update_id`
 if do_count:
   ` count(1)`
 ` FROM`
@@ -32,8 +32,6 @@ pub struct ApProductBrand {
     pub create_id: Option<u64>,
     // 创建者
     pub create_by: Option<String>,
-    // 创建人头像
-    pub create_header_img: Option<String>,
     // 创建时间
     pub create_time: Option<DateTime>,
     // 更新者ID

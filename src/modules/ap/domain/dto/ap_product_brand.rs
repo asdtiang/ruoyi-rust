@@ -21,13 +21,8 @@ pub struct ApProductBrandAddDTO {
     #[validate(length(max = 255, message = "logo不能超过255个字符"))]
     pub logo: Option<String>,
     // 创建者ID
-    #[validate(required(message = "创建者ID不能为空"))]
     pub create_id: Option<u64>,
-    // 创建人头像
-    #[validate(length(max = 255, message = "创建人头像不能超过255个字符"))]
-    pub create_header_img: Option<String>,
     // 更新者ID
-    #[validate(required(message = "更新者ID不能为空"))]
     pub update_id: Option<u64>,
     // 备注
     #[validate(length(max = 500, message = "备注不能超过500个字符"))]
@@ -41,7 +36,6 @@ impl From<ApProductBrandAddDTO> for ApProductBrand {
             logo: arg.logo,
             create_id: arg.create_id,
             create_by: None,
-            create_header_img: arg.create_header_img,
             create_time: None,
             update_id: arg.update_id,
             update_by: None,
@@ -81,7 +75,6 @@ impl From<ApProductBrandUpdateDTO> for ApProductBrand {
             logo: arg.logo,
             create_id: arg.create_id,
             create_by: None,
-            create_header_img: arg.create_header_img,
             create_time: None,
             update_id: arg.update_id,
             update_by: None,

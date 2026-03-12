@@ -8,12 +8,21 @@ use crate::ap::AP_CONTEXT;
 use crate::ap::domain::dto::{ApProductCategoryAddDTO, ApProductCategoryPageDTO, ApProductCategoryUpdateDTO};
 use crate::ap::domain::mapper::ApProductCategory;
 use rbatis::Page;
+use crate::context::CONTEXT;
+
 //查询商品分类列表
 #[pre_authorize("ap:ProductCategory:list")]
 pub async fn list(dto: Json<ApProductCategoryPageDTO>) -> impl IntoResponse {
     let data = AP_CONTEXT.ap_product_category_service.page(&dto.0).await;
     let data = data.map(|d| Page::<ApProductCategoryListVO>::from(d));
     PageVO::from_result(&data).into_response()
+}
+
+
+#[pre_authorize("ap:ProductCategory:list")]
+pub async fn list_parent() -> impl IntoResponse {
+    let data = AP_CONTEXT.ap_product_category_service.list_parent().await;
+    RespVO::from_result(&data).into_response()
 }
 //获取商品分类详细信息
 #[pre_authorize("ap:ProductCategory:query")]
@@ -26,6 +35,8 @@ pub async fn detail(id: Path<String>) -> impl IntoResponse {
 #[pre_authorize("ap:ProductCategory:add", user_cache)]
 pub async fn add(dto: crate::ValidatedForm<ApProductCategoryAddDTO>) -> impl IntoResponse {
     add_marco!(data, dto, user_cache, ApProductCategory);
+    data.create_id = Some(user_cache.user_id.parse::<u64>().unwrap());
+    data.update_id = data.create_id;
     let res = AP_CONTEXT.ap_product_category_service.add(data).await;
     RespVO::from_result(&res).into_response()
 }
@@ -33,6 +44,7 @@ pub async fn add(dto: crate::ValidatedForm<ApProductCategoryAddDTO>) -> impl Int
 #[pre_authorize("ap:ProductCategory:edit", user_cache)]
 pub async fn update(dto: crate::ValidatedForm<ApProductCategoryUpdateDTO>) -> impl IntoResponse {
     update_marco!(data, dto, user_cache, ApProductCategory);
+    data.update_id = Some(user_cache.user_id.parse::<u64>().unwrap());
     let res = AP_CONTEXT.ap_product_category_service.update(data).await;
     RespVO::from_result(&res).into_response()
 }

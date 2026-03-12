@@ -106,7 +106,7 @@ errors:
 
 # 文件上传
 # 文件路径 示例（ Windows配置D:/ruoyi/uploadPath，Linux配置 /home/ruoyi/uploadPath）
-upload_path: D:/ruoyi
+upload_path: D:/openSource/ruoyi-vue3-rust/public/upload
 # 上传文件最大值（mb)
 upload_max_size: 50
 

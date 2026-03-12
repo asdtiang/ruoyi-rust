@@ -85,7 +85,7 @@ label="${{ column.comment }}"{% if column.sortable %} sortable="custom"{% endif 
       {%- if insertEditCnt>=12 %}
       <el-scrollbar height="600px" class="pr-2">
       {%- endif %}
-      <el-form ref="${{ businessName }}Ref" :model="form" :rules="rules" {%- if insertEditCnt>=12 %} class="mr-2"{% endif %}>
+      <el-form ref="${{ businessName }}Ref" :model="form"  label-width="120" :rules="rules" {%- if insertEditCnt>=12 %} class="mr-2"{% endif %}>
         {%- if insertEditCnt>=8 %}
         <el-row :gutter="15">
         {%- endif %}

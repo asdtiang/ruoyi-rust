@@ -7,18 +7,24 @@ impl ApProductCategory {
     r#"
 `SELECT `
 if do_count == false:
-  ` id, parent_id, create_id, update_id, order_num`
+  ` id, name, parent_id, parent_name, create_id, update_id, order_num`
 if do_count:
   ` count(1)`
 ` FROM`
 ` ap_product_category `
 ` WHERE 1=1`
-if dto.name != '':
-  ` AND name like concat('%', #{dto.name}, '%')`
 if dto.parent_id != null:
   ` AND parent_id = #{dto.parent_id}`
+if dto.create_id != null:
+  ` AND create_id = #{dto.create_id}`
+if dto.update_id != null:
+  ` AND update_id = #{dto.update_id}`
+if  dto.params.beginOrderNum != null :
+  ` AND order_num >= #{dto.params.beginOrderNum}`
+if dto.params.endOrderNum != null :
+  ` AND order_num <= #{dto.params.endOrderNum}`
 if do_count == false:
-  ` ORDER BY create_time desc`
+  ` ORDER BY order_num asc`
   ` LIMIT ${page_no},${page_size}`
 "#);
 }
@@ -29,7 +35,9 @@ pub struct ApProductCategory {
     // 名称
     pub name: Option<String>,
     // 上级分类id
-    pub parent_id: Option<i32>,
+    pub parent_id: Option<u64>,
+    // 上级分类名称
+    pub parent_name: Option<String>,
     // 创建者ID
     pub create_id: Option<u64>,
     // 创建者

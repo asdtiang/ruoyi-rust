@@ -3,6 +3,7 @@ use crate::{PageVO, RespVO, add_marco, export_excel_controller, update_marco};
 use axum::Json;
 use axum::extract::Path;
 use axum::response::IntoResponse;
+use log::info;
 use macros::pre_authorize;
 use crate::ap::AP_CONTEXT;
 use crate::ap::domain::dto::{ApProductBrandAddDTO, ApProductBrandPageDTO, ApProductBrandUpdateDTO};
@@ -26,6 +27,9 @@ pub async fn detail(id: Path<String>) -> impl IntoResponse {
 #[pre_authorize("ap:ProductBrand:add", user_cache)]
 pub async fn add(dto: crate::ValidatedForm<ApProductBrandAddDTO>) -> impl IntoResponse {
     add_marco!(data, dto, user_cache, ApProductBrand);
+    data.create_id = Some(user_cache.user_id.parse::<u64>().unwrap());
+    data.update_id = data.create_id;
+    info!("ApProductBrandAddDTO: {:?}",data);
     let res = AP_CONTEXT.ap_product_brand_service.add(data).await;
     RespVO::from_result(&res).into_response()
 }
@@ -33,6 +37,7 @@ pub async fn add(dto: crate::ValidatedForm<ApProductBrandAddDTO>) -> impl IntoRe
 #[pre_authorize("ap:ProductBrand:edit", user_cache)]
 pub async fn update(dto: crate::ValidatedForm<ApProductBrandUpdateDTO>) -> impl IntoResponse {
     update_marco!(data, dto, user_cache, ApProductBrand);
+    data.update_id = Some(user_cache.user_id.parse::<u64>().unwrap());
     let res = AP_CONTEXT.ap_product_brand_service.update(data).await;
     RespVO::from_result(&res).into_response()
 }

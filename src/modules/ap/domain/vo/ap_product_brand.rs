@@ -11,8 +11,6 @@ pub struct ApProductBrandVO {
     pub logo: Option<String>,
     // 创建者ID
     pub create_id: Option<u64>,
-    // 创建人头像
-    pub create_header_img: Option<String>,
     // 更新者ID
     pub update_id: Option<u64>,
     // 备注
@@ -25,7 +23,6 @@ impl From<ApProductBrand> for ApProductBrandVO {
             name: arg.name,
             logo: arg.logo,
             create_id: arg.create_id,
-            create_header_img: arg.create_header_img,
             update_id: arg.update_id,
             remark: arg.remark,
         }
@@ -38,6 +35,9 @@ impl From<ApProductBrand> for ApProductBrandVO {
 pub struct ApProductBrandListVO {
     //
     pub id: Option<u64>,
+    pub name: Option<String>,
+    // logo
+    pub logo: Option<String>,
     // 创建者ID
     #[excel("创建者ID")]
     pub create_id: Option<u64>,
@@ -50,6 +50,8 @@ impl From<ApProductBrand> for ApProductBrandListVO {
     fn from(arg: ApProductBrand) -> Self {
         Self {
             id: arg.id,
+            name:arg.name,
+            logo:arg.logo,
             create_id: arg.create_id,
             update_id: arg.update_id,
         }
