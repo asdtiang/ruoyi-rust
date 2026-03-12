@@ -20,7 +20,7 @@ by wizount, 2537660666,wx:glqqyx
 - 监控管理：在线用户、登录日志、操作日志
 - 代码生成：支持从数据库表自动生成代码
 - 文件存储：支持本地存储和 S3/OSS（未实现) 存储
-- 数据权限控制
+- 数据权限控制：支持sql。
 
 ## 项目结构
 
@@ -32,7 +32,7 @@ by wizount, 2537660666,wx:glqqyx
 - `src/modules`: 各功能模块
   - `system`: 系统管理模块
   - `code_gen`: 代码生成模块
-  - `oa`: 办公自动化模块（待实现）
+  - `ap`: 业务代码，新项目可以直接删除，同时删除mod.rs中的相关代码
 - `src/utils`: 工具类
 - `src/web`: jwt实现、身份验证、日志处理、数据过滤，数据权限实现
 - `src/macro.rs` 宏，简化代码输入
@@ -43,6 +43,36 @@ by wizount, 2537660666,wx:glqqyx
 - ✅ 功能已实现，但需要完善
 - ⚠️ 功能部分实现
 - ❌ 功能未实现
+
+## 文件上传功能
+
+后端实现时，文件目录存储到本地时，存储到 /ruoyi-vue3-rust/public/upload，前端展示时加上路径/public/upload就可以。
+云存储暂时还没有实现。
+```vue
+上传
+
+<el-form-item label="logo" prop="logo">
+  <ImageUpload v-model="form.logo" :limit="1"/>
+</el-form-item>
+
+展示：
+
+ <el-image
+    style="width: 100px; height: 100px"
+    :src="'/public/upload'+scope.row.logo"
+    :preview-src-list="['/public/upload'+scope.row.logo]">
+</el-image>
+```
+## 发布以windows为例，其他平台只是生成包的后缀不同
+
+```shell
+cargo build
+```
+在target/release目录下面会生成文件：ruoyi-rust.exe，另外需要加上配置的yml文件，数据库版本文件liqubase，模板文件template,如图所示：
+
+![项目运行截图](run-img.png)
+
+注意如果一闪而过，那肯定是数据库或redis没有配置好。
 
 ## 贡献指南
 
