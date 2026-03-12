@@ -1,5 +1,10 @@
 # RuoYi-Vue Rust 
-by wizount, 2537660666,wx:glqqyx
+
+项目基于：https://gitee.com/wizount/ruoyi-rust
+
+增加了自己的一些实践代码
+
+by asdtiang, wx:asdtiang
 
 正在努力开发，功能不完善，正式部署请慎重，作者不承担任何后果。
 
