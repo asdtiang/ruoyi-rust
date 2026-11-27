@@ -2,3 +2,9 @@
 base_api: "/dev-api"
 #server 地址
 server_url: "0.0.0.0:8090"
+
+cache: "redis://:admin123@127.0.0.1:6379"
+jwt_secret: "safasfsdfasdf!@!@#!@#!@zdfczf"
+
+
+db_url: "mysql://ruoyi_rust:admin123@127.0.0.1:3306/ruoyi_rust_dev"

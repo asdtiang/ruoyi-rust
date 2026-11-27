@@ -20,3 +20,5 @@
 .Ds_Store
 /macros/target/
 /application.json5
+/docker/dev/mysql-data/
+/docker/dev/redis-data/

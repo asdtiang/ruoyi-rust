@@ -3,7 +3,6 @@ pub mod code_gen;
 //pub mod oa;
 pub mod system;
 
-pub mod ap;
 
 use axum::Router;
 
@@ -12,7 +11,6 @@ pub fn build_api() -> Router {
         .merge(system::controller::build_auth_api())
         .nest("/system", system::controller::build_system_api())
         .nest("/monitor", system::controller::monitor::build_monitor_api())
-        .nest("/ap", ap::build_ap_api())
         .nest("/common", system::controller::build_common_api());
     
        // .nest("/oa", oa::build_oa_api());

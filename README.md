@@ -2,7 +2,12 @@
 
 项目基于：https://gitee.com/wizount/ruoyi-rust
 
+Rust 1.9,前端主要是Vue3,uniapp
+
 增加了自己的一些实践代码
+
+
+# 把web管理端，h5小程序端代码合到一个仓库，利于AI处理。
 
 by asdtiang, wx:asdtiang
 
@@ -12,7 +17,31 @@ by asdtiang, wx:asdtiang
 
 我们正在寻找志同道合的开发者共同完成这个项目。目前部分功能已经实现，但还需要进一步完善。
 
+
+ 
+## 常用命令
+cargo run -- --profile dev
+cargo run -- --profile test
+cargo run -- --profile=prod
+cargo run --release -- -p prod
+
+## 构建打包（release）
+cargo build --release
+
+### 运行打包产物（target/release/ruoyi-rust，Windows 为 ruoyi-rust.exe）
+### 需将 application-{profile}.yml 放到运行目录；不指定 profile 时 release 默认加载 prod
+./ruoyi-rust --profile dev
+./ruoyi-rust --profile test
+./ruoyi-rust --profile=prod
+./ruoyi-rust -p prod
+
+
+--profile dev / -p dev
+--profile=dev / -p=dev
+
+
 ## 技术栈
+- Rust 版本 1.97.1
 - rbatis ORM 框架
 - Axum Web 框架
 - JWT 用于身份验证
@@ -43,6 +72,14 @@ by asdtiang, wx:asdtiang
 - `src/web`: jwt实现、身份验证、日志处理、数据过滤，数据权限实现
 - `src/macro.rs` 宏，简化代码输入
 - `macros`: 自定义宏定义
+
+- 后端： [src](src)
+- H5,APP,小程序端:uniapp vue3 [front-app](front-app)
+- web管理端 ：[front-web](front-web)
+- 数据库版本管理：[liqubase](liqubase)
+- 数据库初始化脚本: [mysql-init.sql](docker/dev/init/mysql-init.sql) ，默认登录为 admin admin123
+- docker配置: [docker](docker)  , dev环境启动后会执行初始化脚本
+
 
 ## 开发状态
 

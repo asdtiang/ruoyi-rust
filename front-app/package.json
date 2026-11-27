@@ -1,0 +1,26 @@
+{
+  "name": "ruoyi-rust-front-app",
+  "private": true,
+  "engines": {
+    "node": ">=22.12.0"
+  },
+  "scripts": {
+    "dev:h5": "cross-env UNI_INPUT_DIR=. uni -p h5 --config vite.h5.config.mjs --strictPort"
+  },
+  "dependencies": {
+    "@dcloudio/uni-app": "3.0.0-5030420261029002",
+    "@dcloudio/uni-components": "3.0.0-5030420261029002",
+    "@dcloudio/uni-h5": "3.0.0-5030420261029002",
+    "@dcloudio/uni-i18n": "3.0.0-5030420261029002",
+    "pinia": "2.1.7",
+    "vue": "3.4.21"
+  },
+  "devDependencies": {
+    "@dcloudio/types": "3.4.31",
+    "@dcloudio/vite-plugin-uni": "3.0.0-5030420261029002",
+    "cross-env": "7.0.3",
+    "rollup": "4.14.3",
+    "sass": "1.77.8",
+    "vite": "5.2.8"
+  }
+}

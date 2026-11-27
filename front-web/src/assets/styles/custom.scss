@@ -1,0 +1,34 @@
+
+//更换messagebox确认与取消的位置，和系统使用el-dialog保持一致
+.el-message-box__btns {
+  flex-flow: row-reverse;
+  justify-content: flex-start!important;
+  button {
+    margin: 10px;
+  }
+}
+
+.el-table .el-popper{
+  max-width: 400px;
+}
+
+.queryForm{
+  .el-form-item{
+    margin-bottom: 10px;
+  }
+}
+
+.subTableDelete{
+  .el-button{
+    display: none;
+  }
+  &:hover{
+    .el-button{
+      display: unset;
+    }
+    span{
+      display: none;
+    }
+  }
+
+}
